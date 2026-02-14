@@ -1,20 +1,27 @@
 import { TRPCError } from "@trpc/server";
 import { router, publicProcedure } from "../trpc";
-import { completeRegistrationSchema } from "@/lib/validations/auth";
+import { registerSchema } from "@/lib/validations/auth";
 import {
   checkRateLimit,
   RATE_LIMITS,
 } from "@/lib/rate-limit";
-
-const SIREN_ALREADY_USED_MESSAGE =
-  "Ce numéro SIREN est déjà enregistré. Contactez votre administrateur si vous pensez qu'il s'agit d'une erreur.";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 const RATE_LIMIT_MESSAGE =
   "Trop de requêtes. Réessayez dans quelques minutes.";
 
+/** Message générique quand email ou SIREN déjà utilisé (option B : tout côté serveur) */
+const REGISTER_UNAVAILABLE_MESSAGE =
+  "Cette combinaison n'est pas disponible. Utilisez un autre email ou un autre numéro SIREN.";
+
 export const authRouter = router({
-  completeRegistration: publicProcedure
-    .input(completeRegistrationSchema)
+  /**
+   * Inscription complète côté serveur : vérifie SIREN et email (Auth + User),
+   * puis crée l'utilisateur Auth (email_confirm: true, pas d'envoi d'email),
+   * puis Company + User en une transaction. Évite les utilisateurs Auth orphelins.
+   */
+  register: publicProcedure
+    .input(registerSchema)
     .mutation(async ({ ctx, input }) => {
       const ip =
         ctx.headers?.get("x-forwarded-for")?.split(",")[0]?.trim() ??
@@ -32,22 +39,44 @@ export const authRouter = router({
         });
       }
 
-      const user = ctx.user;
-      if (!user) {
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message:
-            "Votre session n'a pas pu être établie. Réessayez de vous inscrire.",
-        });
-      }
-
       const existingCompany = await ctx.db.company.findUnique({
         where: { siren: input.siren },
       });
       if (existingCompany) {
         throw new TRPCError({
           code: "CONFLICT",
-          message: SIREN_ALREADY_USED_MESSAGE,
+          message: REGISTER_UNAVAILABLE_MESSAGE,
+        });
+      }
+
+      const existingUserByEmail = await ctx.db.user.findUnique({
+        where: { email: input.email },
+      });
+      if (existingUserByEmail) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: REGISTER_UNAVAILABLE_MESSAGE,
+        });
+      }
+
+      const supabaseAdmin = createAdminClient();
+      const { data: authUser, error: createAuthError } =
+        await supabaseAdmin.auth.admin.createUser({
+          email: input.email,
+          password: input.password,
+          email_confirm: true,
+          user_metadata: {
+            firstName: input.firstName,
+            lastName: input.lastName,
+            companyName: input.companyName,
+            siren: input.siren,
+          },
+        });
+
+      if (createAuthError || !authUser?.user) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: REGISTER_UNAVAILABLE_MESSAGE,
         });
       }
 
@@ -60,8 +89,8 @@ export const authRouter = router({
         });
         await tx.user.create({
           data: {
-            id: user.id,
-            email: user.email ?? "",
+            id: authUser.user.id,
+            email: input.email,
             firstName: input.firstName,
             lastName: input.lastName,
             companyId: newCompany.id,

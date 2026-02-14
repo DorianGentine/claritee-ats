@@ -5,10 +5,12 @@ import { appRouter } from "@/server/trpc/routers/_app";
 import type { Context } from "@/server/trpc/context";
 
 const connectionString = process.env.DATABASE_URL;
+const hasSupabase =
+  !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
+  !!process.env.SUPABASE_SECRET_KEY;
 
-describe.runIf(!!connectionString)("auth.completeRegistration", () => {
+describe.runIf(!!connectionString && hasSupabase)("auth.register", () => {
   let db: PrismaClient;
-  const testUserId = "00000000-0000-0000-0000-000000000001";
   const testSiren = "987654321";
 
   beforeAll(() => {
@@ -17,26 +19,25 @@ describe.runIf(!!connectionString)("auth.completeRegistration", () => {
   });
 
   afterAll(async () => {
-    await db.user.deleteMany({ where: { id: testUserId } });
     await db.company.deleteMany({ where: { siren: testSiren } });
     await db.$disconnect();
   });
 
   const createContext = (): Context => ({
     db,
-    user: {
-      id: testUserId,
-      email: "test-register@example.com",
-    } as Context["user"],
+    user: null,
     companyId: null,
     headers: new Headers(),
   });
 
-  it("creates Company and User in one transaction with valid input", async () => {
+  it("creates Auth user, Company and User in one flow with valid input", async () => {
     const ctx = createContext();
     const caller = appRouter.createCaller(ctx);
+    const email = `test-register-${Date.now()}@example.com`;
 
-    const result = await caller.auth.completeRegistration({
+    const result = await caller.auth.register({
+      email,
+      password: "password123",
       companyName: "Test Company",
       siren: testSiren,
       firstName: "Test",
@@ -47,19 +48,15 @@ describe.runIf(!!connectionString)("auth.completeRegistration", () => {
 
     const company = await db.company.findUnique({
       where: { id: result.companyId },
+      include: { users: true },
     });
     expect(company).not.toBeNull();
     expect(company?.name).toBe("Test Company");
     expect(company?.siren).toBe(testSiren);
-
-    const user = await db.user.findUnique({
-      where: { id: testUserId },
-    });
-    expect(user).not.toBeNull();
-    expect(user?.companyId).toBe(result.companyId);
-    expect(user?.email).toBe("test-register@example.com");
-    expect(user?.firstName).toBe("Test");
-    expect(user?.lastName).toBe("User");
+    expect(company?.users).toHaveLength(1);
+    expect(company?.users[0].email).toBe(email);
+    expect(company?.users[0].firstName).toBe("Test");
+    expect(company?.users[0].lastName).toBe("User");
   });
 
   it("throws with clear message when SIREN already exists", async () => {
@@ -67,14 +64,16 @@ describe.runIf(!!connectionString)("auth.completeRegistration", () => {
     const caller = appRouter.createCaller(ctx);
 
     await expect(
-      caller.auth.completeRegistration({
+      caller.auth.register({
+        email: `test-register-dup-${Date.now()}@example.com`,
+        password: "password123",
         companyName: "Other Company",
         siren: testSiren,
         firstName: "Other",
         lastName: "User",
       }),
     ).rejects.toMatchObject({
-      message: expect.stringContaining("SIREN est déjà enregistré"),
+      message: expect.stringMatching(/disponible/),
     });
   });
 });

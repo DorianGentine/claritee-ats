@@ -117,8 +117,7 @@ Les ATS existants sur le marché sont généralement trop chers, trop complexes 
 
 | Situation | Message utilisateur |
 |-----------|---------------------|
-| SIREN déjà utilisé | "Ce numéro SIREN est déjà enregistré. Contactez votre administrateur si vous pensez qu'il s'agit d'une erreur." |
-| Email déjà utilisé | "Un compte existe déjà avec cet email." |
+| Inscription : email ou SIREN indisponible | "Cette combinaison n'est pas disponible. Utilisez un autre email ou un autre numéro SIREN." |
 | Identifiants invalides | "Email ou mot de passe incorrect." |
 | Invitation expirée | "Cette invitation a expiré. Demandez une nouvelle invitation à votre administrateur." |
 | Invitation déjà utilisée | "Cette invitation a déjà été utilisée." |
