@@ -33,15 +33,7 @@ export const registerFormSchema = z.object({
   siren: sirenSchema,
 });
 
-/** Input pour completeRegistration (après signUp côté client) */
-export const completeRegistrationSchema = z.object({
-  companyName: z.string().min(1),
-  siren: sirenSchema,
-  firstName: z.string().min(1),
-  lastName: z.string().min(1),
-});
+/** Input pour register (tout côté serveur : vérifs puis création Auth + Company + User) */
+export const registerSchema = registerFormSchema;
 
 export type RegisterFormValues = z.infer<typeof registerFormSchema>;
-export type CompleteRegistrationInput = z.infer<
-  typeof completeRegistrationSchema
->;

@@ -16,16 +16,12 @@ import { Label } from "@/components/ui/label";
 import { api } from "@/lib/trpc/client";
 import { createClient } from "@/lib/supabase/client";
 
-const EMAIL_ALREADY_USED_MESSAGE =
-  "Un compte existe déjà avec cet email.";
-const RATE_LIMIT_MESSAGE =
-  "Trop de requêtes. Réessayez dans quelques minutes.";
 const GENERIC_ERROR_MESSAGE = "Une erreur est survenue. Réessayez.";
 
 export default function RegisterPage() {
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
-  const completeRegistration = api.auth.completeRegistration.useMutation();
+  const registerMutation = api.auth.register.useMutation();
 
   const {
     register,
@@ -45,46 +41,28 @@ export default function RegisterPage() {
 
   const onSubmit = async (data: RegisterFormValues) => {
     setServerError(null);
-    const supabase = createClient();
-
-    const { error: signUpError } = await supabase.auth.signUp({
-      email: data.email,
-      password: data.password,
-      options: {
-        data: {
-          firstName: data.firstName,
-          lastName: data.lastName,
-          companyName: data.companyName,
-          siren: data.siren,
-        },
-      },
-    });
-
-    if (signUpError) {
-      if (
-        signUpError.message.toLowerCase().includes("already") ||
-        signUpError.code === "user_already_registered"
-      ) {
-        setServerError(EMAIL_ALREADY_USED_MESSAGE);
-      } else if (
-        signUpError.status === 429 ||
-        signUpError.message.toLowerCase().includes("too many") ||
-        signUpError.message.toLowerCase().includes("trop de requêtes")
-      ) {
-        setServerError(RATE_LIMIT_MESSAGE);
-      } else {
-        setServerError(GENERIC_ERROR_MESSAGE);
-      }
-      return;
-    }
 
     try {
-      await completeRegistration.mutateAsync({
+      await registerMutation.mutateAsync({
+        email: data.email,
+        password: data.password,
         companyName: data.companyName,
         siren: data.siren,
         firstName: data.firstName,
         lastName: data.lastName,
       });
+
+      const supabase = createClient();
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
+      });
+
+      if (signInError) {
+        setServerError(GENERIC_ERROR_MESSAGE);
+        return;
+      }
+
       router.push("/dashboard");
       router.refresh();
     } catch (err: unknown) {
