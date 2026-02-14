@@ -6,7 +6,7 @@ import { db } from "@/server/db";
  * Context créé pour chaque requête tRPC.
  * Auth via Supabase ; companyId résolu depuis la table User.
  */
-export const createContext = async (_opts: FetchCreateContextFnOptions) => {
+export const createContext = async (opts: FetchCreateContextFnOptions) => {
   const supabase = await createClient();
   const {
     data: { user },
@@ -21,10 +21,12 @@ export const createContext = async (_opts: FetchCreateContextFnOptions) => {
     companyId = dbUser?.companyId ?? null;
   }
 
+  const headers = opts.req.headers;
   return {
     db,
     user,
     companyId,
+    headers,
   };
 };
 

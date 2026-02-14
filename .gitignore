@@ -3,6 +3,7 @@ node_modules/
 .pnp
 .pnp.js
 tsconfig.tsbuildinfo
+pnpm-lock.yaml
 
 # Build / Next
 .next/
