@@ -1,0 +1,12 @@
+# Fichiers sensibles - exclus du contexte et de l'indexation Cursor
+.env
+.env.local
+.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Clés et secrets
+*.pem
+*.key
+secrets/

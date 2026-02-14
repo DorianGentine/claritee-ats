@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+package-lock.json
+tsconfig.tsbuildinfo
+
+# Build / Next
+.next/
+out/
+build/
+dist/
+
+# Vercel
+.vercel
+
+# Fichiers sensibles - exclus du contexte et de l'indexation Cursor
+.env
+.env.local
+.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Clés et secrets
+*.pem
+*.key
+secrets/
+
+# Debug / IDE
+*.log
+.ai/
+
+# BMAD
+.bmad-core/
+.bmad-infrastructure-devops/
+.cursor/

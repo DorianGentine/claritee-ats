@@ -1,0 +1,296 @@
+// Claritee ATS - Prisma Schema
+// 16 entités, multi-tenant par companyId (RLS sur Supabase)
+// PostgreSQL via Supabase
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============ ENUMS ============
+
+enum JobOfferStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+}
+
+enum CandidatureStatus {
+  CONTACTED_LINKEDIN
+  PHONE_CONTACT
+  APPLIED
+  ACCEPTED
+  REJECTED_BY_EMPLOYER
+  REJECTED_BY_CANDIDATE
+}
+
+enum LanguageLevel {
+  NOTION
+  INTERMEDIATE
+  FLUENT
+  BILINGUAL
+  NATIVE
+}
+
+enum ShareLinkType {
+  NORMAL
+  ANONYMOUS
+}
+
+// ============ COMPANY (tenant root) ============
+
+model Company {
+  id        String   @id @default(uuid())
+  name      String
+  siren     String   @unique // 9 chiffres
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users         User[]
+  invitations   Invitation[]
+  candidates    Candidate[]
+  tags          Tag[]
+  clientCompanies ClientCompany[]
+  jobOffers     JobOffer[]
+  notes         Note[]
+}
+
+// ============ USER (lié à Supabase Auth : id = auth.uid()) ============
+
+model User {
+  id        String   @id // UUID Supabase Auth
+  email     String   @unique
+  firstName String
+  lastName  String
+  companyId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company   Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  notes     Note[]
+}
+
+// ============ INVITATION ============
+
+model Invitation {
+  id        String    @id @default(uuid())
+  email     String
+  token     String    @unique
+  companyId String
+  expiresAt DateTime
+  usedAt    DateTime?
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+}
+
+// ============ CANDIDATE ============
+
+model Candidate {
+  id         String   @id @default(uuid())
+  firstName  String
+  lastName   String
+  email      String?
+  phone      String?
+  linkedinUrl String?
+  title      String?
+  city       String?
+  summary    String?  @db.Text
+  photoUrl   String?
+  cvUrl      String?
+  companyId  String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  company     Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  experiences Experience[]
+  formations  Formation[]
+  languages   Language[]
+  tags        CandidateTag[]
+  candidatures Candidature[]
+  notes       Note[]
+  shareLinks  ShareLink[]
+}
+
+// ============ EXPERIENCE ============
+
+model Experience {
+  id          String    @id @default(uuid())
+  candidateId String
+  title       String
+  company     String
+  startDate   DateTime
+  endDate     DateTime?
+  description String?   @db.Text
+  order       Int       @default(0)
+
+  candidate Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+}
+
+// ============ FORMATION ============
+
+model Formation {
+  id          String    @id @default(uuid())
+  candidateId String
+  degree      String
+  field       String?
+  school      String
+  startDate   DateTime?
+  endDate     DateTime?
+  order       Int       @default(0)
+
+  candidate Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+}
+
+// ============ LANGUAGE ============
+
+model Language {
+  id          String        @id @default(uuid())
+  candidateId String
+  name        String
+  level       LanguageLevel
+
+  candidate Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+}
+
+// ============ TAG ============
+
+model Tag {
+  id        String   @id @default(uuid())
+  name      String
+  color     String
+  companyId String
+  createdAt DateTime @default(now())
+
+  company       Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  candidates    CandidateTag[]
+  jobOffers     OfferTag[]
+
+  @@unique([name, companyId])
+}
+
+// ============ CANDIDATE <-> TAG (N-N) ============
+
+model CandidateTag {
+  candidateId String
+  tagId       String
+
+  candidate Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  tag        Tag       @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([candidateId, tagId])
+}
+
+// ============ CLIENT COMPANY ============
+
+model ClientCompany {
+  id        String   @id @default(uuid())
+  name      String
+  siren     String?
+  companyId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company       Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  contacts      ClientContact[]
+  jobOffers     JobOffer[]
+}
+
+// ============ CLIENT CONTACT ============
+
+model ClientContact {
+  id             String   @id @default(uuid())
+  clientCompanyId String
+  firstName      String
+  lastName       String
+  email          String?
+  phone          String?
+  position       String?
+  linkedinUrl    String?
+  createdAt      DateTime @default(now())
+
+  clientCompany ClientCompany @relation(fields: [clientCompanyId], references: [id], onDelete: Cascade)
+}
+
+// ============ JOB OFFER ============
+
+model JobOffer {
+  id               String         @id @default(uuid())
+  title            String
+  description      String?        @db.Text
+  location         String?
+  salaryMin        Int?
+  salaryMax        Int?
+  status           JobOfferStatus  @default(TODO)
+  clientCompanyId  String?
+  companyId        String
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  company        Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  clientCompany  ClientCompany?  @relation(fields: [clientCompanyId], references: [id], onDelete: SetNull)
+  tags           OfferTag[]
+  candidatures   Candidature[]
+  notes          Note[]
+}
+
+// ============ OFFER <-> TAG (N-N) ============
+
+model OfferTag {
+  offerId String
+  tagId   String
+
+  jobOffer JobOffer @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  tag      Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([offerId, tagId])
+}
+
+// ============ CANDIDATURE (candidat <-> offre + statut) ============
+
+model Candidature {
+  id          String            @id @default(uuid())
+  candidateId String
+  offerId     String
+  status      CandidatureStatus @default(CONTACTED_LINKEDIN)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  candidate Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  jobOffer   JobOffer  @relation(fields: [offerId], references: [id], onDelete: Cascade)
+
+  @@unique([candidateId, offerId])
+}
+
+// ============ NOTE (candidat ou offre, partagée par cabinet) ============
+
+model Note {
+  id          String   @id @default(uuid())
+  content     String   @db.Text
+  authorId    String
+  candidateId String?
+  offerId     String?
+  companyId   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  candidate Candidate? @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  jobOffer  JobOffer?  @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  company   Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+}
+
+// ============ SHARE LINK (fiche candidat partageable) ============
+
+model ShareLink {
+  id         String        @id @default(uuid())
+  candidateId String
+  token      String        @unique
+  type       ShareLinkType
+  expiresAt  DateTime?
+  createdAt  DateTime      @default(now())
+
+  candidate Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+}
