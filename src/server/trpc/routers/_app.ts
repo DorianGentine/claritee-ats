@@ -1,7 +1,8 @@
 import { router } from "../trpc";
+import { authRouter } from "./auth";
 
 export const appRouter = router({
-  // Routers métier (candidate, offer, etc.) ajoutés en Story 1.2+
+  auth: authRouter,
 });
 
 export type AppRouter = typeof appRouter;
