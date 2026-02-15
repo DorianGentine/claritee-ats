@@ -470,6 +470,12 @@ Les résultats complets du brainstorming sont disponibles dans : `docs/brainstor
 - **Prisma Documentation:** https://www.prisma.io/docs
 - **Vercel Documentation:** https://vercel.com/docs
 
+## Améliorations Post MVP
+
+Points hors périmètre du MVP, documentés pour les évolutions futures.
+
+- **Rôles et permissions** : Restreindre la page Settings/Team (invitations, équipe) aux administrateurs du cabinet uniquement. Actuellement, tous les membres du cabinet ont les mêmes droits (cf. PRD Story 4.8, critère « No role management in MVP »).
+
 ## Next Steps
 
 ### Immediate Actions

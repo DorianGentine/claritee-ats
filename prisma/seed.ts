@@ -12,6 +12,9 @@ const prisma = new PrismaClient({ adapter });
 /** Placeholder UUID for dev seed (User.id = Supabase Auth uid in production) */
 const DEV_USER_ID = "00000000-0000-0000-0000-000000000001";
 
+/** UUID valide pour l'invitation de seed (getByToken attend un UUID) */
+const DEV_INVITATION_TOKEN = "00000000-0000-0000-0000-000000000002";
+
 const main = async () => {
   const company = await prisma.company.upsert({
     where: { siren: "123456789" },
@@ -35,11 +38,11 @@ const main = async () => {
   });
 
   await prisma.invitation.upsert({
-    where: { token: "dev-invitation-token-001" },
+    where: { token: DEV_INVITATION_TOKEN },
     create: {
       email: "invite@claritee.local",
       companyId: company.id,
-      token: "dev-invitation-token-001",
+      token: DEV_INVITATION_TOKEN,
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     },
     update: {},
