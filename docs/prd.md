@@ -1333,6 +1333,19 @@ Implémenter la recherche globale et les filtres avancés pour retrouver rapidem
 
 ---
 
+## Améliorations Post MVP
+
+Les points ci-dessous sont hors périmètre du MVP mais documentés pour les évolutions futures.
+
+### Rôles et permissions
+
+- **Restriction de la page Settings/Team aux admins du cabinet**  
+  Actuellement, tous les utilisateurs d’un cabinet peuvent accéder à `/settings/team` et gérer les invitations.  
+  *Amélioration envisagée :* restreindre cette page et les actions d’invitation (créer, révoquer, lister) aux administrateurs du cabinet.  
+  *Prérequis :* ajout d’un champ de rôle dans le modèle `User` (ex. `role: "ADMIN" | "MEMBER"` ou `isAdmin: Boolean`), migration Prisma, procédure `adminProcedure` pour les procédures concernées.
+
+---
+
 ## Next Steps
 
 ### Livrables UX & Architecture (intégrés)

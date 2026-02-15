@@ -82,6 +82,7 @@ model Invitation {
   companyId String
   expiresAt DateTime
   usedAt    DateTime?
+  revokedAt DateTime?
 
   company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 }

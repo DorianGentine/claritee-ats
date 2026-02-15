@@ -15,6 +15,7 @@
 ### Formatage et lint
 
 - Suivre les règles ESLint/Prettier du projet. Pas de console.log en prod ; utiliser un logger structuré si besoin (voir observabilité dans `architecture.md`).
+- Corriger toutes les erreurs de lint et TypeScript avant de considérer une tâche ou une story terminée.
 
 ---
 
