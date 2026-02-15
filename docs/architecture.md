@@ -341,6 +341,10 @@ const protectedProcedure = t.procedure.use(({ ctx, next }) => {
 
 Toutes les mutations/queries métier (candidats, offres, clients, notes, partages) utilisent `protectedProcedure` et filtrent par `ctx.companyId`.
 
+### 7.2.1 Session côté client (Navbar, état auth)
+
+Pour les composants client qui doivent afficher l'état de connexion (ex. `SiteNavbar`), on utilise `getSession()` plutôt que `getUser()`. Choix documenté : `getSession()` lit la session depuis le stockage local/cookies sans appel réseau, ce qui permet un affichage immédiat au chargement. `getUser()` valide le JWT auprès du serveur et est réservé au contexte serveur (tRPC, proxy). En cas de session invalide ou expirée, `onAuthStateChange` mettra à jour l'état après le prochain refresh ou une action utilisateur.
+
 ### 7.3 Invitation
 
 - Création d’une entrée `Invitation` (email, token, companyId, expiresAt).
@@ -410,6 +414,24 @@ Chaque router utilise des schémas Zod (depuis `src/lib/validations/`) pour les 
 - **Frontend :** TanStack Query (staleTime approprié), lazy loading des routes, images optimisées (Next.js Image + URLs Supabase).
 - **Vercel :** utiliser les régions proches du projet Supabase (ex. EU).
 
+#### 10.2.1 Performance du serveur de développement (Turbopack)
+
+Le serveur Next.js 16 utilise **Turbopack** par défaut en `next dev`. Il est sensible à la taille du graphe de modules chargé en mémoire. Les règles suivantes ont été établies après un incident de consommation CPU/mémoire excessive (260-350 % CPU, OOM) sur un projet de ~33 fichiers.
+
+**Règles à respecter :**
+
+1. **Dépendances Radix UI — packages individuels uniquement.** Ne jamais installer le package monolithique `radix-ui` (umbrella). Utiliser les packages individuels correspondant aux composants réellement utilisés (ex. `@radix-ui/react-slot`, `@radix-ui/react-label`). Le package umbrella charge l'intégralité des primitives Radix en mémoire en dev (tree-shaking limité avec Turbopack), ce qui peut provoquer des fuites mémoire et une boucle de recompilation.
+2. **Prisma — pas de log `"query"` en dev.** Le logging de chaque requête SQL (`log: ["query", ...]`) accumule des strings en mémoire sur la durée d'une session dev. Utiliser `["error", "warn"]` en développement, `["error"]` en production.
+3. **Cache `.next/` — nettoyer régulièrement.** En cas de comportement anormal (compilation infinie, CPU élevé au repos, OOM), supprimer le dossier `.next/` et relancer : `rm -rf .next && pnpm dev`.
+4. **CSS — éviter les doublons.** Les règles `@apply` dupliquées dans `globals.css` causent du travail PostCSS inutile à chaque recompilation.
+5. **tsconfig.json — ne pas modifier `"jsx"`.** Next.js 16 impose `"jsx": "react-jsx"` au démarrage. Ne pas le changer ; c'est le réglage correct pour React 19 (automatic JSX runtime).
+
+**Diagnostic si le problème réapparaît :**
+
+- Vérifier le FAB Next.js dans le navigateur : un « Compiling… » permanent indique une boucle de recompilation.
+- Vérifier l'onglet Network du navigateur : des requêtes en boucle (polling, retry tRPC sur erreur 401) peuvent bombarder le proxy/middleware.
+- En dernier recours, tester sans Turbopack : `pnpm next dev --no-turbopack`.
+
 ### 10.3 Observabilité (MVP)
 
 Pour le MVP, pas d’outil de monitoring dédié ; on s’appuie sur les logs Vercel et un health check minimal.
@@ -471,10 +493,10 @@ Pour respecter le NFR9 (conformité RGPD) et les droits des personnes concernée
 
 - **Objectif :** limiter les abus et rester dans les quotas des free tiers (Supabase, Vercel).
 - **Périmètre recommandé (MVP) :**
-  - **Auth :** limiter les tentatives de connexion / inscription par IP (ex. 10 req/min) pour limiter le brute-force et les inscriptions abusives. À implémenter en middleware Next.js ou via une route API dédiée qui compte en mémoire ou via un store externe (ex. Vercel KV si disponible).
+  - **Auth :** limiter les tentatives de connexion / inscription par IP (ex. 10 req/min) pour limiter le brute-force et les inscriptions abusives. À implémenter dans le proxy Next.js (`src/proxy.ts`) ou via une route API dédiée qui compte en mémoire ou via un store externe (ex. Vercel KV si disponible).
   - **Génération de liens de partage :** limiter par utilisateur (ex. 20 créations/heure) pour éviter le spam.
   - **Upload (photo, CV) :** limiter par utilisateur (ex. 30 uploads/heure) ou par taille cumulée sur une fenêtre glissante.
-- **Implémentation :** pour le MVP, une approche simple suffit (compteur en mémoire par IP pour l’auth en dev ; en production, envisager Vercel Edge Config, Upstash Redis, ou un middleware type `@upstash/ratelimit`). Si aucun rate limit n’est en place au premier déploiement, documenter la cible (seuils ci-dessus) et l’ajouter dès que possible.
+- **Implémentation :** pour le MVP, une approche simple suffit (compteur en mémoire par IP pour l’auth en dev ; en production, envisager Vercel Edge Config, Upstash Redis, ou un package type `@upstash/ratelimit`). Si aucun rate limit n’est en place au premier déploiement, documenter la cible (seuils ci-dessus) et l’ajouter dès que possible.
 - **Réponse en cas de dépassement :** HTTP 429 (Too Many Requests) ou erreur tRPC équivalente, avec message générique côté client (ex. « Trop de requêtes. Réessayez dans quelques minutes. »).
 
 ---

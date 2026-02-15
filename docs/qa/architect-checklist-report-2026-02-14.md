@@ -337,7 +337,7 @@ L'architecture est solide, alignée au PRD et prête pour le développement. Un 
 
 ### Must-fix before production
 
-1. **Brancher le rate limiting** : Intégrer `checkRateLimit` selon `rate-limiting.md` §3 dans auth (middleware ou auth.register), shareLink.create, et les procédures d'upload photo/CV.
+1. **Brancher le rate limiting** : Intégrer `checkRateLimit` selon `rate-limiting.md` §3 dans auth (proxy ou auth.register), shareLink.create, et les procédures d'upload photo/CV.
 
 ### Should-fix for better quality
 

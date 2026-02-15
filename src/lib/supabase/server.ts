@@ -18,7 +18,7 @@ export const createClient = async () => {
               cookieStore.set(name, value, options),
             );
           } catch {
-            // Appel depuis un Server Component (read-only) ; le middleware rafraîchira la session.
+            // Appel depuis un Server Component (read-only) ; le proxy rafraîchira la session.
           }
         },
       },

@@ -37,3 +37,11 @@ export const registerFormSchema = z.object({
 export const registerSchema = registerFormSchema;
 
 export type RegisterFormValues = z.infer<typeof registerFormSchema>;
+
+/** Schéma formulaire login (email + mot de passe, validation client) */
+export const loginFormSchema = z.object({
+  email: emailSchema,
+  password: z.string().min(1, "Le mot de passe est requis."),
+});
+
+export type LoginFormValues = z.infer<typeof loginFormSchema>;

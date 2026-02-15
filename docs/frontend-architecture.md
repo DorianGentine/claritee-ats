@@ -29,7 +29,7 @@ Next.js App Router avec groupes de routes : `(auth)` pour login/register/invite,
 
 | Route | Groupe | Protection | Rôle |
 |-------|--------|------------|------|
-| `/` | - | Redirect | Redirection vers dashboard ou login |
+| `/` | - | Publique | Landing avec navbar dynamique (auth : Mon espace / Déconnexion ; non auth : S'inscrire / Se connecter) |
 | `/login` | (auth) | Publique | Connexion |
 | `/register` | (auth) | Publique | Inscription + création cabinet |
 | `/invite/[token]` | (auth) | Publique | Inscription via invitation |
@@ -45,7 +45,7 @@ Next.js App Router avec groupes de routes : `(auth)` pour login/register/invite,
 | `/api/health` | api | Publique | Health check |
 | `/api/trpc/[...trpc]` | api | Selon procédure | API tRPC |
 
-Protection : middleware Next.js vérifie la session Supabase sur `(dashboard)/**` ; absence de session → redirect `/login`. `/share/[token]` et `(auth)/**` restent accessibles sans auth.
+Protection : le proxy Next.js (`src/proxy.ts`, ex-middleware) vérifie la session Supabase sur `(dashboard)/**` ; absence de session → redirect `/login`. `/share/[token]` et `(auth)/**` restent accessibles sans auth.
 
 Référence structure : `docs/architecture/source-tree.md` et `docs/architecture.md` §6.
 
@@ -143,7 +143,7 @@ Configuration du client tRPC : typiquement dans un Provider (React Query + tRPC)
 ## 7. Routing côté client et navigation
 
 - **Liens** : `next/link` pour toute navigation interne ; pas de `window.location` pour les parcours standards.
-- **Protection** : les routes `(dashboard)/**` sont protégées par le middleware ; si la session est absente, l’utilisateur est redirigé vers `/login`.
+- **Protection** : les routes `(dashboard)/**` sont protégées par le proxy Next.js (`src/proxy.ts`) ; si la session est absente, l’utilisateur est redirigé vers `/login`.
 - **Deep linking** : la page `/share/[token]` est conçue pour être ouverte par lien direct (mail, message) ; pas de dépendance à un état en mémoire.
 - **Raccourcis** : Cmd+K pour la recherche globale, Cmd+N pour la note rapide (FAB) — à implémenter dans le layout (keyboard listener).
 

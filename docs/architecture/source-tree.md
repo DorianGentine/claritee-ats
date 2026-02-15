@@ -28,6 +28,7 @@ claritee-ats/
 │   └── seed.ts               # Données de dev
 ├── public/
 ├── src/
+│   ├── proxy.ts              # Proxy Next.js (ex-middleware) : auth, rate limit, protection routes
 │   ├── app/                  # Next.js App Router
 │   │   ├── layout.tsx
 │   │   ├── page.tsx          # Landing / redirect
@@ -49,7 +50,7 @@ claritee-ats/
 │   │   └── ...
 │   ├── components/
 │   │   ├── ui/               # shadcn/ui (ne pas modifier sans raison)
-│   │   ├── layout/           # Sidebar, header, FAB
+│   │   ├── layout/           # SiteNavbar, DashboardShell, Sidebar, FAB
 │   │   └── ...               # Composants métier (par domaine si besoin)
 │   ├── server/
 │   │   ├── db.ts             # PrismaClient singleton
