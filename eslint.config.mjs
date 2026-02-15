@@ -9,6 +9,10 @@ const eslintConfig = defineConfig([
   prettier,
   {
     rules: {
+      "react/no-unescaped-entities": [
+        "error",
+        { forbid: [">", '"', "}"] },
+      ],
       "no-console": ["warn", { allow: ["warn", "error"] }],
       "@typescript-eslint/no-unused-vars": [
         "warn",
