@@ -145,4 +145,61 @@ describe.runIf(!!connectionString)("candidate", () => {
       code: "UNAUTHORIZED",
     });
   });
+
+  it("create: creates candidate with caller companyId and returns id", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const result = await caller.candidate.create({
+      firstName: "New",
+      lastName: "Candidate",
+      email: "new@test.com",
+      phone: "06 11 22 33 44",
+      title: "QA",
+      city: "Lille",
+    });
+
+    expect(result.id).toBeDefined();
+    expect(result.firstName).toBe("New");
+    expect(result.lastName).toBe("Candidate");
+    expect(result.companyId).toBe(companyAId);
+
+    const inDb = await db.candidate.findUniqueOrThrow({
+      where: { id: result.id },
+    });
+    expect(inDb.companyId).toBe(companyAId);
+    expect(inDb.email).toBe("new@test.com");
+    expect(inDb.phone).toBe("06 11 22 33 44");
+    expect(inDb.title).toBe("QA");
+    expect(inDb.city).toBe("Lille");
+
+    await db.candidate.delete({ where: { id: result.id } });
+  });
+
+  it("create: does not allow creating candidate for another company", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const result = await caller.candidate.create({
+      firstName: "Scoped",
+      lastName: "User",
+    });
+
+    expect(result.companyId).toBe(companyAId);
+    const inDb = await db.candidate.findUniqueOrThrow({
+      where: { id: result.id },
+    });
+    expect(inDb.companyId).toBe(companyAId);
+
+    await db.candidate.delete({ where: { id: result.id } });
+  });
+
+  it("create: throws UNAUTHORIZED when not authenticated", async () => {
+    const ctx = createContext(null);
+    const caller = appRouter.createCaller(ctx);
+
+    await expect(
+      caller.candidate.create({ firstName: "X", lastName: "Y" }),
+    ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+  });
 });
