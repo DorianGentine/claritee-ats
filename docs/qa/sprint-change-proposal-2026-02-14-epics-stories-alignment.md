@@ -89,12 +89,12 @@ Dans la liste des Acceptance Criteria, après l'AC 9 (ou intégré comme AC 10, 
 **Modification de l'AC 9 :**
 
 - **De :** `9. Rate limiting on login attempts (Supabase built-in)`
-- **À :** `9. Rate limiting : Supabase Auth applique des limites côté service ; l'app peut compléter par un rate limit par IP sur les routes auth (login/register) via middleware si souhaité — sinon couvert par Story 1.3 pour l'inscription.`
+- **À :** `9. Rate limiting : Supabase Auth applique des limites côté service ; l'app peut compléter par un rate limit par IP sur les routes auth (login/register) via le proxy Next.js si souhaité — sinon couvert par Story 1.3 pour l'inscription.`
 
 **Mise à jour de la ligne Réf. :**
 
-- **De :** `**Réf.** Architecture §7 (connexion Supabase Auth, middleware Next.js sur routes protégées).`
-- **À :** `**Réf.** Architecture §7 (connexion Supabase Auth, middleware Next.js sur routes protégées) ; rate-limiting.md §3.1 (auth par IP, inscription prioritaire).`
+- **De :** `**Réf.** Architecture §7 (connexion Supabase Auth, proxy Next.js sur routes protégées).`
+- **À :** `**Réf.** Architecture §7 (connexion Supabase Auth, proxy Next.js sur routes protégées) ; rate-limiting.md §3.1 (auth par IP, inscription prioritaire).`
 
 ---
 

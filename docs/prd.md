@@ -608,9 +608,9 @@ Les epics et stories s’appuient sur les livrables suivants ; les critères d�
 6. Logout button accessible from any authenticated page
 7. Logout clears session and redirects to login page
 8. Protected routes redirect to login if not authenticated
-9. Rate limiting : Supabase Auth applique des limites côté service ; l'app peut compléter par un rate limit par IP sur les routes auth (login/register) via middleware si souhaité — sinon couvert par Story 1.3 pour l'inscription.
+9. Rate limiting : Supabase Auth applique des limites côté service ; l'app peut compléter par un rate limit par IP sur les routes auth (login/register) via le proxy Next.js (`src/proxy.ts`) si souhaité — sinon couvert par Story 1.3 pour l'inscription.
 
-**Réf.** Architecture §7 (connexion Supabase Auth, middleware Next.js sur routes protégées) ; rate-limiting.md §3.1 (auth par IP, inscription prioritaire).
+**Réf.** Architecture §7 (connexion Supabase Auth, proxy Next.js sur routes protégées) ; rate-limiting.md §3.1 (auth par IP, inscription prioritaire).
 
 ### Story 1.5: Collaborator Invitation System
 

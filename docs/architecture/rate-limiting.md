@@ -35,8 +35,8 @@ import { checkRateLimit, RATE_LIMITS, type RateLimitResult } from "@/lib/rate-li
 
 **Contexte** : limiter les tentatives de connexion / inscription par IP (brute-force, inscriptions abusives).
 
-**Option A — Middleware Next.js**  
-Dans `src/middleware.ts`, pour les requêtes vers les routes d'auth (ex. `/login`, `/register`, `/invite/*`) :
+**Option A — Proxy Next.js**  
+Dans `src/proxy.ts` (proxy Next.js, ex-middleware), pour les requêtes vers les routes d'auth (ex. `/login`, `/register`, `/invite/*`) :
 
 1. Récupérer l'IP : `request.headers.get("x-forwarded-for") ?? request.headers.get("x-real-ip") ?? "unknown"`.
 2. Clé : `auth:${ip}`.
@@ -101,7 +101,7 @@ if (!result.success) {
 
 | Zone | Clé | Fichier / endroit |
 |------|-----|-------------------|
-| Auth (IP) | `auth:${ip}` | Middleware Next.js ou procédure `auth.register` |
+| Auth (IP) | `auth:${ip}` | Proxy Next.js (`src/proxy.ts`) ou procédure `auth.register` |
 | Partage | `share:${userId}` | Router `shareLink`, procédure `create` |
 | Upload | `upload:${userId}` | Procédures ou route qui traitent l'upload photo/CV |
 

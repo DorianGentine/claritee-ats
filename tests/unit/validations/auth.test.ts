@@ -4,6 +4,7 @@ import {
   passwordSchema,
   sirenSchema,
   registerFormSchema,
+  loginFormSchema,
 } from "@/lib/validations/auth";
 
 describe("auth validations", () => {
@@ -107,6 +108,36 @@ describe("auth validations", () => {
         siren: "12345",
       };
       expect(() => registerFormSchema.parse(data)).toThrow();
+    });
+  });
+
+  describe("loginFormSchema", () => {
+    it("accepts valid email and password", () => {
+      const data = { email: "user@example.com", password: "password123" };
+      expect(loginFormSchema.parse(data)).toEqual(data);
+    });
+
+    it("rejects invalid email format", () => {
+      expect(() =>
+        loginFormSchema.parse({ email: "invalid", password: "password123" }),
+      ).toThrow();
+    });
+
+    it("rejects empty password", () => {
+      expect(() =>
+        loginFormSchema.parse({ email: "user@example.com", password: "" }),
+      ).toThrow();
+    });
+
+    it("returns message for invalid email", () => {
+      const result = loginFormSchema.safeParse({
+        email: "bad",
+        password: "password123",
+      });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.issues[0].message).toContain("email valide");
+      }
     });
   });
 });

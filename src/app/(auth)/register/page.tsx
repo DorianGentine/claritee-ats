@@ -88,7 +88,7 @@ export default function RegisterPage() {
 
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="flex flex-col gap-4 rounded-lg border border-border bg-card p-6 shadow-sm"
+          className="flex flex-col gap-4 rounded-lg border border-border bg-card p-6 shadow"
         >
           {serverError && (
             <div
