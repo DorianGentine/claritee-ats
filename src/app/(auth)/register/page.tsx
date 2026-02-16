@@ -14,7 +14,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api } from "@/lib/trpc/client";
-import { createClient } from "@/lib/supabase/client";
 
 const GENERIC_ERROR_MESSAGE = "Une erreur est survenue. Réessayez.";
 
@@ -52,18 +51,7 @@ export default function RegisterPage() {
         lastName: data.lastName,
       });
 
-      const supabase = createClient();
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: data.email,
-        password: data.password,
-      });
-
-      if (signInError) {
-        setServerError(GENERIC_ERROR_MESSAGE);
-        return;
-      }
-
-      router.push("/dashboard");
+      router.push("/login?registered=1");
       router.refresh();
     } catch (err: unknown) {
       if (err instanceof TRPCClientError) {

@@ -66,6 +66,15 @@ export const LoginForm = () => {
         onSubmit={handleSubmit(onSubmit)}
         className="flex flex-col gap-4 rounded-lg border border-border bg-card p-6 shadow"
       >
+        {searchParams.get("registered") === "1" && (
+          <div
+            role="status"
+            className="rounded-md border border-green-600/50 bg-green-500/10 px-3 py-2.5 text-sm text-green-800 dark:text-green-200"
+          >
+            Un email de confirmation vous a été envoyé. Cliquez sur le lien
+            pour activer votre compte, puis connectez-vous.
+          </div>
+        )}
         {serverError && (
           <div
             role="alert"
