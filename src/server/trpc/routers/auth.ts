@@ -64,7 +64,7 @@ export const authRouter = router({
         await supabaseAdmin.auth.admin.createUser({
           email: input.email,
           password: input.password,
-          email_confirm: true,
+          email_confirm: false,
           user_metadata: {
             firstName: input.firstName,
             lastName: input.lastName,
@@ -78,6 +78,14 @@ export const authRouter = router({
           code: "CONFLICT",
           message: REGISTER_UNAVAILABLE_MESSAGE,
         });
+      }
+
+      const { error: resendError } = await supabaseAdmin.auth.resend({
+        type: "signup",
+        email: input.email,
+      });
+      if (resendError) {
+        console.warn("[auth.register] Resend confirmation email failed:", resendError.message);
       }
 
       const company = await ctx.db.$transaction(async (tx) => {
