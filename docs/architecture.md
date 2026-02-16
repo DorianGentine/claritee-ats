@@ -316,7 +316,7 @@ Partage de types : les types métier viennent de Prisma (`Prisma.Candidate`, etc
 
 ### 7.1 Flux
 
-1. **Inscription :** formulaire → Supabase Auth `signUp` → création `Company` + `User` (id = `auth.uid()`) en une transaction côté API (tRPC ou route API).
+1. **Inscription :** formulaire → tRPC `auth.register` → `admin.createUser` (email non confirmé) → `auth.resend({ type: 'signup', email })` (envoi email via SMTP Supabase) → création `Company` + `User` en transaction. Détail des essais et solution : [architecture/auth-email-confirmation.md](architecture/auth-email-confirmation.md).
 2. **Connexion :** email/mot de passe → Supabase Auth `signInWithPassword` → session JWT (cookie ou stockage côté client selon config Supabase).
 3. **Requêtes tRPC :** le contexte tRPC lit la session (Supabase `getUser` côté serveur) et résout `userId` + `companyId` (via table `User`). Les procédures `protected` exigent une session valide et injectent `companyId`.
 4. **Middleware Next.js :** sur les routes `(dashboard)/**`, vérification de la session ; si absente, redirection vers `/login`. La route `/share/[token]` reste publique.
