@@ -1,5 +1,8 @@
 import { router, protectedProcedure } from "../trpc";
-import { candidateListInputSchema } from "@/lib/validations/candidate";
+import {
+  candidateListInputSchema,
+  createCandidateSchema,
+} from "@/lib/validations/candidate";
 
 export const candidateRouter = router({
   /**
@@ -53,5 +56,27 @@ export const candidateRouter = router({
         nextCursor,
         hasMore: !!nextCursor,
       };
+    }),
+
+  /**
+   * Crée un candidat pour le cabinet de l'utilisateur connecté.
+   * companyId dérivé du contexte uniquement.
+   */
+  create: protectedProcedure
+    .input(createCandidateSchema)
+    .mutation(async ({ ctx, input }) => {
+      const candidate = await ctx.db.candidate.create({
+        data: {
+          firstName: input.firstName,
+          lastName: input.lastName,
+          email: input.email || null,
+          phone: input.phone || null,
+          linkedinUrl: input.linkedinUrl || null,
+          title: input.title || null,
+          city: input.city || null,
+          companyId: ctx.companyId,
+        },
+      });
+      return candidate;
     }),
 });
