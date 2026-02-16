@@ -62,4 +62,26 @@ export const createCandidateSchema = z.object({
 
 export type CreateCandidateInput = z.infer<typeof createCandidateSchema>;
 
+/** Formats MIME acceptés pour les photos candidat */
+export const PHOTO_ACCEPTED_MIMES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+] as const;
+
+export const PHOTO_MAX_BYTES = 2 * 1024 * 1024; // 2 Mo
+
+/** Schéma pour l'upload de photo candidat */
+export const uploadPhotoSchema = z.object({
+  candidateId: z.string().uuid(),
+  fileBase64: z.string().min(1, "Fichier requis"),
+  mimeType: z
+    .enum(PHOTO_ACCEPTED_MIMES, {
+      message:
+        "Format de fichier non supporté. Formats acceptés : JPG, PNG, WebP.",
+    }),
+});
+
+export type UploadPhotoInput = z.infer<typeof uploadPhotoSchema>;
+
 export { LIST_PAGE_SIZE };

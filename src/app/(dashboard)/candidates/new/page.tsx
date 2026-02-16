@@ -1,12 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { createCandidateSchema } from "@/lib/validations/candidate";
+import {
+  createCandidateSchema,
+  PHOTO_ACCEPTED_MIMES,
+  PHOTO_MAX_BYTES,
+} from "@/lib/validations/candidate";
 import { api } from "@/lib/trpc/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 /** Type du formulaire : champs optionnels pour compatibilité avec useForm + zodResolver */
 type NewCandidateFormValues = {
@@ -18,29 +26,42 @@ type NewCandidateFormValues = {
   title?: string;
   city?: string;
 };
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
 const GENERIC_ERROR_MESSAGE = "Une erreur est survenue. Réessayez.";
+const PHOTO_ACCEPT_ATTR = ".jpg,.jpeg,.png,.webp";
+
+const fileToBase64 = (file: File): Promise<{ base64: string; mimeType: string }> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      const [header, base64] = dataUrl.split(",");
+      const mimeMatch = header?.match(/:(.+);/);
+      const mimeType = (mimeMatch?.[1] ?? "image/jpeg") as string;
+      resolve({ base64: base64 ?? "", mimeType });
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+const getInitials = (firstName: string, lastName: string) =>
+  `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || "?";
 
 export default function NewCandidatePage() {
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const createMutation = api.candidate.create.useMutation({
-    onSuccess: (data) => {
-      setServerError(null);
-      router.push(`/candidates/${data.id}`);
-    },
-    onError: () => {
-      setServerError(GENERIC_ERROR_MESSAGE);
-    },
-  });
+  const createMutation = api.candidate.create.useMutation();
+  const uploadPhotoMutation = api.candidate.uploadPhoto.useMutation();
 
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<NewCandidateFormValues>({
     resolver: zodResolver(createCandidateSchema),
@@ -55,20 +76,76 @@ export default function NewCandidatePage() {
     },
   });
 
-  const onSubmit = (data: NewCandidateFormValues) => {
-    setServerError(null);
-    createMutation.mutate({
-      firstName: data.firstName,
-      lastName: data.lastName,
-      email: data.email?.trim() || undefined,
-      phone: data.phone?.trim() || undefined,
-      linkedinUrl: data.linkedinUrl?.trim() || undefined,
-      title: data.title?.trim() || undefined,
-      city: data.city?.trim() || undefined,
-    });
+  const firstName = watch("firstName");
+  const lastName = watch("lastName");
+  const displayInitials = getInitials(firstName || "?", lastName || "?");
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPhotoError(null);
+    const file = e.target.files?.[0];
+    if (!file) {
+      setPhotoFile(null);
+      setPhotoPreviewUrl(null);
+      return;
+    }
+
+    const mime = file.type as (typeof PHOTO_ACCEPTED_MIMES)[number];
+    if (!PHOTO_ACCEPTED_MIMES.includes(mime)) {
+      setPhotoError(
+        "Format de fichier non supporté. Formats acceptés : JPG, PNG, WebP.",
+      );
+      return;
+    }
+    if (file.size > PHOTO_MAX_BYTES) {
+      setPhotoError(
+        "Le fichier dépasse la taille maximale autorisée (2 Mo pour les photos, 5 Mo pour les CVs).",
+      );
+      return;
+    }
+
+    setPhotoFile(file);
+    setPhotoPreviewUrl(URL.createObjectURL(file));
   };
 
-  const isPending = isSubmitting || createMutation.isPending;
+  const removePhoto = () => {
+    setPhotoFile(null);
+    if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl);
+    setPhotoPreviewUrl(null);
+    setPhotoError(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const onSubmit = async (data: NewCandidateFormValues) => {
+    setServerError(null);
+    try {
+      const candidate = await createMutation.mutateAsync({
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email?.trim() || undefined,
+        phone: data.phone?.trim() || undefined,
+        linkedinUrl: data.linkedinUrl?.trim() || undefined,
+        title: data.title?.trim() || undefined,
+        city: data.city?.trim() || undefined,
+      });
+
+      if (photoFile) {
+        const { base64, mimeType } = await fileToBase64(photoFile);
+        await uploadPhotoMutation.mutateAsync({
+          candidateId: candidate.id,
+          fileBase64: base64,
+          mimeType: mimeType as (typeof PHOTO_ACCEPTED_MIMES)[number],
+        });
+      }
+
+      router.push(`/candidates/${candidate.id}`);
+    } catch (err) {
+      setServerError(
+        (err as { message?: string })?.message ?? GENERIC_ERROR_MESSAGE,
+      );
+    }
+  };
+
+  const isPending = isSubmitting || createMutation.isPending || uploadPhotoMutation.isPending;
 
   return (
     <main className="min-h-[calc(100vh-3.5rem)] bg-background p-6">
@@ -92,6 +169,45 @@ export default function NewCandidatePage() {
               {serverError}
             </div>
           )}
+
+          <div className="space-y-2">
+            <Label>Photo</Label>
+            <div className="flex items-center gap-4">
+              <Avatar className="size-16">
+                {photoPreviewUrl ? (
+                  <AvatarImage src={photoPreviewUrl} alt="Aperçu" />
+                ) : null}
+                <AvatarFallback className="text-lg">
+                  {displayInitials}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept={PHOTO_ACCEPT_ATTR}
+                  aria-label="Sélectionner une photo"
+                  className="text-sm file:mr-2 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-primary-foreground file:cursor-pointer hover:file:bg-primary/90"
+                  onChange={handlePhotoChange}
+                />
+                {(photoPreviewUrl || photoFile) && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={removePhoto}
+                  >
+                    Supprimer / Remplacer
+                  </Button>
+                )}
+              </div>
+            </div>
+            {photoError && (
+              <p className="text-sm text-destructive" role="alert">
+                {photoError}
+              </p>
+            )}
+          </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
