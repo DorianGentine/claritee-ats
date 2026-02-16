@@ -1,10 +1,26 @@
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import { appRouter } from "@/server/trpc/routers/_app";
 import type { Context } from "@/server/trpc/context";
+import { PHOTO_MAX_BYTES } from "@/lib/validations/candidate";
 
 const connectionString = process.env.DATABASE_URL;
+
+vi.mock("@/lib/supabase/admin", () => ({
+  createAdminClient: () => ({
+    storage: {
+      from: () => ({
+        upload: () => Promise.resolve({ error: null }),
+        getPublicUrl: (path: string) => ({
+          data: {
+            publicUrl: `https://storage.example.com/photos/${path}`,
+          },
+        }),
+      }),
+    },
+  }),
+}));
 
 describe.runIf(!!connectionString)("candidate", () => {
   let db: PrismaClient;
@@ -201,5 +217,99 @@ describe.runIf(!!connectionString)("candidate", () => {
     await expect(
       caller.candidate.create({ firstName: "X", lastName: "Y" }),
     ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+  });
+
+  /** Minimal valid JPEG (magic bytes FF D8 FF) */
+  const minimalJpegBase64 = Buffer.from([
+    0xff, 0xd8, 0xff, ...Array(20).fill(0),
+  ]).toString("base64");
+
+  it("uploadPhoto: updates Candidate.photoUrl after upload", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const result = await caller.candidate.uploadPhoto({
+      candidateId: candidateA1Id,
+      fileBase64: minimalJpegBase64,
+      mimeType: "image/jpeg",
+    });
+
+    expect(result.photoUrl).toContain(
+      `https://storage.example.com/photos/${companyAId}/candidates/${candidateA1Id}/photo.jpg`,
+    );
+
+    const inDb = await db.candidate.findUniqueOrThrow({
+      where: { id: candidateA1Id },
+    });
+    expect(inDb.photoUrl).toBe(result.photoUrl);
+
+    await db.candidate.update({
+      where: { id: candidateA1Id },
+      data: { photoUrl: null },
+    });
+  });
+
+  it("uploadPhoto: rejects file exceeding 2 MB with PRD message", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+    const oversizedBuffer = Buffer.alloc(PHOTO_MAX_BYTES + 1, "x");
+    const oversizedBase64 = oversizedBuffer.toString("base64");
+
+    await expect(
+      caller.candidate.uploadPhoto({
+        candidateId: candidateA1Id,
+        fileBase64: oversizedBase64,
+        mimeType: "image/jpeg",
+      }),
+    ).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+      message: expect.stringContaining(
+        "Le fichier dépasse la taille maximale autorisée (2 Mo pour les photos, 5 Mo pour les CVs)",
+      ),
+    });
+  });
+
+  it("uploadPhoto: rejects invalid mime type with PRD message", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+    const smallBase64 = Buffer.from("x").toString("base64");
+
+    await expect(
+      caller.candidate.uploadPhoto({
+        candidateId: candidateA1Id,
+        fileBase64: smallBase64,
+        mimeType: "image/gif" as "image/jpeg",
+      }),
+    ).rejects.toThrow(/Format de fichier non supporté/);
+  });
+
+  it("uploadPhoto: throws NOT_FOUND when candidate belongs to another company", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    await expect(
+      caller.candidate.uploadPhoto({
+        candidateId: candidateB1Id,
+        fileBase64: minimalJpegBase64,
+        mimeType: "image/jpeg",
+      }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+
+  it("uploadPhoto: rejects file with content not matching declared mime type", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+    const notJpegBase64 = Buffer.from("not a jpeg").toString("base64");
+
+    await expect(
+      caller.candidate.uploadPhoto({
+        candidateId: candidateA1Id,
+        fileBase64: notJpegBase64,
+        mimeType: "image/jpeg",
+      }),
+    ).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+      message: expect.stringContaining("Format de fichier non supporté"),
+    });
   });
 });

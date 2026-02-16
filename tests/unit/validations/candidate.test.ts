@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { createCandidateSchema } from "@/lib/validations/candidate";
+import {
+  createCandidateSchema,
+  uploadPhotoSchema,
+  PHOTO_ACCEPTED_MIMES,
+} from "@/lib/validations/candidate";
 
 describe("candidate validations", () => {
   describe("createCandidateSchema", () => {
@@ -112,6 +116,53 @@ describe("candidate validations", () => {
       expect(result.title).toBeUndefined();
       expect(result.city).toBeUndefined();
       expect(result.email).toBeUndefined();
+    });
+  });
+
+  describe("uploadPhotoSchema", () => {
+    const validUuid = "550e8400-e29b-41d4-a716-446655440000";
+    const validBase64 = Buffer.from("fake-image-bytes").toString("base64");
+
+    it("accepts valid input for each mime type", () => {
+      for (const mimeType of PHOTO_ACCEPTED_MIMES) {
+        const result = uploadPhotoSchema.parse({
+          candidateId: validUuid,
+          fileBase64: validBase64,
+          mimeType,
+        });
+        expect(result.candidateId).toBe(validUuid);
+        expect(result.mimeType).toBe(mimeType);
+      }
+    });
+
+    it("rejects invalid mime type with PRD message", () => {
+      expect(() =>
+        uploadPhotoSchema.parse({
+          candidateId: validUuid,
+          fileBase64: validBase64,
+          mimeType: "image/gif",
+        }),
+      ).toThrow(/Format de fichier non supporté. Formats acceptés : JPG, PNG, WebP/);
+    });
+
+    it("rejects empty fileBase64", () => {
+      expect(() =>
+        uploadPhotoSchema.parse({
+          candidateId: validUuid,
+          fileBase64: "",
+          mimeType: "image/jpeg",
+        }),
+      ).toThrow();
+    });
+
+    it("rejects invalid candidateId (non-uuid)", () => {
+      expect(() =>
+        uploadPhotoSchema.parse({
+          candidateId: "not-a-uuid",
+          fileBase64: validBase64,
+          mimeType: "image/jpeg",
+        }),
+      ).toThrow();
     });
   });
 });
