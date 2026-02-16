@@ -219,14 +219,18 @@ describe.runIf(!!connectionString)("candidate", () => {
     ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
   });
 
+  /** Minimal valid JPEG (magic bytes FF D8 FF) */
+  const minimalJpegBase64 = Buffer.from([
+    0xff, 0xd8, 0xff, ...Array(20).fill(0),
+  ]).toString("base64");
+
   it("uploadPhoto: updates Candidate.photoUrl after upload", async () => {
     const ctx = createContext(companyAId);
     const caller = appRouter.createCaller(ctx);
-    const smallBase64 = Buffer.from("x".repeat(100)).toString("base64");
 
     const result = await caller.candidate.uploadPhoto({
       candidateId: candidateA1Id,
-      fileBase64: smallBase64,
+      fileBase64: minimalJpegBase64,
       mimeType: "image/jpeg",
     });
 
@@ -282,14 +286,30 @@ describe.runIf(!!connectionString)("candidate", () => {
   it("uploadPhoto: throws NOT_FOUND when candidate belongs to another company", async () => {
     const ctx = createContext(companyAId);
     const caller = appRouter.createCaller(ctx);
-    const smallBase64 = Buffer.from("x").toString("base64");
 
     await expect(
       caller.candidate.uploadPhoto({
         candidateId: candidateB1Id,
-        fileBase64: smallBase64,
+        fileBase64: minimalJpegBase64,
         mimeType: "image/jpeg",
       }),
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+
+  it("uploadPhoto: rejects file with content not matching declared mime type", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+    const notJpegBase64 = Buffer.from("not a jpeg").toString("base64");
+
+    await expect(
+      caller.candidate.uploadPhoto({
+        candidateId: candidateA1Id,
+        fileBase64: notJpegBase64,
+        mimeType: "image/jpeg",
+      }),
+    ).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+      message: expect.stringContaining("Format de fichier non supporté"),
+    });
   });
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -47,13 +47,24 @@ const fileToBase64 = (file: File): Promise<{ base64: string; mimeType: string }>
 const getInitials = (firstName: string, lastName: string) =>
   `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || "?";
 
+const PHOTO_INPUT_ID = "candidate-photo";
+
 export default function NewCandidatePage() {
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
+  const [createdCandidateId, setCreatedCandidateId] = useState<string | null>(
+    null,
+  );
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    return () => {
+      if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl);
+    };
+  }, [photoPreviewUrl]);
 
   const createMutation = api.candidate.create.useMutation();
   const uploadPhotoMutation = api.candidate.uploadPhoto.useMutation();
@@ -103,6 +114,7 @@ export default function NewCandidatePage() {
       return;
     }
 
+    if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl);
     setPhotoFile(file);
     setPhotoPreviewUrl(URL.createObjectURL(file));
   };
@@ -118,26 +130,32 @@ export default function NewCandidatePage() {
   const onSubmit = async (data: NewCandidateFormValues) => {
     setServerError(null);
     try {
-      const candidate = await createMutation.mutateAsync({
-        firstName: data.firstName,
-        lastName: data.lastName,
-        email: data.email?.trim() || undefined,
-        phone: data.phone?.trim() || undefined,
-        linkedinUrl: data.linkedinUrl?.trim() || undefined,
-        title: data.title?.trim() || undefined,
-        city: data.city?.trim() || undefined,
-      });
+      let candidateId = createdCandidateId;
 
-      if (photoFile) {
+      if (!candidateId) {
+        const candidate = await createMutation.mutateAsync({
+          firstName: data.firstName,
+          lastName: data.lastName,
+          email: data.email?.trim() || undefined,
+          phone: data.phone?.trim() || undefined,
+          linkedinUrl: data.linkedinUrl?.trim() || undefined,
+          title: data.title?.trim() || undefined,
+          city: data.city?.trim() || undefined,
+        });
+        candidateId = candidate.id;
+        setCreatedCandidateId(candidate.id);
+      }
+
+      if (photoFile && candidateId) {
         const { base64, mimeType } = await fileToBase64(photoFile);
         await uploadPhotoMutation.mutateAsync({
-          candidateId: candidate.id,
+          candidateId,
           fileBase64: base64,
           mimeType: mimeType as (typeof PHOTO_ACCEPTED_MIMES)[number],
         });
       }
 
-      router.push(`/candidates/${candidate.id}`);
+      router.push(`/candidates/${candidateId}`);
     } catch (err) {
       setServerError(
         (err as { message?: string })?.message ?? GENERIC_ERROR_MESSAGE,
@@ -171,7 +189,7 @@ export default function NewCandidatePage() {
           )}
 
           <div className="space-y-2">
-            <Label>Photo</Label>
+            <Label htmlFor={PHOTO_INPUT_ID}>Photo</Label>
             <div className="flex items-center gap-4">
               <Avatar className="size-16">
                 {photoPreviewUrl ? (
@@ -183,6 +201,7 @@ export default function NewCandidatePage() {
               </Avatar>
               <div className="flex flex-col gap-2">
                 <input
+                  id={PHOTO_INPUT_ID}
                   ref={fileInputRef}
                   type="file"
                   accept={PHOTO_ACCEPT_ATTR}
