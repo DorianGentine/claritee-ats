@@ -1,0 +1,9 @@
+# Documentation — pas nécessaire pour le build ni la prod
+docs/
+
+# Tests — pas exécutés sur Vercel
+tests/
+
+# Optionnel : autres dossiers non nécessaires au build
+.bmad-core/
+.cursor/
