@@ -98,6 +98,7 @@ Partage de types : les types métier viennent de Prisma (`Prisma.Candidate`, etc
 | **Nouvelle page (route)** | `src/app/(dashboard)/<section>/page.tsx` ou sous-dossier avec `layout.tsx` si besoin |
 | **Composant UI réutilisable (shadcn)** | `src/components/ui/` (via CLI shadcn) |
 | **Composant métier / layout** | `src/components/` (ex. `CandidateCard.tsx`, ou `candidates/CandidateCard.tsx` si beaucoup de composants) |
+| **Composant partagé transversal** (EmptyState, StatusBadge, PageHeader, skeleton…) | `src/components/shared/` — privilégier l’extraction dès la 2ᵉ occurrence (DRY) |
 | **Nouvelle procedure tRPC** | Router correspondant dans `src/server/trpc/routers/` (ex. `candidate.ts`) ; si nouveau domaine, créer un nouveau router et l’enregistrer dans `_app.ts` |
 | **Schéma de validation (input)** | `src/lib/validations/<domaine>.ts` (ex. `candidate.ts`, `offer.ts`) |
 | **Hook React réutilisable** | `src/hooks/` (ex. `useCompanyId.ts`) |
