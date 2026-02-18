@@ -1,8 +1,12 @@
 import { describe, it, expect } from "vitest";
 import {
   createCandidateSchema,
+  updateCandidateSchema,
+  addLanguageSchema,
+  removeLanguageSchema,
   uploadPhotoSchema,
   PHOTO_ACCEPTED_MIMES,
+  LANGUAGE_LEVELS,
 } from "@/lib/validations/candidate";
 
 describe("candidate validations", () => {
@@ -116,6 +120,112 @@ describe("candidate validations", () => {
       expect(result.title).toBeUndefined();
       expect(result.city).toBeUndefined();
       expect(result.email).toBeUndefined();
+    });
+  });
+
+  describe("updateCandidateSchema", () => {
+    const validUuid = "550e8400-e29b-41d4-a716-446655440000";
+
+    it("accepts valid summary", () => {
+      const result = updateCandidateSchema.parse({
+        id: validUuid,
+        summary: "Un bon profil",
+      });
+      expect(result.id).toBe(validUuid);
+      expect(result.summary).toBe("Un bon profil");
+    });
+
+    it("trims summary", () => {
+      const result = updateCandidateSchema.parse({
+        id: validUuid,
+        summary: "  Résumé  ",
+      });
+      expect(result.summary).toBe("Résumé");
+    });
+
+    it("converts empty/whitespace summary to null", () => {
+      expect(updateCandidateSchema.parse({ id: validUuid, summary: "" }).summary).toBeNull();
+      expect(updateCandidateSchema.parse({ id: validUuid, summary: "   " }).summary).toBeNull();
+    });
+
+    it("converts undefined summary to null", () => {
+      expect(updateCandidateSchema.parse({ id: validUuid }).summary).toBeNull();
+    });
+
+    it("rejects summary exceeding 500 characters", () => {
+      expect(() =>
+        updateCandidateSchema.parse({ id: validUuid, summary: "a".repeat(501) }),
+      ).toThrow(/500/);
+    });
+
+    it("rejects invalid id", () => {
+      expect(() =>
+        updateCandidateSchema.parse({ id: "not-uuid", summary: "ok" }),
+      ).toThrow();
+    });
+  });
+
+  describe("addLanguageSchema", () => {
+    const validUuid = "550e8400-e29b-41d4-a716-446655440000";
+
+    it("accepts valid input for each level", () => {
+      for (const level of LANGUAGE_LEVELS) {
+        const result = addLanguageSchema.parse({
+          candidateId: validUuid,
+          name: "Français",
+          level,
+        });
+        expect(result.level).toBe(level);
+      }
+    });
+
+    it("rejects empty name", () => {
+      expect(() =>
+        addLanguageSchema.parse({ candidateId: validUuid, name: "", level: "FLUENT" }),
+      ).toThrow();
+    });
+
+    it("rejects name exceeding 50 characters", () => {
+      expect(() =>
+        addLanguageSchema.parse({ candidateId: validUuid, name: "a".repeat(51), level: "FLUENT" }),
+      ).toThrow();
+    });
+
+    it("rejects invalid level", () => {
+      expect(() =>
+        addLanguageSchema.parse({ candidateId: validUuid, name: "Français", level: "EXPERT" }),
+      ).toThrow();
+    });
+
+    it("rejects missing level", () => {
+      expect(() =>
+        addLanguageSchema.parse({ candidateId: validUuid, name: "Français" }),
+      ).toThrow();
+    });
+  });
+
+  describe("removeLanguageSchema", () => {
+    const validUuid = "550e8400-e29b-41d4-a716-446655440000";
+
+    it("accepts valid input", () => {
+      const result = removeLanguageSchema.parse({
+        candidateId: validUuid,
+        languageId: validUuid,
+      });
+      expect(result.candidateId).toBe(validUuid);
+      expect(result.languageId).toBe(validUuid);
+    });
+
+    it("rejects invalid candidateId", () => {
+      expect(() =>
+        removeLanguageSchema.parse({ candidateId: "bad", languageId: validUuid }),
+      ).toThrow();
+    });
+
+    it("rejects invalid languageId", () => {
+      expect(() =>
+        removeLanguageSchema.parse({ candidateId: validUuid, languageId: "bad" }),
+      ).toThrow();
     });
   });
 

@@ -382,4 +382,156 @@ describe.runIf(!!connectionString)("candidate", () => {
     });
     expect(stillExists).not.toBeNull();
   });
+
+  // ─── update (summary) ───
+
+  it("update: updates summary for own candidate", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const result = await caller.candidate.update({
+      id: candidateA1Id,
+      summary: "Développeur full-stack senior",
+    });
+
+    expect(result.summary).toBe("Développeur full-stack senior");
+
+    const inDb = await db.candidate.findUniqueOrThrow({
+      where: { id: candidateA1Id },
+    });
+    expect(inDb.summary).toBe("Développeur full-stack senior");
+
+    await db.candidate.update({
+      where: { id: candidateA1Id },
+      data: { summary: null },
+    });
+  });
+
+  it("update: clears summary when empty string sent", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    await caller.candidate.update({
+      id: candidateA1Id,
+      summary: "Temp",
+    });
+
+    const result = await caller.candidate.update({
+      id: candidateA1Id,
+      summary: "",
+    });
+
+    expect(result.summary).toBeNull();
+  });
+
+  it("update: throws NOT_FOUND for candidate of another company", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    await expect(
+      caller.candidate.update({ id: candidateB1Id, summary: "Nope" }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+
+  // ─── addLanguage / removeLanguage ───
+
+  it("addLanguage: adds language to own candidate", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const lang = await caller.candidate.addLanguage({
+      candidateId: candidateA1Id,
+      name: "Français",
+      level: "NATIVE",
+    });
+
+    expect(lang.id).toBeDefined();
+    expect(lang.name).toBe("Français");
+    expect(lang.level).toBe("NATIVE");
+    expect(lang.candidateId).toBe(candidateA1Id);
+
+    await db.language.delete({ where: { id: lang.id } });
+  });
+
+  it("addLanguage: trims language name", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const lang = await caller.candidate.addLanguage({
+      candidateId: candidateA1Id,
+      name: "  Anglais  ",
+      level: "FLUENT",
+    });
+
+    expect(lang.name).toBe("Anglais");
+    await db.language.delete({ where: { id: lang.id } });
+  });
+
+  it("addLanguage: throws NOT_FOUND for candidate of another company", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    await expect(
+      caller.candidate.addLanguage({
+        candidateId: candidateB1Id,
+        name: "Français",
+        level: "NATIVE",
+      }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+
+  it("removeLanguage: removes language from own candidate", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const lang = await db.language.create({
+      data: { candidateId: candidateA1Id, name: "Espagnol", level: "NOTION" },
+    });
+
+    const result = await caller.candidate.removeLanguage({
+      candidateId: candidateA1Id,
+      languageId: lang.id,
+    });
+
+    expect(result.success).toBe(true);
+
+    const inDb = await db.language.findUnique({ where: { id: lang.id } });
+    expect(inDb).toBeNull();
+  });
+
+  it("removeLanguage: throws NOT_FOUND for candidate of another company", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const lang = await db.language.create({
+      data: { candidateId: candidateB1Id, name: "Allemand", level: "INTERMEDIATE" },
+    });
+
+    await expect(
+      caller.candidate.removeLanguage({
+        candidateId: candidateB1Id,
+        languageId: lang.id,
+      }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+    await db.language.delete({ where: { id: lang.id } });
+  });
+
+  it("removeLanguage: throws NOT_FOUND if language does not belong to candidate", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const lang = await db.language.create({
+      data: { candidateId: candidateA2Id, name: "Italien", level: "NOTION" },
+    });
+
+    await expect(
+      caller.candidate.removeLanguage({
+        candidateId: candidateA1Id,
+        languageId: lang.id,
+      }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+    await db.language.delete({ where: { id: lang.id } });
+  });
 });

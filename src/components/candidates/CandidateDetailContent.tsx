@@ -29,7 +29,7 @@ export const CandidateDetailContent = ({
   experiences,
   formations,
 }: CandidateDetailContentProps) => (
-  <div className="space-y-6">
+  <div className="space-y-6 rounded-lg border border-border bg-card p-6 shadow-sm print:shadow-none">
     <section>
       <h2 className="text-lg font-semibold text-foreground">Expériences</h2>
       {experiences.length === 0 ? (

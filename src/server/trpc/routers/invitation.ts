@@ -93,7 +93,7 @@ export const invitationRouter = router({
   }),
 
   revoke: protectedProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(z.object({ id: z.uuid() }))
     .mutation(async ({ ctx, input }) => {
       const invitation = await ctx.db.invitation.findFirst({
         where: {
@@ -112,7 +112,7 @@ export const invitationRouter = router({
     }),
 
   getByToken: publicProcedure
-    .input(z.object({ token: z.string().uuid() }))
+    .input(z.object({ token: z.uuid() }))
     .query(async ({ ctx, input }) => {
       const invitation = await ctx.db.invitation.findUnique({
         where: { token: input.token },
@@ -130,7 +130,7 @@ export const invitationRouter = router({
   accept: publicProcedure
     .input(
       z.object({
-        token: z.string().uuid(),
+        token: z.uuid(),
         email: emailSchema,
         firstName: z.string().min(1, "Le prénom est requis."),
         lastName: z.string().min(1, "Le nom est requis."),

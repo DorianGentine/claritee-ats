@@ -1,48 +1,27 @@
 "use client";
 
-const LANGUAGE_LEVEL_LABELS: Record<string, string> = {
-  NOTION: "Notion",
-  INTERMEDIATE: "Intermédiaire",
-  FLUENT: "Courant",
-  BILINGUAL: "Bilingue",
-  NATIVE: "Natif",
-};
+import { CandidateSummarySection } from "./CandidateSummarySection";
+import { CandidateLanguagesSection } from "./CandidateLanguagesSection";
 
 export type LanguageItem = { id: string; name: string; level: string };
 export type TagItem = { id: string; name: string; color: string };
 
 export type CandidateDetailSidebarProps = {
+  candidateId: string;
   languages: LanguageItem[];
   tags: TagItem[];
   summary: string | null;
 };
 
 export const CandidateDetailSidebar = ({
+  candidateId,
   languages,
   tags,
   summary,
 }: CandidateDetailSidebarProps) => (
-  <aside className="space-y-6">
-    {summary && (
-      <section>
-        <h2 className="text-lg font-semibold text-foreground">Résumé</h2>
-        <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">
-          {summary}
-        </p>
-      </section>
-    )}
-    {languages.length > 0 && (
-      <section>
-        <h2 className="text-lg font-semibold text-foreground">Langues</h2>
-        <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
-          {languages.map((lang) => (
-            <li key={lang.id}>
-              {lang.name} — {LANGUAGE_LEVEL_LABELS[lang.level] ?? lang.level}
-            </li>
-          ))}
-        </ul>
-      </section>
-    )}
+  <aside className="space-y-6 rounded-lg border border-border bg-card p-6 shadow-sm print:shadow-none">
+    <CandidateSummarySection candidateId={candidateId} summary={summary} />
+    <CandidateLanguagesSection candidateId={candidateId} languages={languages} />
     {tags.length > 0 && (
       <section>
         <h2 className="text-lg font-semibold text-foreground">Tags</h2>

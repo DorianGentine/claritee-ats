@@ -88,6 +88,7 @@ export const CandidateDetailView = ({ candidateId }: Props) => {
 
         <div className="grid gap-6 lg:grid-cols-[1fr_2fr]">
           <CandidateDetailSidebar
+            candidateId={candidateId}
             languages={candidate.languages}
             tags={candidate.tags}
             summary={candidate.summary}
