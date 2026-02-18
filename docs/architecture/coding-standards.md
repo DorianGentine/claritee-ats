@@ -120,6 +120,8 @@ export const createExampleSchema = z.object({
 ## 4. Frontend (React + Next.js)
 
 - **Composants UI** : shadcn/ui dans `src/components/ui/` ; ne pas modifier le code généré sans raison. Composants métier et layout dans `src/components/` (sous-dossiers par domaine si besoin).
+- **DRY — composants partagés** : éviter la duplication. Dès qu'un bloc de JSX ou une logique est réutilisé (2ᵉ occurrence), l'extraire dans un composant partagé (`components/shared/` ou domaine) ou un hook (`hooks/`). Ne pas copier-coller des patterns de loading/erreur/empty state entre pages. Détail : `docs/frontend-architecture.md` §4.4.
+- **Apostrophes en JSX/HTML** : ne pas utiliser `&apos;` inutilement ; utiliser directement `'` (apostrophe droite). L'entité HTML n'est pas nécessaire dans les chaînes JSX ni dans la plupart des attributs.
 - **Styles** : **Tailwind CSS** + variables CSS du design-system (`docs/design-system.md`). Pas de CSS inline arbitraire pour les couleurs ; utiliser les tokens (e.g. `bg-primary`, `text-muted-foreground`).
 - **État serveur** : **TanStack Query** (v5) pour cache et mutations. Stale time et invalidation cohérentes avec l'usage (listes vs détail).
 - **Formulaires** : **React Hook Form** + Zod pour la validation partagée.

@@ -1,4 +1,5 @@
 import { TRPCError } from "@trpc/server";
+import { z } from "zod";
 import { router, protectedProcedure } from "../trpc";
 import {
   candidateListInputSchema,
@@ -91,6 +92,47 @@ export const candidateRouter = router({
         nextCursor,
         hasMore: !!nextCursor,
       };
+    }),
+
+  /**
+   * Récupère un candidat par id avec toutes les relations nécessaires au layout CV.
+   * NOT_FOUND si absent ou autre cabinet.
+   */
+  getById: protectedProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      const candidate = await ctx.db.candidate.findFirst({
+        where: { id: input.id, companyId: ctx.companyId },
+        include: {
+          experiences: { orderBy: { order: "asc" } },
+          formations: { orderBy: { order: "asc" } },
+          languages: true,
+          tags: { include: { tag: true } },
+        },
+      });
+      if (!candidate) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+      return {
+        ...candidate,
+        tags: candidate.tags.map((ct) => ct.tag),
+      };
+    }),
+
+  /**
+   * Supprime un candidat du cabinet. Vérifie companyId ; cascade Prisma gère les relations.
+   */
+  delete: protectedProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const existing = await ctx.db.candidate.findFirst({
+        where: { id: input.id, companyId: ctx.companyId },
+      });
+      if (!existing) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+      await ctx.db.candidate.delete({ where: { id: input.id } });
+      return { success: true };
     }),
 
   /**

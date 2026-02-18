@@ -13,6 +13,7 @@ Ce document décrit l'architecture technique complète du projet **Claritee ATS*
 | Date       | Version | Description                    | Author   |
 |------------|---------|--------------------------------|----------|
 | 2026-02-14 | 1.0     | Création architecture initiale | Architect |
+| 2026-02-17 | 1.1     | Ajout principes DRY et composants partagés | - |
 
 ---
 
@@ -104,6 +105,7 @@ graph TB
 - **API type-safe :** tRPC + Zod pour contrats partagés front/back.
 - **Auth externe :** Supabase Auth gère identité et JWT ; l’app conserve un profil `User` lié à `Company`.
 - **BFF implicite :** Next.js + tRPC sert de Backend-for-Frontend (pas d’API REST publique MVP).
+- **DRY (Don't Repeat Yourself) :** éviter la duplication de code ; privilégier les composants partagés, hooks réutilisables et utilitaires communs. Détail : `docs/frontend-architecture.md` §4.4.
 
 ---
 

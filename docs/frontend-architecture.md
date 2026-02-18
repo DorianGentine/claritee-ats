@@ -115,7 +115,50 @@ Référence nommage et style : `docs/architecture/coding-standards.md`.
 
 - **Layout** : Sidebar (nav Dashboard, Candidats, Offres, Clients, Paramètres), Header (recherche Cmd+K, avatar + menu user), FAB (note rapide).
 - **UI** : tout ce qui vient de shadcn (Button, Card, Input, Dialog, etc.) ; couleurs et espacements via variables CSS du design-system (`docs/design-system.md`).
-- Pas de bibliothèque de composants métier formalisée pour le MVP ; les composants métier réutilisables (ex. badge statut, tag) peuvent être centralisés dans `components/` au fil de l’eau.
+- Les composants métier réutilisables (ex. badge statut, tag, skeleton de chargement) doivent être centralisés et partagés plutôt que dupliqués (voir §4.4).
+
+### 4.4 Principes DRY et composants partagés
+
+Les composants ont tendance à devenir lourds et dupliqués. Appliquer les principes **DRY (Don't Repeat Yourself)** pour maintenir une base de code légère et maintenable.
+
+**Objectifs :**
+- Réduire la duplication de code entre composants.
+- Centraliser les comportements et patrons récurrents dans des composants partagés.
+- Alléger les composants métier en extrayant des sous-composants ou utilitaires réutilisables.
+
+**Règles à suivre :**
+
+1. **Extraction dès la 2ᵉ occurrence**  
+   Si un bloc de JSX, une logique ou un pattern apparaît à plus d'un endroit → extraire dans un composant partagé ou un hook.
+
+2. **Composants partagés par usage :**
+   - **UI générique** : `components/ui/` (shadcn) pour boutons, inputs, modals, etc.
+   - **Composants métier réutilisables** : `components/shared/` ou sous-dossiers par domaine (`components/candidates/`, `components/offers/`) avec des composants exportés et réutilisés (ex. `StatusBadge`, `EmptyState`, `LoadingSkeleton`, `PageHeader`).
+   - **Layout commun** : `components/layout/` pour Sidebar, Header, FAB, ou wrappers de page (ex. `DetailPageLayout`, `ListPageLayout`).
+
+3. **Hooks et utilitaires :**
+   - Logique de chargement, erreur, pagination → `src/hooks/` (ex. `useEntityDetail`, `usePaginatedList`).
+   - Formatage, calculs, helpers → `src/lib/utils.ts` ou `src/lib/formatters.ts`.
+
+4. **Signaux de duplication à surveiller :**
+   - Même structure de page (header + contenu + actions) répétée sur plusieurs écrans.
+   - Patterns de loading/erreur/empty state copiés-collés.
+   - Blocs de formulaires similaires (champs email, nom, etc.) non factorisés.
+   - Skeletons ou placeholders définis inline au lieu d'un composant dédié.
+
+**Structure recommandée pour les composants partagés :**
+
+```
+src/components/
+├── ui/           # shadcn (inchangé)
+├── layout/       # Shell, Sidebar, Header, FAB
+├── shared/       # Composants transversaux (EmptyState, StatusBadge, PageHeader, DataTableSkeleton…)
+├── candidates/   # Composants métier candidats (réutilisables entre liste, détail, partage)
+├── offers/       # Idem pour offres
+└── clients/      # Idem pour clients
+```
+
+Référence : `docs/architecture/source-tree.md` et `docs/architecture/coding-standards.md`.
 
 ---
 
@@ -193,4 +236,4 @@ Référence visuelle et tokens : `docs/design-system.md`.
 
 ---
 
-*Dernière mise à jour : 2026-02-14. Aligné avec le rapport de checklist architect et `docs/architecture.md`.*
+*Dernière mise à jour : 2026-02-17. Principes DRY et composants partagés (§4.4). Aligné avec `docs/architecture.md`.*

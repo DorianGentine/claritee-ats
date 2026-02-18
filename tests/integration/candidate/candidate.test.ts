@@ -312,4 +312,74 @@ describe.runIf(!!connectionString)("candidate", () => {
       message: expect.stringContaining("Format de fichier non supporté"),
     });
   });
+
+  it("getById: returns candidate with relations for own company", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const result = await caller.candidate.getById({ id: candidateA1Id });
+
+    expect(result.id).toBe(candidateA1Id);
+    expect(result.firstName).toBe("Alice");
+    expect(result.lastName).toBe("A1");
+    expect(result.companyId).toBe(companyAId);
+    expect(result.title).toBe("Dev");
+    expect(result.city).toBe("Paris");
+    expect(Array.isArray(result.experiences)).toBe(true);
+    expect(Array.isArray(result.formations)).toBe(true);
+    expect(Array.isArray(result.languages)).toBe(true);
+    expect(Array.isArray(result.tags)).toBe(true);
+  });
+
+  it("getById: throws NOT_FOUND when candidate belongs to another company", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    await expect(
+      caller.candidate.getById({ id: candidateB1Id }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+
+  it("getById: throws NOT_FOUND for non-existent id", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+    const fakeId = "00000000-0000-0000-0000-000000000000";
+
+    await expect(
+      caller.candidate.getById({ id: fakeId }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+
+  it("delete: removes candidate and respects companyId", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const created = await caller.candidate.create({
+      firstName: "ToDelete",
+      lastName: "User",
+    });
+    expect(created.id).toBeDefined();
+
+    const result = await caller.candidate.delete({ id: created.id });
+    expect(result.success).toBe(true);
+
+    const inDb = await db.candidate.findUnique({
+      where: { id: created.id },
+    });
+    expect(inDb).toBeNull();
+  });
+
+  it("delete: throws NOT_FOUND when candidate belongs to another company", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    await expect(
+      caller.candidate.delete({ id: candidateB1Id }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+    const stillExists = await db.candidate.findUnique({
+      where: { id: candidateB1Id },
+    });
+    expect(stillExists).not.toBeNull();
+  });
 });
