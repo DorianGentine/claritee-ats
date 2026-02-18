@@ -4,6 +4,9 @@ import { router, protectedProcedure } from "../trpc";
 import {
   candidateListInputSchema,
   createCandidateSchema,
+  updateCandidateSchema,
+  addLanguageSchema,
+  removeLanguageSchema,
   PHOTO_ACCEPTED_MIMES,
   PHOTO_MAX_BYTES,
   uploadPhotoSchema,
@@ -99,7 +102,7 @@ export const candidateRouter = router({
    * NOT_FOUND si absent ou autre cabinet.
    */
   getById: protectedProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(z.object({ id: z.uuid() }))
     .query(async ({ ctx, input }) => {
       const candidate = await ctx.db.candidate.findFirst({
         where: { id: input.id, companyId: ctx.companyId },
@@ -123,7 +126,7 @@ export const candidateRouter = router({
    * Supprime un candidat du cabinet. Vérifie companyId ; cascade Prisma gère les relations.
    */
   delete: protectedProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(z.object({ id: z.uuid() }))
     .mutation(async ({ ctx, input }) => {
       const existing = await ctx.db.candidate.findFirst({
         where: { id: input.id, companyId: ctx.companyId },
@@ -133,6 +136,23 @@ export const candidateRouter = router({
       }
       await ctx.db.candidate.delete({ where: { id: input.id } });
       return { success: true };
+    }),
+
+  /**
+   * Met à jour les champs modifiables d'un candidat (ex. summary).
+   * Vérifie que le candidat appartient au cabinet.
+   */
+  update: protectedProcedure
+    .input(updateCandidateSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { id, ...data } = input;
+      const existing = await ctx.db.candidate.findFirst({
+        where: { id, companyId: ctx.companyId },
+      });
+      if (!existing) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+      return ctx.db.candidate.update({ where: { id }, data });
     }),
 
   /**
@@ -155,6 +175,51 @@ export const candidateRouter = router({
         },
       });
       return candidate;
+    }),
+
+  /**
+   * Ajoute une langue au profil d'un candidat.
+   * Vérifie que le candidat appartient au cabinet.
+   */
+  addLanguage: protectedProcedure
+    .input(addLanguageSchema)
+    .mutation(async ({ ctx, input }) => {
+      const candidate = await ctx.db.candidate.findFirst({
+        where: { id: input.candidateId, companyId: ctx.companyId },
+      });
+      if (!candidate) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+      return ctx.db.language.create({
+        data: {
+          candidateId: input.candidateId,
+          name: input.name.trim(),
+          level: input.level,
+        },
+      });
+    }),
+
+  /**
+   * Supprime une langue du profil d'un candidat.
+   * Vérifie que le candidat appartient au cabinet et que la langue lui est bien rattachée.
+   */
+  removeLanguage: protectedProcedure
+    .input(removeLanguageSchema)
+    .mutation(async ({ ctx, input }) => {
+      const candidate = await ctx.db.candidate.findFirst({
+        where: { id: input.candidateId, companyId: ctx.companyId },
+      });
+      if (!candidate) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+      const language = await ctx.db.language.findFirst({
+        where: { id: input.languageId, candidateId: input.candidateId },
+      });
+      if (!language) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+      await ctx.db.language.delete({ where: { id: input.languageId } });
+      return { success: true };
     }),
 
   /**

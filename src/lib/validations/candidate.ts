@@ -4,7 +4,7 @@ const LIST_PAGE_SIZE = 20;
 
 /** Input pour la liste paginée des candidats (cursor-based) */
 export const candidateListInputSchema = z.object({
-  cursor: z.string().uuid().optional(),
+  cursor: z.uuid().optional(),
   limit: z.number().int().min(1).max(100).default(LIST_PAGE_SIZE),
 });
 
@@ -62,6 +62,48 @@ export const createCandidateSchema = z.object({
 
 export type CreateCandidateInput = z.infer<typeof createCandidateSchema>;
 
+/** Schéma pour la mise à jour partielle d'un candidat (summary, etc.) */
+export const updateCandidateSchema = z.object({
+  id: z.uuid(),
+  summary: z
+    .string()
+    .max(500, "Le résumé ne peut pas dépasser 500 caractères")
+    .optional()
+    .transform((v) => (v?.trim() === "" ? null : v?.trim() ?? null)),
+});
+
+export type UpdateCandidateInput = z.infer<typeof updateCandidateSchema>;
+
+/** Niveaux de langue (mirroir de l'enum Prisma LanguageLevel) */
+export const LANGUAGE_LEVELS = [
+  "NOTION",
+  "INTERMEDIATE",
+  "FLUENT",
+  "BILINGUAL",
+  "NATIVE",
+] as const;
+
+export const languageLevelSchema = z.enum(LANGUAGE_LEVELS, {
+  message: "Le niveau de langue est requis",
+});
+
+/** Schéma pour l'ajout d'une langue à un candidat */
+export const addLanguageSchema = z.object({
+  candidateId: z.uuid(),
+  name: z.string().min(1, "Le nom de la langue est requis").max(50),
+  level: languageLevelSchema,
+});
+
+export type AddLanguageInput = z.infer<typeof addLanguageSchema>;
+
+/** Schéma pour la suppression d'une langue */
+export const removeLanguageSchema = z.object({
+  candidateId: z.uuid(),
+  languageId: z.uuid(),
+});
+
+export type RemoveLanguageInput = z.infer<typeof removeLanguageSchema>;
+
 /** Formats MIME acceptés pour les photos candidat */
 export const PHOTO_ACCEPTED_MIMES = [
   "image/jpeg",
@@ -73,7 +115,7 @@ export const PHOTO_MAX_BYTES = 2 * 1024 * 1024; // 2 Mo
 
 /** Schéma pour l'upload de photo candidat */
 export const uploadPhotoSchema = z.object({
-  candidateId: z.string().uuid(),
+  candidateId: z.uuid(),
   fileBase64: z.string().min(1, "Fichier requis"),
   mimeType: z
     .enum(PHOTO_ACCEPTED_MIMES, {
