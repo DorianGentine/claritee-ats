@@ -162,4 +162,40 @@ export const deleteExperienceSchema = z.object({
 
 export type DeleteExperienceInput = z.infer<typeof deleteExperienceSchema>;
 
+/** Date optionnelle pour formation (année ou mois/année côté UI → DateTime en base). */
+const optionalFormationDate = z.coerce.date().optional().nullable();
+
+/** Schéma pour l'ajout d'une formation */
+export const addFormationSchema = z.object({
+  candidateId: z.uuid(),
+  degree: z.string().min(1, "Le diplôme est requis"),
+  field: z.string().max(200).optional().nullable(),
+  school: z.string().min(1, "L'établissement est requis"),
+  startDate: optionalFormationDate,
+  endDate: optionalFormationDate,
+});
+
+export type AddFormationInput = z.infer<typeof addFormationSchema>;
+
+/** Schéma pour la mise à jour d'une formation */
+export const updateFormationSchema = z.object({
+  candidateId: z.uuid(),
+  formationId: z.uuid(),
+  degree: z.string().min(1, "Le diplôme est requis").optional(),
+  field: z.string().max(200).optional().nullable(),
+  school: z.string().min(1, "L'établissement est requis").optional(),
+  startDate: optionalFormationDate,
+  endDate: optionalFormationDate,
+});
+
+export type UpdateFormationInput = z.infer<typeof updateFormationSchema>;
+
+/** Schéma pour la suppression d'une formation */
+export const deleteFormationSchema = z.object({
+  candidateId: z.uuid(),
+  formationId: z.uuid(),
+});
+
+export type DeleteFormationInput = z.infer<typeof deleteFormationSchema>;
+
 export { LIST_PAGE_SIZE };

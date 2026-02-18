@@ -770,4 +770,235 @@ describe.runIf(!!connectionString)("candidate", () => {
 
     await db.experience.deleteMany({ where: { id: { in: [e1.id, e2.id] } } });
   });
+
+  // ─── addFormation / updateFormation / deleteFormation ───
+
+  it("addFormation: adds formation to own candidate", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const startDate = new Date("2018-09-01");
+    const endDate = new Date("2020-06-01");
+
+    const form = await caller.candidate.addFormation({
+      candidateId: candidateA1Id,
+      degree: "Master Informatique",
+      field: "Systèmes distribués",
+      school: "HEC Paris",
+      startDate,
+      endDate,
+    });
+
+    expect(form.id).toBeDefined();
+    expect(form.degree).toBe("Master Informatique");
+    expect(form.field).toBe("Systèmes distribués");
+    expect(form.school).toBe("HEC Paris");
+    expect(new Date(form.startDate!).toISOString()).toBe(startDate.toISOString());
+    expect(new Date(form.endDate!).toISOString()).toBe(endDate.toISOString());
+
+    await db.formation.delete({ where: { id: form.id } });
+  });
+
+  it("addFormation: allows optional dates and field", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const form = await caller.candidate.addFormation({
+      candidateId: candidateA1Id,
+      degree: "Licence",
+      school: "Université Paris-Saclay",
+      field: null,
+      startDate: null,
+      endDate: null,
+    });
+
+    expect(form.startDate).toBeNull();
+    expect(form.endDate).toBeNull();
+    expect(form.field).toBeNull();
+    await db.formation.delete({ where: { id: form.id } });
+  });
+
+  it("addFormation: throws NOT_FOUND for candidate of another company", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    await expect(
+      caller.candidate.addFormation({
+        candidateId: candidateB1Id,
+        degree: "MBA",
+        school: "INSEAD",
+      }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+
+  it("updateFormation: updates formation of own candidate", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const form = await db.formation.create({
+      data: {
+        candidateId: candidateA1Id,
+        degree: "BTS",
+        school: "Lycée X",
+        startDate: new Date("2015-09-01"),
+        endDate: new Date("2017-06-01"),
+      },
+    });
+
+    const updated = await caller.candidate.updateFormation({
+      candidateId: candidateA1Id,
+      formationId: form.id,
+      degree: "BTS SIO",
+      school: "Lycée Y",
+    });
+
+    expect(updated.degree).toBe("BTS SIO");
+    expect(updated.school).toBe("Lycée Y");
+    await db.formation.delete({ where: { id: form.id } });
+  });
+
+  it("updateFormation: throws NOT_FOUND for candidate of another company", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const form = await db.formation.create({
+      data: {
+        candidateId: candidateB1Id,
+        degree: "PhD",
+        school: "MIT",
+      },
+    });
+
+    await expect(
+      caller.candidate.updateFormation({
+        candidateId: candidateB1Id,
+        formationId: form.id,
+        degree: "PhD CS",
+      }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+    await db.formation.delete({ where: { id: form.id } });
+  });
+
+  it("updateFormation: throws NOT_FOUND if formation does not belong to candidate", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const form = await db.formation.create({
+      data: {
+        candidateId: candidateA2Id,
+        degree: "Master",
+        school: "ESSEC",
+      },
+    });
+
+    await expect(
+      caller.candidate.updateFormation({
+        candidateId: candidateA1Id,
+        formationId: form.id,
+        degree: "Hacked",
+      }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+    await db.formation.delete({ where: { id: form.id } });
+  });
+
+  it("deleteFormation: removes formation of own candidate", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const form = await db.formation.create({
+      data: {
+        candidateId: candidateA1Id,
+        degree: "To Delete",
+        school: "Tmp School",
+      },
+    });
+
+    const result = await caller.candidate.deleteFormation({
+      candidateId: candidateA1Id,
+      formationId: form.id,
+    });
+
+    expect(result.success).toBe(true);
+    const inDb = await db.formation.findUnique({ where: { id: form.id } });
+    expect(inDb).toBeNull();
+  });
+
+  it("deleteFormation: throws NOT_FOUND for candidate of another company", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const form = await db.formation.create({
+      data: {
+        candidateId: candidateB1Id,
+        degree: "MBA",
+        school: "HEC",
+      },
+    });
+
+    await expect(
+      caller.candidate.deleteFormation({
+        candidateId: candidateB1Id,
+        formationId: form.id,
+      }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+    await db.formation.delete({ where: { id: form.id } });
+  });
+
+  it("deleteFormation: throws NOT_FOUND if formation does not belong to candidate", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const form = await db.formation.create({
+      data: {
+        candidateId: candidateA2Id,
+        degree: "Master",
+        school: "ESSEC",
+      },
+    });
+
+    await expect(
+      caller.candidate.deleteFormation({
+        candidateId: candidateA1Id,
+        formationId: form.id,
+      }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+    await db.formation.delete({ where: { id: form.id } });
+  });
+
+  it("getById: returns formations ordered by startDate desc", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const [f1, f2] = await Promise.all([
+      db.formation.create({
+        data: {
+          candidateId: candidateA1Id,
+          degree: "Licence",
+          school: "Paris 6",
+          startDate: new Date("2012-09-01"),
+          endDate: new Date("2015-06-01"),
+        },
+      }),
+      db.formation.create({
+        data: {
+          candidateId: candidateA1Id,
+          degree: "Master",
+          school: "Paris 9",
+          startDate: new Date("2016-09-01"),
+          endDate: new Date("2018-06-01"),
+        },
+      }),
+    ]);
+
+    const result = await caller.candidate.getById({ id: candidateA1Id });
+    expect(result.formations).toHaveLength(2);
+    expect(result.formations[0].degree).toBe("Master");
+    expect(result.formations[1].degree).toBe("Licence");
+
+    await db.formation.deleteMany({ where: { id: { in: [f1.id, f2.id] } } });
+  });
 });
