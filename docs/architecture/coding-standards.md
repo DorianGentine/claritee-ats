@@ -14,6 +14,7 @@
 
 ### Formatage et lint
 
+- **Point-virgule :** ne pas mettre de `;` en fin de ligne lorsqu'il n'est pas nécessaire. En JavaScript/TypeScript, l'ASI permet de s'en passer dans la plupart des cas ; privilégier un style cohérent sans point-virgule superflus.
 - Suivre les règles ESLint/Prettier du projet. Pas de console.log en prod ; utiliser un logger structuré si besoin (voir observabilité dans `architecture.md`).
 - Corriger toutes les erreurs de lint et TypeScript avant de considérer une tâche ou une story terminée.
 
@@ -175,4 +176,4 @@ export const createExampleSchema = z.object({
 
 ---
 
-*Dernière mise à jour : 2026-02-14. Aligné avec `docs/architecture.md`, `docs/design-system.md` et `docs/frontend-architecture.md`.*
+*Dernière mise à jour : 2026-02-19. Aligné avec `docs/architecture.md`, `docs/design-system.md` et `docs/frontend-architecture.md`.*

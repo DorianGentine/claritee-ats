@@ -14,6 +14,7 @@ Ce document décrit l'architecture technique complète du projet **Claritee ATS*
 |------------|---------|--------------------------------|----------|
 | 2026-02-14 | 1.0     | Création architecture initiale | Architect |
 | 2026-02-17 | 1.1     | Ajout principes DRY et composants partagés | - |
+| 2026-02-19 | 1.2     | Ajout convention point-virgule (pas de ; si inutile) | - |
 
 ---
 
@@ -106,6 +107,10 @@ graph TB
 - **Auth externe :** Supabase Auth gère identité et JWT ; l’app conserve un profil `User` lié à `Company`.
 - **BFF implicite :** Next.js + tRPC sert de Backend-for-Frontend (pas d’API REST publique MVP).
 - **DRY (Don't Repeat Yourself) :** éviter la duplication de code ; privilégier les composants partagés, hooks réutilisables et utilitaires communs. Détail : `docs/frontend-architecture.md` §4.4.
+
+### 3.3 Conventions de code
+
+- **Point-virgule :** ne pas mettre de `;` en fin de ligne lorsqu'il n'est pas nécessaire. En JavaScript/TypeScript, l'ASI (Automatic Semicolon Insertion) permet de s'en passer dans la plupart des cas ; privilégier un style cohérent sans point-virgule superflus.
 
 ---
 

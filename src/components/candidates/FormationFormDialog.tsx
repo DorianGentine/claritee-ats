@@ -23,122 +23,112 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { MONTHS, YEARS } from "@/lib/date-constants";
 
-const experienceFormSchema = z
+const formationFormSchema = z
   .object({
-    title: z.string().min(1, "Le titre est requis"),
-    company: z.string().min(1, "L'entreprise est requise"),
-    startMonth: z.number().min(1, "Mois requis").max(12),
-    startYear: z.number().min(1900).max(2100),
-    isCurrentJob: z.boolean(),
-    endMonth: z.number().min(1).max(12).optional(),
-    endYear: z.number().min(1900).max(2100).optional(),
-    description: z.string().max(2000).optional(),
+    degree: z.string().min(1, "Le diplôme est requis"),
+    field: z.string().max(200).optional(),
+    school: z.string().min(1, "L'établissement est requis"),
+    startYear: z.number().min(1900).max(2100).optional().nullable(),
+    startMonth: z.number().min(1).max(12).optional().nullable(),
+    endYear: z.number().min(1900).max(2100).optional().nullable(),
+    endMonth: z.number().min(1).max(12).optional().nullable(),
   })
   .refine(
     (data) => {
-      if (data.isCurrentJob) return true;
-      return data.endMonth != null && data.endYear != null;
-    },
-    { message: "La date de fin est requise", path: ["endYear"] }
-  )
-  .refine(
-    (data) => {
-      if (data.isCurrentJob) return true;
-      if (data.endMonth == null || data.endYear == null) return true;
-      const start = new Date(data.startYear, data.startMonth - 1, 1).getTime();
-      const end = new Date(data.endYear, data.endMonth - 1, 1).getTime();
+      if (data.startYear == null || data.endYear == null) return true;
+      const start = new Date(
+        data.startYear,
+        (data.startMonth ?? 1) - 1,
+        1
+      ).getTime();
+      const end = new Date(
+        data.endYear,
+        (data.endMonth ?? 1) - 1,
+        1
+      ).getTime();
       return end >= start;
     },
-    { message: "La date de fin doit être après la date de début", path: ["endYear"] }
+    {
+      message: "La date de fin doit être après la date de début",
+      path: ["endYear"],
+    }
   );
 
-type ExperienceFormValues = z.infer<typeof experienceFormSchema>;
+type FormationFormValues = z.infer<typeof formationFormSchema>;
 
-export type ExperienceItem = {
+export type FormationItem = {
   id: string;
-  title: string;
-  company: string;
-  startDate: Date | string;
+  degree: string;
+  field: string | null;
+  school: string;
+  startDate: Date | string | null;
   endDate: Date | string | null;
-  description: string | null;
 };
 
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   candidateId: string;
-  experience?: ExperienceItem | null;
+  formation?: FormationItem | null;
   onSuccess?: () => void;
 };
 
-const defaultValues: ExperienceFormValues = {
-  title: "",
-  company: "",
-  startMonth: new Date().getMonth() + 1,
-  startYear: new Date().getFullYear(),
-  isCurrentJob: true,
-  endMonth: undefined,
-  endYear: undefined,
-  description: "",
+const defaultValues: FormationFormValues = {
+  degree: "",
+  field: "",
+  school: "",
+  startYear: null,
+  startMonth: null,
+  endYear: null,
+  endMonth: null,
 };
 
-export const ExperienceFormDialog = ({
+export const FormationFormDialog = ({
   open,
   onOpenChange,
   candidateId,
-  experience,
+  formation,
   onSuccess,
 }: Props) => {
   const utils = api.useUtils();
-  const isEdit = Boolean(experience?.id);
+  const isEdit = Boolean(formation?.id);
 
   const {
     register,
     handleSubmit,
     control,
     reset,
-    watch,
-    setValue,
     formState: { errors },
-  } = useForm<ExperienceFormValues>({
-    resolver: zodResolver(experienceFormSchema),
+  } = useForm<FormationFormValues>({
+    resolver: zodResolver(formationFormSchema),
     defaultValues,
   });
 
-  const isCurrentJob = watch("isCurrentJob");
-
-  useEffect(() => {
-    if (isCurrentJob) {
-      setValue("endMonth", undefined);
-      setValue("endYear", undefined);
-    }
-  }, [isCurrentJob, setValue]);
-
   useEffect(() => {
     if (open) {
-      if (experience) {
-        const start = new Date(experience.startDate);
-        const end = experience.endDate ? new Date(experience.endDate) : null;
+      if (formation) {
+        const start = formation.startDate
+          ? new Date(formation.startDate)
+          : null;
+        const end = formation.endDate ? new Date(formation.endDate) : null;
         reset({
-          title: experience.title,
-          company: experience.company,
-          startMonth: start.getMonth() + 1,
-          startYear: start.getFullYear(),
-          isCurrentJob: !end,
-          endMonth: end ? end.getMonth() + 1 : undefined,
-          endYear: end ? end.getFullYear() : undefined,
-          description: experience.description ?? "",
+          degree: formation.degree,
+          field: formation.field ?? "",
+          school: formation.school,
+          startYear: start ? start.getFullYear() : null,
+          startMonth: start ? start.getMonth() + 1 : null,
+          endYear: end ? end.getFullYear() : null,
+          endMonth: end ? end.getMonth() + 1 : null,
         });
       } else {
         reset(defaultValues);
       }
     }
-  }, [open, experience, reset]);
+  }, [open, formation, reset]);
 
-  const addMutation = api.candidate.addExperience.useMutation({
+  const addMutation = api.candidate.addFormation.useMutation({
     onSuccess: () => {
       void utils.candidate.getById.invalidate({ id: candidateId });
       onSuccess?.();
@@ -147,7 +137,7 @@ export const ExperienceFormDialog = ({
     },
   });
 
-  const updateMutation = api.candidate.updateExperience.useMutation({
+  const updateMutation = api.candidate.updateFormation.useMutation({
     onSuccess: () => {
       void utils.candidate.getById.invalidate({ id: candidateId });
       onSuccess?.();
@@ -156,32 +146,38 @@ export const ExperienceFormDialog = ({
     },
   });
 
-  const onSubmit = (values: ExperienceFormValues) => {
-    const startDate = new Date(values.startYear, values.startMonth - 1, 1);
-    const endDate = values.isCurrentJob
-      ? null
-      : values.endMonth != null && values.endYear != null
-        ? new Date(values.endYear, values.endMonth - 1, 1)
+  const onSubmit = (values: FormationFormValues) => {
+    const startDate =
+      values.startYear != null
+        ? new Date(
+            values.startYear,
+            (values.startMonth ?? 1) - 1,
+            1
+          )
+        : null;
+    const endDate =
+      values.endYear != null
+        ? new Date(values.endYear, (values.endMonth ?? 1) - 1, 1)
         : null;
 
-    if (isEdit && experience) {
+    if (isEdit && formation) {
       updateMutation.mutate({
         candidateId,
-        experienceId: experience.id,
-        title: values.title,
-        company: values.company,
+        formationId: formation.id,
+        degree: values.degree,
+        field: values.field?.trim() || null,
+        school: values.school,
         startDate,
         endDate,
-        description: values.description || null,
       });
     } else {
       addMutation.mutate({
         candidateId,
-        title: values.title,
-        company: values.company,
+        degree: values.degree,
+        field: values.field?.trim() || null,
+        school: values.school,
         startDate,
         endDate,
-        description: values.description || null,
       });
     }
   };
@@ -194,50 +190,65 @@ export const ExperienceFormDialog = ({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {isEdit ? "Modifier l'expérience" : "Ajouter une expérience"}
+            {isEdit ? "Modifier la formation" : "Ajouter une formation"}
           </DialogTitle>
           <DialogDescription className="sr-only">
             {isEdit
-              ? "Formulaire de modification d'une expérience professionnelle"
-              : "Formulaire d'ajout d'une expérience professionnelle"}
+              ? "Formulaire de modification d'une formation"
+              : "Formulaire d'ajout d'une formation"}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
-            <Label htmlFor="exp-title">Titre du poste *</Label>
+            <Label htmlFor="form-degree">Diplôme / Intitulé *</Label>
             <Input
-              id="exp-title"
-              {...register("title")}
-              placeholder="Ex. Développeur full stack"
+              id="form-degree"
+              {...register("degree")}
+              placeholder="Ex. Master Informatique"
             />
-            {errors.title && (
-              <p className="mt-1 text-xs text-destructive">{errors.title.message}</p>
+            {errors.degree && (
+              <p className="mt-1 text-xs text-destructive">
+                {errors.degree.message}
+              </p>
             )}
           </div>
 
           <div>
-            <Label htmlFor="exp-company">Entreprise *</Label>
+            <Label htmlFor="form-field">Domaine</Label>
             <Input
-              id="exp-company"
-              {...register("company")}
-              placeholder="Ex. Acme Inc."
+              id="form-field"
+              {...register("field")}
+              placeholder="Ex. Systèmes d'information"
             />
-            {errors.company && (
-              <p className="mt-1 text-xs text-destructive">{errors.company.message}</p>
+          </div>
+
+          <div>
+            <Label htmlFor="form-school">École / Établissement *</Label>
+            <Input
+              id="form-school"
+              {...register("school")}
+              placeholder="Ex. HEC Paris, Jouy-en-Josas"
+            />
+            {errors.school && (
+              <p className="mt-1 text-xs text-destructive">
+                {errors.school.message}
+              </p>
             )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label>Date de début *</Label>
+              <Label>Date de début</Label>
               <div className="mt-1 flex gap-2">
                 <Controller
                   control={control}
                   name="startMonth"
                   render={({ field }) => (
                     <Select
-                      value={String(field.value)}
-                      onValueChange={(v) => field.onChange(Number(v))}
+                      value={field.value != null ? String(field.value) : ""}
+                      onValueChange={(v) =>
+                        field.onChange(v === "" ? null : Number(v))
+                      }
                     >
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Mois" />
@@ -257,8 +268,10 @@ export const ExperienceFormDialog = ({
                   name="startYear"
                   render={({ field }) => (
                     <Select
-                      value={String(field.value)}
-                      onValueChange={(v) => field.onChange(Number(v))}
+                      value={field.value != null ? String(field.value) : ""}
+                      onValueChange={(v) =>
+                        field.onChange(v === "" ? null : Number(v))
+                      }
                     >
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Année" />
@@ -275,28 +288,6 @@ export const ExperienceFormDialog = ({
                 />
               </div>
             </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Controller
-              control={control}
-              name="isCurrentJob"
-              render={({ field }) => (
-                <input
-                  type="checkbox"
-                  id="exp-current"
-                  checked={field.value}
-                  onChange={(e) => field.onChange(e.target.checked)}
-                  className="h-4 w-4 rounded border-border"
-                />
-              )}
-            />
-            <Label htmlFor="exp-current" className="cursor-pointer font-normal">
-              Poste actuel
-            </Label>
-          </div>
-
-          {!isCurrentJob && (
             <div>
               <Label>Date de fin</Label>
               <div className="mt-1 flex gap-2">
@@ -306,7 +297,9 @@ export const ExperienceFormDialog = ({
                   render={({ field }) => (
                     <Select
                       value={field.value != null ? String(field.value) : ""}
-                      onValueChange={(v) => field.onChange(Number(v))}
+                      onValueChange={(v) =>
+                        field.onChange(v === "" ? null : Number(v))
+                      }
                     >
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Mois" />
@@ -327,7 +320,9 @@ export const ExperienceFormDialog = ({
                   render={({ field }) => (
                     <Select
                       value={field.value != null ? String(field.value) : ""}
-                      onValueChange={(v) => field.onChange(Number(v))}
+                      onValueChange={(v) =>
+                        field.onChange(v === "" ? null : Number(v))
+                      }
                     >
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Année" />
@@ -344,24 +339,17 @@ export const ExperienceFormDialog = ({
                 />
               </div>
               {errors.endYear && (
-                <p className="mt-1 text-xs text-destructive">{errors.endYear.message}</p>
+                <p className="mt-1 text-xs text-destructive">
+                  {errors.endYear.message}
+                </p>
               )}
             </div>
-          )}
-
-          <div>
-            <Label htmlFor="exp-description">Description</Label>
-            <Textarea
-              id="exp-description"
-              {...register("description")}
-              placeholder="Principales missions, réalisations..."
-              rows={4}
-              className="resize-none"
-            />
           </div>
 
           {error && (
-            <p className="text-xs text-destructive">Une erreur est survenue. Réessayez.</p>
+            <p className="text-xs text-destructive">
+              Une erreur est survenue. Réessayez.
+            </p>
           )}
 
           <DialogFooter>

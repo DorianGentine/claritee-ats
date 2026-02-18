@@ -10,6 +10,9 @@ import {
   addExperienceSchema,
   updateExperienceSchema,
   deleteExperienceSchema,
+  addFormationSchema,
+  updateFormationSchema,
+  deleteFormationSchema,
   PHOTO_ACCEPTED_MIMES,
   PHOTO_MAX_BYTES,
   uploadPhotoSchema,
@@ -111,7 +114,7 @@ export const candidateRouter = router({
         where: { id: input.id, companyId: ctx.companyId },
         include: {
           experiences: { orderBy: [{ endDate: "desc" }, { startDate: "desc" }] },
-          formations: { orderBy: { order: "asc" } },
+          formations: { orderBy: [{ endDate: "desc" }, { startDate: "desc" }] },
           languages: true,
           tags: { include: { tag: true } },
         },
@@ -304,6 +307,86 @@ export const candidateRouter = router({
         throw new TRPCError({ code: "NOT_FOUND" });
       }
       await ctx.db.experience.delete({ where: { id: input.experienceId } });
+      return { success: true };
+    }),
+
+  /**
+   * Ajoute une formation à un candidat.
+   * Vérifie que le candidat appartient au cabinet. Formations triées par startDate desc côté getById.
+   */
+  addFormation: protectedProcedure
+    .input(addFormationSchema)
+    .mutation(async ({ ctx, input }) => {
+      const candidate = await ctx.db.candidate.findFirst({
+        where: { id: input.candidateId, companyId: ctx.companyId },
+      });
+      if (!candidate) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+      return ctx.db.formation.create({
+        data: {
+          candidateId: input.candidateId,
+          degree: input.degree,
+          field: input.field ?? null,
+          school: input.school,
+          startDate: input.startDate ?? null,
+          endDate: input.endDate ?? null,
+        },
+      });
+    }),
+
+  /**
+   * Met à jour une formation d'un candidat.
+   * Vérifie que le candidat appartient au cabinet et que la formation lui est rattachée.
+   */
+  updateFormation: protectedProcedure
+    .input(updateFormationSchema)
+    .mutation(async ({ ctx, input }) => {
+      const candidate = await ctx.db.candidate.findFirst({
+        where: { id: input.candidateId, companyId: ctx.companyId },
+      });
+      if (!candidate) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+      const formation = await ctx.db.formation.findFirst({
+        where: { id: input.formationId, candidateId: input.candidateId },
+      });
+      if (!formation) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+      const { candidateId: _cid, formationId, ...data } = input;
+      return ctx.db.formation.update({
+        where: { id: formationId },
+        data: {
+          ...(data.degree !== undefined && { degree: data.degree }),
+          ...(data.field !== undefined && { field: data.field }),
+          ...(data.school !== undefined && { school: data.school }),
+          ...(data.startDate !== undefined && { startDate: data.startDate }),
+          ...(data.endDate !== undefined && { endDate: data.endDate }),
+        },
+      });
+    }),
+
+  /**
+   * Supprime une formation d'un candidat.
+   * Vérifie que le candidat appartient au cabinet et que la formation lui est rattachée.
+   */
+  deleteFormation: protectedProcedure
+    .input(deleteFormationSchema)
+    .mutation(async ({ ctx, input }) => {
+      const candidate = await ctx.db.candidate.findFirst({
+        where: { id: input.candidateId, companyId: ctx.companyId },
+      });
+      if (!candidate) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+      const formation = await ctx.db.formation.findFirst({
+        where: { id: input.formationId, candidateId: input.candidateId },
+      });
+      if (!formation) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+      await ctx.db.formation.delete({ where: { id: input.formationId } });
       return { success: true };
     }),
 
