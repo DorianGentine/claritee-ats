@@ -31,7 +31,10 @@ export const CandidateDetailHeader = ({
   return (
     <header className="flex flex-col gap-4 rounded-lg border border-border bg-card p-6 shadow-sm sm:flex-row sm:items-start print:shadow-none">
       <Avatar className="size-20 shrink-0 rounded-full border-2 border-border">
-        <AvatarImage src={photoUrl ?? undefined} alt="" />
+        <AvatarImage
+          src={photoUrl ?? undefined}
+          alt={fullName !== "Sans nom" ? `Photo de ${fullName}` : ""}
+        />
         <AvatarFallback className="bg-secondary/80 text-lg text-secondary-foreground">
           {initials}
         </AvatarFallback>
