@@ -534,4 +534,240 @@ describe.runIf(!!connectionString)("candidate", () => {
 
     await db.language.delete({ where: { id: lang.id } });
   });
+
+  // ─── addExperience / updateExperience / deleteExperience ───
+
+  it("addExperience: adds experience to own candidate", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const startDate = new Date("2022-06-01");
+    const endDate = new Date("2024-03-01");
+
+    const exp = await caller.candidate.addExperience({
+      candidateId: candidateA1Id,
+      title: "Développeur",
+      company: "Acme",
+      startDate,
+      endDate,
+      description: "Mission principale",
+    });
+
+    expect(exp.id).toBeDefined();
+    expect(exp.title).toBe("Développeur");
+    expect(exp.company).toBe("Acme");
+    expect(new Date(exp.startDate).toISOString()).toBe(startDate.toISOString());
+    expect(exp.endDate).not.toBeNull();
+    expect(exp.description).toBe("Mission principale");
+
+    await db.experience.delete({ where: { id: exp.id } });
+  });
+
+  it("addExperience: allows null endDate (current job)", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const exp = await caller.candidate.addExperience({
+      candidateId: candidateA1Id,
+      title: "Lead Dev",
+      company: "Beta",
+      startDate: new Date("2023-01-01"),
+      endDate: null,
+      description: null,
+    });
+
+    expect(exp.endDate).toBeNull();
+    expect(exp.description).toBeNull();
+    await db.experience.delete({ where: { id: exp.id } });
+  });
+
+  it("addExperience: throws NOT_FOUND for candidate of another company", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    await expect(
+      caller.candidate.addExperience({
+        candidateId: candidateB1Id,
+        title: "Dev",
+        company: "Other",
+        startDate: new Date("2020-01-01"),
+      }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+
+  it("updateExperience: updates experience of own candidate", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const exp = await db.experience.create({
+      data: {
+        candidateId: candidateA1Id,
+        title: "Stagiaire",
+        company: "Gamma",
+        startDate: new Date("2021-06-01"),
+        endDate: new Date("2021-08-01"),
+      },
+    });
+
+    const updated = await caller.candidate.updateExperience({
+      candidateId: candidateA1Id,
+      experienceId: exp.id,
+      title: "Développeur stagiaire",
+      company: "Gamma Corp",
+    });
+
+    expect(updated.title).toBe("Développeur stagiaire");
+    expect(updated.company).toBe("Gamma Corp");
+    await db.experience.delete({ where: { id: exp.id } });
+  });
+
+  it("updateExperience: throws NOT_FOUND for candidate of another company", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const exp = await db.experience.create({
+      data: {
+        candidateId: candidateB1Id,
+        title: "Dev",
+        company: "Other",
+        startDate: new Date("2020-01-01"),
+      },
+    });
+
+    await expect(
+      caller.candidate.updateExperience({
+        candidateId: candidateB1Id,
+        experienceId: exp.id,
+        title: "Updated",
+      }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+    await db.experience.delete({ where: { id: exp.id } });
+  });
+
+  it("updateExperience: throws NOT_FOUND if experience does not belong to candidate", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const exp = await db.experience.create({
+      data: {
+        candidateId: candidateA2Id,
+        title: "Designer",
+        company: "Studio",
+        startDate: new Date("2022-01-01"),
+      },
+    });
+
+    await expect(
+      caller.candidate.updateExperience({
+        candidateId: candidateA1Id,
+        experienceId: exp.id,
+        title: "Hacked",
+      }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+    await db.experience.delete({ where: { id: exp.id } });
+  });
+
+  it("deleteExperience: removes experience of own candidate", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const exp = await db.experience.create({
+      data: {
+        candidateId: candidateA1Id,
+        title: "To Delete",
+        company: "Tmp",
+        startDate: new Date("2020-01-01"),
+      },
+    });
+
+    const result = await caller.candidate.deleteExperience({
+      candidateId: candidateA1Id,
+      experienceId: exp.id,
+    });
+
+    expect(result.success).toBe(true);
+    const inDb = await db.experience.findUnique({ where: { id: exp.id } });
+    expect(inDb).toBeNull();
+  });
+
+  it("deleteExperience: throws NOT_FOUND for candidate of another company", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const exp = await db.experience.create({
+      data: {
+        candidateId: candidateB1Id,
+        title: "Dev",
+        company: "Other",
+        startDate: new Date("2020-01-01"),
+      },
+    });
+
+    await expect(
+      caller.candidate.deleteExperience({
+        candidateId: candidateB1Id,
+        experienceId: exp.id,
+      }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+    await db.experience.delete({ where: { id: exp.id } });
+  });
+
+  it("deleteExperience: throws NOT_FOUND if experience does not belong to candidate", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const exp = await db.experience.create({
+      data: {
+        candidateId: candidateA2Id,
+        title: "Designer",
+        company: "Studio",
+        startDate: new Date("2022-01-01"),
+      },
+    });
+
+    await expect(
+      caller.candidate.deleteExperience({
+        candidateId: candidateA1Id,
+        experienceId: exp.id,
+      }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+    await db.experience.delete({ where: { id: exp.id } });
+  });
+
+  it("getById: returns experiences ordered by startDate desc", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const [e1, e2] = await Promise.all([
+      db.experience.create({
+        data: {
+          candidateId: candidateA1Id,
+          title: "First",
+          company: "A",
+          startDate: new Date("2020-01-01"),
+          endDate: new Date("2021-12-01"),
+        },
+      }),
+      db.experience.create({
+        data: {
+          candidateId: candidateA1Id,
+          title: "Second",
+          company: "B",
+          startDate: new Date("2023-06-01"),
+          endDate: null,
+        },
+      }),
+    ]);
+
+    const result = await caller.candidate.getById({ id: candidateA1Id });
+    expect(result.experiences).toHaveLength(2);
+    expect(result.experiences[0].title).toBe("Second");
+    expect(result.experiences[1].title).toBe("First");
+
+    await db.experience.deleteMany({ where: { id: { in: [e1.id, e2.id] } } });
+  });
 });

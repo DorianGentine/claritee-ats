@@ -126,4 +126,40 @@ export const uploadPhotoSchema = z.object({
 
 export type UploadPhotoInput = z.infer<typeof uploadPhotoSchema>;
 
+/** Date optionnelle (premier jour du mois côté UI → DateTime en base). z.coerce.date() accepte Date ou chaîne ISO. */
+const optionalDate = z.coerce.date().optional().nullable();
+
+/** Schéma pour l'ajout d'une expérience professionnelle */
+export const addExperienceSchema = z.object({
+  candidateId: z.uuid(),
+  title: z.string().min(1, "Le titre est requis"),
+  company: z.string().min(1, "L'entreprise est requise"),
+  startDate: z.coerce.date(),
+  endDate: optionalDate,
+  description: z.string().max(2000).optional().nullable(),
+});
+
+export type AddExperienceInput = z.infer<typeof addExperienceSchema>;
+
+/** Schéma pour la mise à jour d'une expérience */
+export const updateExperienceSchema = z.object({
+  candidateId: z.uuid(),
+  experienceId: z.uuid(),
+  title: z.string().min(1, "Le titre est requis").optional(),
+  company: z.string().min(1, "L'entreprise est requise").optional(),
+  startDate: z.coerce.date().optional(),
+  endDate: optionalDate,
+  description: z.string().max(2000).optional().nullable(),
+});
+
+export type UpdateExperienceInput = z.infer<typeof updateExperienceSchema>;
+
+/** Schéma pour la suppression d'une expérience */
+export const deleteExperienceSchema = z.object({
+  candidateId: z.uuid(),
+  experienceId: z.uuid(),
+});
+
+export type DeleteExperienceInput = z.infer<typeof deleteExperienceSchema>;
+
 export { LIST_PAGE_SIZE };

@@ -7,6 +7,9 @@ import {
   updateCandidateSchema,
   addLanguageSchema,
   removeLanguageSchema,
+  addExperienceSchema,
+  updateExperienceSchema,
+  deleteExperienceSchema,
   PHOTO_ACCEPTED_MIMES,
   PHOTO_MAX_BYTES,
   uploadPhotoSchema,
@@ -107,7 +110,7 @@ export const candidateRouter = router({
       const candidate = await ctx.db.candidate.findFirst({
         where: { id: input.id, companyId: ctx.companyId },
         include: {
-          experiences: { orderBy: { order: "asc" } },
+          experiences: { orderBy: [{ endDate: "desc" }, { startDate: "desc" }] },
           formations: { orderBy: { order: "asc" } },
           languages: true,
           tags: { include: { tag: true } },
@@ -219,6 +222,88 @@ export const candidateRouter = router({
         throw new TRPCError({ code: "NOT_FOUND" });
       }
       await ctx.db.language.delete({ where: { id: input.languageId } });
+      return { success: true };
+    }),
+
+  /**
+   * Ajoute une expérience professionnelle à un candidat.
+   * Vérifie que le candidat appartient au cabinet. Expériences triées par startDate desc côté getById.
+   */
+  addExperience: protectedProcedure
+    .input(addExperienceSchema)
+    .mutation(async ({ ctx, input }) => {
+      const candidate = await ctx.db.candidate.findFirst({
+        where: { id: input.candidateId, companyId: ctx.companyId },
+      });
+      if (!candidate) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+      return ctx.db.experience.create({
+        data: {
+          candidateId: input.candidateId,
+          title: input.title,
+          company: input.company,
+          startDate: input.startDate,
+          endDate: input.endDate ?? null,
+          description: input.description ?? null,
+        },
+      });
+    }),
+
+  /**
+   * Met à jour une expérience d'un candidat.
+   * Vérifie que le candidat appartient au cabinet et que l'expérience lui est rattachée.
+   */
+  updateExperience: protectedProcedure
+    .input(updateExperienceSchema)
+    .mutation(async ({ ctx, input }) => {
+      const candidate = await ctx.db.candidate.findFirst({
+        where: { id: input.candidateId, companyId: ctx.companyId },
+      });
+      if (!candidate) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+      const experience = await ctx.db.experience.findFirst({
+        where: { id: input.experienceId, candidateId: input.candidateId },
+      });
+      if (!experience) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+      const { candidateId: _cid, experienceId, ...data } = input;
+      return ctx.db.experience.update({
+        where: { id: experienceId },
+        data: {
+          ...(data.title !== undefined && { title: data.title }),
+          ...(data.company !== undefined && { company: data.company }),
+          ...(data.startDate !== undefined && { startDate: data.startDate }),
+          ...(data.endDate !== undefined && { endDate: data.endDate }),
+          ...(data.description !== undefined && {
+            description: data.description,
+          }),
+        },
+      });
+    }),
+
+  /**
+   * Supprime une expérience d'un candidat.
+   * Vérifie que le candidat appartient au cabinet et que l'expérience lui est rattachée.
+   */
+  deleteExperience: protectedProcedure
+    .input(deleteExperienceSchema)
+    .mutation(async ({ ctx, input }) => {
+      const candidate = await ctx.db.candidate.findFirst({
+        where: { id: input.candidateId, companyId: ctx.companyId },
+      });
+      if (!candidate) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+      const experience = await ctx.db.experience.findFirst({
+        where: { id: input.experienceId, candidateId: input.candidateId },
+      });
+      if (!experience) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+      await ctx.db.experience.delete({ where: { id: input.experienceId } });
       return { success: true };
     }),
 

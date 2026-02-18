@@ -94,6 +94,7 @@ export const CandidateDetailView = ({ candidateId }: Props) => {
             summary={candidate.summary}
           />
           <CandidateDetailContent
+            candidateId={candidateId}
             experiences={candidate.experiences}
             formations={candidate.formations}
           />
