@@ -24,6 +24,8 @@ Les ATS existants sur le marché sont généralement trop chers, trop complexes 
 | 2026-01-24 | 1.1 | Added Data Model, User Flows, Testing Matrix, Observability, Error Messages | John (PM) |
 | 2026-02-14 | 1.2 | Repasse epics/stories : intégration livrables UX (wireframes, design-system) et Architecture ; références par epic et story ; Next Steps mis à jour | John (PM) |
 | 2026-02-14 | 1.3 | Alignement epics/stories avec doc architecture : rate limiting (Stories 1.3, 1.4, 2.3, 2.9, 4.4), références frontend-architecture, rate-limiting, coding-standards, source-tree, tech-stack ; a11y (Story 1.7) | John (PM) |
+| 2026-02-21 | 1.4 | Association offre d'emploi à un contact client (FR16b, modèle JobOffer + clientContactId, Stories 3.4 & 3.6) | John (PM) |
+| 2026-02-21 | 1.5 | Priorisation : Recherche (4.1, 4.2) et Notes (3.9, 3.11) avant Offres/Clients ; section Ordre de priorités, Next Steps | John (PM) |
 
 ---
 
@@ -62,6 +64,8 @@ Les ATS existants sur le marché sont généralement trop chers, trop complexes 
 **FR15:** Le système doit permettre l'ajout de contacts clients : nom, prénom, email, téléphone, poste, LinkedIn
 
 **FR16:** Le système doit permettre l'association d'une offre d'emploi à une entreprise cliente
+
+**FR16b:** Le système doit permettre l'association d'une offre d'emploi à un contact du client (optionnel)
 
 **FR17:** Le système doit permettre l'association candidat + offre d'emploi avec un statut parmi : "Contacté sur LinkedIn", "Contact téléphonique", "Postulé", "Accepté", "Refusé par l'employeur", "Rejeté par le candidat"
 
@@ -447,6 +451,7 @@ JobOffer
 ├── salaryMax (Int, nullable)
 ├── status (Enum: TODO, IN_PROGRESS, DONE)
 ├── clientCompanyId (FK → ClientCompany, nullable)
+├── clientContactId (FK → ClientContact, nullable)
 ├── companyId (FK → Company)
 ├── createdAt (DateTime)
 └── updatedAt (DateTime)
@@ -493,6 +498,7 @@ ShareLink
 - **Candidate ↔ JobOffer** : N-N via Candidature (avec statut)
 - **ClientCompany → ClientContacts** : 1-N
 - **ClientCompany → JobOffers** : 1-N (optionnel)
+- **JobOffer → ClientContact** : N-1 optionnel (contact référent pour l'offre)
 
 ---
 
@@ -519,6 +525,20 @@ Les epics et stories s’appuient sur les livrables suivants ; les critères d�
 | **Epic 2** | Gestion des Candidats | Permettre la création, consultation et gestion complète des fiches candidats avec expériences, formations, CV, tags et layout professionnel type CV |
 | **Epic 3** | Offres, Clients & Pipeline | Gérer les offres d'emploi et entreprises clientes, et permettre le suivi des candidats par offre avec statuts et notes partagées |
 | **Epic 4** | Recherche, Filtres & Partage | Implémenter la recherche/filtrage des candidats et offres, et permettre le partage de fiches candidats (normales et anonymisées) via URLs publiques |
+
+### Ordre de priorités de développement
+
+L'ordre de développement recommandé privilégie la **recherche** et la **gestion des notes** avant les onglets Offres et Clients :
+
+| Phase | Focus | Stories |
+|-------|-------|---------|
+| **1** | Foundation | Epic 1 (1.1 → 1.7) |
+| **2** | Candidats | Epic 2 (2.1 → 2.10) |
+| **3** | **Recherche & Notes** | 4.1 Barre de recherche globale, 4.2 Filtres liste candidats, 3.9 Notes sur candidats, 3.11 Note rapide FAB |
+| **4** | Offres, Clients & Pipeline | Epic 3 (3.1 → 3.8, 3.10) + 4.3 Filtres offres |
+| **5** | Partage & finalisation | 4.4 → 4.8 (Partage, Dashboard final, Paramètres) |
+
+*Les onglets Offres et Clients (3.1–3.8) peuvent être désactivés ou masqués en navigation tant que la phase 4 n’est pas engagée.*
 
 ---
 
@@ -982,15 +1002,16 @@ Permettre la gestion complète des offres d'emploi et des entreprises clientes, 
 **Acceptance Criteria:**
 
 1. "Nouvelle offre" opens creation form
-2. Form fields: title*, description (textarea), location, salaryMin, salaryMax, status, clientCompanyId
+2. Form fields: title*, description (textarea), location, salaryMin, salaryMax, status, clientCompanyId, clientContactId
 3. Client company dropdown populated from existing clients
-4. Option to create offer without client (client optional)
-5. Status dropdown: "À faire", "En cours", "Terminé" (default: "À faire")
-6. Salary fields accept numbers (€, annual)
-7. Description plain text (multi-line)
-8. Edit form pre-populates existing data
-9. Delete offer with confirmation (cascade deletes candidatures)
-10. Validation: title required
+4. Contact dropdown populated from contacts of selected client (optionnel ; si pas de client sélectionné, masqué ou vide)
+5. Option to create offer without client (client optional)
+6. Status dropdown: "À faire", "En cours", "Terminé" (default: "À faire")
+7. Salary fields accept numbers (€, annual)
+8. Description plain text (multi-line)
+9. Edit form pre-populates existing data
+10. Delete offer with confirmation (cascade deletes candidatures)
+11. Validation: title required (contact référent optionnel)
 
 **Réf.** Router `offer` (create, update, delete), schéma Prisma JobOffer, ClientCompany (optionnel).
 
@@ -1023,8 +1044,8 @@ Permettre la gestion complète des offres d'emploi et des entreprises clientes, 
 
 **Acceptance Criteria:**
 
-1. Offer detail page with header: title, status badge, client company (linked)
-2. Details section: description, location, salary range, tags
+1. Offer detail page with header: title, status badge, client company (linked), contact référent (si défini)
+2. Details section: description, location, salary range, tags, contact client (nom, email, téléphone avec lien copier)
 3. "Modifier" and "Supprimer" buttons
 4. **Candidats section:** List of candidates linked to this offer with their status
 5. Candidate entries show: photo, name, title, status badge
@@ -1358,6 +1379,7 @@ Les epics et stories ci-dessus référencent ces livrables ; le développement d
 
 ### Prochaines actions recommandées
 
-1. **Développement** : Démarrer par l'Epic 1 (Story 1.1 Project Setup) en suivant la structure `docs/architecture.md` §6 et le stack §2.
-2. **Critères d'acceptation** : Pour chaque story, vérifier la cohérence avec les sections « Réf. » (wireframes, design-system, architecture, frontend-architecture, rate-limiting, coding-standards).
-3. **Sharding optionnel** : Si besoin, utiliser la tâche `shard-doc` pour découper le PRD en sous-documents par epic.
+1. **Développement** : Suivre l’**ordre de priorités** (§ Epic List > Ordre de priorités) : Foundation → Candidats → **Recherche & Notes** → Offres/Clients → Partage. Démarrer par l’Epic 1 (Story 1.1) selon `docs/architecture.md` §6.
+2. **Phase Recherche & Notes (priorité)** : Implémenter 4.1, 4.2, 3.9, 3.11 avant d’attaquer les onglets Offres et Clients.
+3. **Critères d'acceptation** : Pour chaque story, vérifier la cohérence avec les sections « Réf. » (wireframes, design-system, architecture, frontend-architecture, rate-limiting, coding-standards).
+4. **Sharding optionnel** : Si besoin, utiliser la tâche `shard-doc` pour découper le PRD en sous-documents par epic.

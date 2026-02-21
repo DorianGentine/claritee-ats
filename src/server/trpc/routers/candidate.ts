@@ -196,19 +196,22 @@ export const candidateRouter = router({
     }),
 
   /**
-   * Met à jour les champs modifiables d'un candidat (ex. summary).
+   * Met à jour les champs modifiables d'un candidat (infos de base).
    * Vérifie que le candidat appartient au cabinet.
    */
   update: protectedProcedure
     .input(updateCandidateSchema)
     .mutation(async ({ ctx, input }) => {
-      const { id, ...data } = input;
+      const { id, ...rest } = input;
       const existing = await ctx.db.candidate.findFirst({
         where: { id, companyId: ctx.companyId },
       });
       if (!existing) {
         throw new TRPCError({ code: "NOT_FOUND" });
       }
+      const data = Object.fromEntries(
+        Object.entries(rest).filter(([, v]) => v !== undefined)
+      );
       return ctx.db.candidate.update({ where: { id }, data });
     }),
 
