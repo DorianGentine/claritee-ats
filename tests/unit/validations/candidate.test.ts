@@ -128,6 +128,65 @@ describe("candidate validations", () => {
   describe("updateCandidateSchema", () => {
     const validUuid = "550e8400-e29b-41d4-a716-446655440000";
 
+    it("accepts all base fields", () => {
+      const result = updateCandidateSchema.parse({
+        id: validUuid,
+        firstName: "Jean",
+        lastName: "Martin",
+        email: "jean@example.com",
+        phone: "06 12 34 56 78",
+        linkedinUrl: "https://linkedin.com/in/jeanmartin",
+        title: "Dev",
+        city: "Paris",
+        summary: "Profil senior",
+      });
+      expect(result.id).toBe(validUuid);
+      expect(result.firstName).toBe("Jean");
+      expect(result.lastName).toBe("Martin");
+      expect(result.email).toBe("jean@example.com");
+      expect(result.phone).toBe("06 12 34 56 78");
+      expect(result.linkedinUrl).toBe("https://linkedin.com/in/jeanmartin");
+      expect(result.title).toBe("Dev");
+      expect(result.city).toBe("Paris");
+      expect(result.summary).toBe("Profil senior");
+    });
+
+    it("accepts partial update (only some fields)", () => {
+      const result = updateCandidateSchema.parse({
+        id: validUuid,
+        firstName: "Jean-Pierre",
+      });
+      expect(result.firstName).toBe("Jean-Pierre");
+      expect(result.lastName).toBeUndefined();
+    });
+
+    it("validates email format when provided", () => {
+      expect(() =>
+        updateCandidateSchema.parse({
+          id: validUuid,
+          email: "invalid-email",
+        }),
+      ).toThrow();
+    });
+
+    it("validates LinkedIn URL format when provided", () => {
+      expect(() =>
+        updateCandidateSchema.parse({
+          id: validUuid,
+          linkedinUrl: "https://example.com/profile",
+        }),
+      ).toThrow();
+    });
+
+    it("validates phone format when provided", () => {
+      expect(() =>
+        updateCandidateSchema.parse({
+          id: validUuid,
+          phone: "123",
+        }),
+      ).toThrow();
+    });
+
     it("accepts valid summary", () => {
       const result = updateCandidateSchema.parse({
         id: validUuid,

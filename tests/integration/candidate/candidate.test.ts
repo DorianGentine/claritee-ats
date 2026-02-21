@@ -654,7 +654,58 @@ describe.runIf(!!connectionString)("candidate", () => {
     expect(stillExists).not.toBeNull();
   });
 
-  // ─── update (summary) ───
+  // ─── update (base fields) ───
+
+  it("update: updates all base fields for own candidate", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const result = await caller.candidate.update({
+      id: candidateA1Id,
+      firstName: "Alice-Updated",
+      lastName: "A1-Updated",
+      email: "alice@example.com",
+      phone: "06 99 88 77 66",
+      linkedinUrl: "https://linkedin.com/in/alice-a1",
+      title: "Senior Dev",
+      city: "Lyon",
+      summary: "Profil mis à jour via formulaire complet",
+    });
+
+    expect(result.firstName).toBe("Alice-Updated");
+    expect(result.lastName).toBe("A1-Updated");
+    expect(result.email).toBe("alice@example.com");
+    expect(result.phone).toBe("06 99 88 77 66");
+    expect(result.linkedinUrl).toBe("https://linkedin.com/in/alice-a1");
+    expect(result.title).toBe("Senior Dev");
+    expect(result.city).toBe("Lyon");
+    expect(result.summary).toBe("Profil mis à jour via formulaire complet");
+
+    const inDb = await db.candidate.findUniqueOrThrow({
+      where: { id: candidateA1Id },
+    });
+    expect(inDb.firstName).toBe("Alice-Updated");
+    expect(inDb.lastName).toBe("A1-Updated");
+    expect(inDb.email).toBe("alice@example.com");
+    expect(inDb.phone).toBe("06 99 88 77 66");
+    expect(inDb.title).toBe("Senior Dev");
+    expect(inDb.city).toBe("Lyon");
+    expect(inDb.summary).toBe("Profil mis à jour via formulaire complet");
+
+    await db.candidate.update({
+      where: { id: candidateA1Id },
+      data: {
+        firstName: "Alice",
+        lastName: "A1",
+        email: null,
+        phone: null,
+        linkedinUrl: null,
+        title: "Dev",
+        city: "Paris",
+        summary: null,
+      },
+    });
+  });
 
   it("update: updates summary for own candidate", async () => {
     const ctx = createContext(companyAId);

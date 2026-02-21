@@ -62,9 +62,24 @@ export const createCandidateSchema = z.object({
 
 export type CreateCandidateInput = z.infer<typeof createCandidateSchema>;
 
-/** Schéma pour la mise à jour partielle d'un candidat (summary, etc.) */
+/** Schéma pour la mise à jour partielle d'un candidat (champs de base) */
 export const updateCandidateSchema = z.object({
   id: z.uuid(),
+  firstName: z
+    .string()
+    .min(1, "Le prénom est requis")
+    .optional()
+    .transform(trimToUndefined),
+  lastName: z
+    .string()
+    .min(1, "Le nom est requis")
+    .optional()
+    .transform(trimToUndefined),
+  email: optionalEmail,
+  phone: optionalPhone,
+  linkedinUrl: optionalLinkedInUrl,
+  title: z.string().optional().transform(trimToUndefined),
+  city: z.string().optional().transform(trimToUndefined),
   summary: z
     .string()
     .max(500, "Le résumé ne peut pas dépasser 500 caractères")
