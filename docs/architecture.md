@@ -576,6 +576,10 @@ Si le projet devient soumis à des audits (ISO 27001, SOC2, audits clients, etc.
 - **Traçabilité des accès sensibles** : les opérations d'export et de suppression définitive doivent être tracées (qui, quand, type d'action, identifiant concerné si pertinent). Voir §10.4 « Traçabilité et responsabilité » ; en contexte d'audit, un journal dédié (table `AuditLog` ou équivalent) peut remplacer les seuls logs stdout.
 - **Périmètre** : pas d'obligation pour le MVP ; documenter ces attentes pour faciliter la montée en conformité si nécessaire.
 
+### 11.8 Améliorations possibles
+
+- **Recherche full-text (tsvector)** : l'implémentation actuelle utilise Prisma `OR` + `contains`/`ilike` sur les champs candidats et offres. Une variante avec **PostgreSQL tsvector** (colonnes GIN indexées, `to_tsvector`/`to_tsquery`) offrirait de meilleures performances et une pertinence renforcée sur de gros volumes, au prix d'une complexité accrue (colonnes dédiées, triggers de mise à jour, migration). Voir `docs/architecture/adr/0004-recherche-tsvector-vs-ilike.md` pour le raisonnement détaillé.
+
 ---
 
 ## 12. Fichiers de référence à créer/maintenir

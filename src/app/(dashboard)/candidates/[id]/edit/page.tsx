@@ -3,7 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import type { FieldErrors, Resolver, UseFormRegister } from "react-hook-form";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { z } from "zod";
@@ -86,7 +86,7 @@ export default function EditCandidatePage() {
   const {
     register,
     handleSubmit,
-    watch,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<EditFormValues>({
     resolver: zodResolver(editFormSchema) as Resolver<EditFormValues>,
@@ -114,8 +114,8 @@ export default function EditCandidatePage() {
     },
   });
 
-  const firstName = watch("firstName");
-  const lastName = watch("lastName");
+  const firstName = useWatch({ control, name: "firstName" });
+  const lastName = useWatch({ control, name: "lastName" });
   const displayInitials = getCandidateInitials(firstName ?? "?", lastName ?? "?");
 
   const onSubmit = async (data: EditFormValues): Promise<void> => {

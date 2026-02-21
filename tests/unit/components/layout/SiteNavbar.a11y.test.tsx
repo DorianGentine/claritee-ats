@@ -37,6 +37,11 @@ vi.mock("@/lib/trpc/client", () => ({
         useQuery: () => ({ data: { id: "c1", name: "Cabinet Test" }, isLoading: false }),
       },
     },
+    search: {
+      search: {
+        useQuery: () => ({ data: { candidates: [], offers: [] }, isLoading: false }),
+      },
+    },
   },
 }));
 

@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { FieldErrors, UseFormRegister } from "react-hook-form";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   createCandidateSchema,
@@ -67,7 +67,7 @@ export default function NewCandidatePage() {
   const {
     register,
     handleSubmit,
-    watch,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<NewCandidateFormValues>({
     resolver: zodResolver(createCandidateSchema),
@@ -82,8 +82,8 @@ export default function NewCandidatePage() {
     },
   });
 
-  const firstName = watch("firstName");
-  const lastName = watch("lastName");
+  const firstName = useWatch({ control, name: "firstName" });
+  const lastName = useWatch({ control, name: "lastName" });
   const displayInitials = getCandidateInitials(firstName || "?", lastName || "?");
 
   const onSubmit = async (data: NewCandidateFormValues) => {

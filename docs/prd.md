@@ -1178,11 +1178,11 @@ Implémenter la recherche globale et les filtres avancés pour retrouver rapidem
 
 **Acceptance Criteria:**
 
-1. Search bar in navigation header, visible on all pages
-2. Search icon + input field (expandable or always visible)
+1. Search trigger in navigation header (icon), visible on all pages
+2. Clic on icon or Cmd/Ctrl+K opens modal with search input (expandable)
 3. Search queries candidates by: firstName, lastName, title, summary
 4. Search queries offers by: title, description
-5. Results displayed in dropdown as user types (debounced, 300ms)
+5. Results displayed in modal as user types (debounced, 300ms)
 6. Results grouped by type: "Candidats", "Offres"
 7. Each result shows: name/title, subtitle (title for candidate, client for offer)
 8. Click result navigates to detail page
@@ -1191,7 +1191,7 @@ Implémenter la recherche globale et les filtres avancés pour retrouver rapidem
 11. Empty state: "Aucun résultat pour '[query]'"
 12. Minimum 2 characters to trigger search
 
-**Réf.** Wireframes « Barre de recherche (Cmd+K) » (résultats groupés Candidats / Offres, lien « Voir tous les résultats ») ; Design System (champ recherche, debounce 300ms).
+**Réf.** Wireframes « Barre de recherche (Cmd+K) » ; implémentation : icône trigger, modal centrée ancrée en haut, résultats groupés Candidats / Offres, lien « Voir tous les résultats » accessible clavier ; Design System (champ recherche, debounce 300ms).
 
 ### Story 4.2: Candidate List Filters
 
@@ -1357,6 +1357,12 @@ Implémenter la recherche globale et les filtres avancés pour retrouver rapidem
 ## Améliorations Post MVP
 
 Les points ci-dessous sont hors périmètre du MVP mais documentés pour les évolutions futures.
+
+### Historique de recherche (style Notion)
+
+- **Affichage de l’historique de recherche dans la modal de recherche globale**  
+  Inspiré de Notion : dans la grande modal de recherche (ancrée en haut de l'écran à 20vh), afficher les recherches récentes (ex. « 30 derniers jours », « Plus ancien ») lorsque l’utilisateur n’a pas encore saisi de requête ou lorsqu’il n’y a pas de résultats.  
+  *Prérequis :* persister les recherches par utilisateur/cabinet (table `SearchHistory` ou similaire), API pour récupérer l’historique, affichage dans la modal avant les résultats live.
 
 ### Rôles et permissions
 

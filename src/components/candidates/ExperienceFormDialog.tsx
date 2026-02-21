@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, useWatch, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { api } from "@/lib/trpc/client";
@@ -100,7 +100,6 @@ export const ExperienceFormDialog = ({
     handleSubmit,
     control,
     reset,
-    watch,
     setValue,
     formState: { errors },
   } = useForm<ExperienceFormValues>({
@@ -108,7 +107,7 @@ export const ExperienceFormDialog = ({
     defaultValues,
   });
 
-  const isCurrentJob = watch("isCurrentJob");
+  const isCurrentJob = useWatch({ control, name: "isCurrentJob", defaultValue: true });
 
   useEffect(() => {
     if (isCurrentJob) {

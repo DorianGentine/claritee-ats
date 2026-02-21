@@ -122,8 +122,9 @@ export const createExampleSchema = z.object({
 
 - **Composants UI** : shadcn/ui dans `src/components/ui/` ; ne pas modifier le code généré sans raison. Composants métier et layout dans `src/components/` (sous-dossiers par domaine si besoin).
 - **DRY — composants partagés** : éviter la duplication. Dès qu'un bloc de JSX ou une logique est réutilisé (2ᵉ occurrence), l'extraire dans un composant partagé (`components/shared/` ou domaine) ou un hook (`hooks/`). Ne pas copier-coller des patterns de loading/erreur/empty state entre pages. Détail : `docs/frontend-architecture.md` §4.4.
-- **Apostrophes en JSX/HTML** : ne pas utiliser `&apos;` inutilement ; utiliser directement `'` (apostrophe droite). L'entité HTML n'est pas nécessaire dans les chaînes JSX ni dans la plupart des attributs.
+- **Apostrophes et guillemets en JSX/HTML** : ne pas utiliser `&apos;` ni `&quot;` inutilement ; utiliser directement `'` (apostrophe) et `"` (guillemets doubles) dans le contenu textuel JSX. Les entités HTML ne sont pas nécessaires pour ces caractères.
 - **Styles** : **Tailwind CSS** + variables CSS du design-system (`docs/design-system.md`). Pas de CSS inline arbitraire pour les couleurs ; utiliser les tokens (e.g. `bg-primary`, `text-muted-foreground`).
+- **Variables CSS dans Tailwind** : utiliser la syntaxe courte pour les variables CSS. Par ex. `w-(--radix-popover-trigger-width)` plutôt que `w-[var(--radix-popover-trigger-width)]`. S’applique à toute propriété utilisant `var(--...)`.
 - **État serveur** : **TanStack Query** (v5) pour cache et mutations. Stale time et invalidation cohérentes avec l'usage (listes vs détail).
 - **Formulaires** : **React Hook Form** + Zod pour la validation partagée.
 
@@ -176,4 +177,4 @@ export const createExampleSchema = z.object({
 
 ---
 
-*Dernière mise à jour : 2026-02-19. Aligné avec `docs/architecture.md`, `docs/design-system.md` et `docs/frontend-architecture.md`.*
+*Dernière mise à jour : 2026-02-21. Aligné avec `docs/architecture.md`, `docs/design-system.md` et `docs/frontend-architecture.md`.*
