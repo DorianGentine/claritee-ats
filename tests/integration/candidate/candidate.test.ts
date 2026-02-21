@@ -1001,4 +1001,270 @@ describe.runIf(!!connectionString)("candidate", () => {
 
     await db.formation.deleteMany({ where: { id: { in: [f1.id, f2.id] } } });
   });
+
+  // ─── addTag / removeTag ───
+
+  it("addTag: creates new tag and links to candidate when tag does not exist", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const result = await caller.candidate.addTag({
+      candidateId: candidateA1Id,
+      tagName: "Python",
+    });
+
+    expect(result.tag.id).toBeDefined();
+    expect(result.tag.name).toBe("Python");
+    expect(result.tag.color).toMatch(/^#[0-9A-Fa-f]{6}$/);
+    expect(result.tag.companyId).toBe(companyAId);
+
+    const inDb = await db.candidateTag.findUnique({
+      where: {
+        candidateId_tagId: {
+          candidateId: candidateA1Id,
+          tagId: result.tag.id,
+        },
+      },
+    });
+    expect(inDb).not.toBeNull();
+
+    await db.candidateTag.delete({
+      where: {
+        candidateId_tagId: {
+          candidateId: candidateA1Id,
+          tagId: result.tag.id,
+        },
+      },
+    });
+    await db.tag.delete({ where: { id: result.tag.id } });
+  });
+
+  it("addTag: returns tag when candidate already has this tag (idempotent)", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const tag = await db.tag.create({
+      data: {
+        name: `Idempotent-${Date.now()}`,
+        color: "#9B8BA8",
+        companyId: companyAId,
+      },
+    });
+    await db.candidateTag.create({
+      data: { candidateId: candidateA1Id, tagId: tag.id },
+    });
+
+    const result = await caller.candidate.addTag({
+      candidateId: candidateA1Id,
+      tagName: tag.name,
+    });
+
+    expect(result.tag.id).toBe(tag.id);
+    const linkCount = await db.candidateTag.count({
+      where: { candidateId: candidateA1Id, tagId: tag.id },
+    });
+    expect(linkCount).toBe(1);
+
+    await db.candidateTag.delete({
+      where: {
+        candidateId_tagId: { candidateId: candidateA1Id, tagId: tag.id },
+      },
+    });
+    await db.tag.delete({ where: { id: tag.id } });
+  });
+
+  it("addTag: reuses existing tag when tag exists for company", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const existingTag = await db.tag.create({
+      data: {
+        name: "React",
+        color: "#9B8BA8",
+        companyId: companyAId,
+      },
+    });
+
+    const result = await caller.candidate.addTag({
+      candidateId: candidateA1Id,
+      tagName: "React",
+    });
+
+    expect(result.tag.id).toBe(existingTag.id);
+    expect(result.tag.name).toBe("React");
+
+    const count = await db.tag.count({
+      where: { name: "React", companyId: companyAId },
+    });
+    expect(count).toBe(1);
+
+    await db.candidateTag.delete({
+      where: {
+        candidateId_tagId: {
+          candidateId: candidateA1Id,
+          tagId: existingTag.id,
+        },
+      },
+    });
+    await db.tag.delete({ where: { id: existingTag.id } });
+  });
+
+  it("addTag: trims tagName", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const result = await caller.candidate.addTag({
+      candidateId: candidateA1Id,
+      tagName: "  TypeScript  ",
+    });
+
+    expect(result.tag.name).toBe("TypeScript");
+
+    await db.candidateTag.delete({
+      where: {
+        candidateId_tagId: {
+          candidateId: candidateA1Id,
+          tagId: result.tag.id,
+        },
+      },
+    });
+    await db.tag.delete({ where: { id: result.tag.id } });
+  });
+
+  it("addTag: throws BAD_REQUEST when candidate has 20 tags", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const tags = await Promise.all(
+      Array.from({ length: 20 }, (_, i) =>
+        db.tag.create({
+          data: {
+            name: `Tag-${i}-${Date.now()}`,
+            color: "#D4A5A5",
+            companyId: companyAId,
+          },
+        }),
+      ),
+    );
+    await db.candidateTag.createMany({
+      data: tags.map((t) => ({
+        candidateId: candidateA1Id,
+        tagId: t.id,
+      })),
+    });
+
+    await expect(
+      caller.candidate.addTag({
+        candidateId: candidateA1Id,
+        tagName: "Extra",
+      }),
+    ).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+      message:
+        "Maximum 20 tags par élément. Supprimez un tag existant pour en ajouter un nouveau.",
+    });
+
+    await db.candidateTag.deleteMany({
+      where: { candidateId: candidateA1Id, tagId: { in: tags.map((t) => t.id) } },
+    });
+    await db.tag.deleteMany({
+      where: { id: { in: tags.map((t) => t.id) } },
+    });
+  });
+
+  it("addTag: throws NOT_FOUND for candidate of another company", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    await expect(
+      caller.candidate.addTag({
+        candidateId: candidateB1Id,
+        tagName: "Python",
+      }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+
+  it("removeTag: removes tag from candidate", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const tag = await db.tag.create({
+      data: {
+        name: `ToRemove-${Date.now()}`,
+        color: "#D4A5A5",
+        companyId: companyAId,
+      },
+    });
+    await db.candidateTag.create({
+      data: { candidateId: candidateA1Id, tagId: tag.id },
+    });
+
+    const result = await caller.candidate.removeTag({
+      candidateId: candidateA1Id,
+      tagId: tag.id,
+    });
+
+    expect(result.success).toBe(true);
+
+    const inDb = await db.candidateTag.findUnique({
+      where: {
+        candidateId_tagId: { candidateId: candidateA1Id, tagId: tag.id },
+      },
+    });
+    expect(inDb).toBeNull();
+
+    await db.tag.delete({ where: { id: tag.id } });
+  });
+
+  it("removeTag: throws NOT_FOUND for candidate of another company", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const tag = await db.tag.create({
+      data: {
+        name: `CompanyB-${Date.now()}`,
+        color: "#D4A5A5",
+        companyId: companyBId,
+      },
+    });
+    await db.candidateTag.create({
+      data: { candidateId: candidateB1Id, tagId: tag.id },
+    });
+
+    await expect(
+      caller.candidate.removeTag({
+        candidateId: candidateB1Id,
+        tagId: tag.id,
+      }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+    await db.candidateTag.delete({
+      where: {
+        candidateId_tagId: { candidateId: candidateB1Id, tagId: tag.id },
+      },
+    });
+    await db.tag.delete({ where: { id: tag.id } });
+  });
+
+  it("removeTag: throws NOT_FOUND when tag is not linked to candidate", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const tag = await db.tag.create({
+      data: {
+        name: `Orphan-${Date.now()}`,
+        color: "#D4A5A5",
+        companyId: companyAId,
+      },
+    });
+
+    await expect(
+      caller.candidate.removeTag({
+        candidateId: candidateA1Id,
+        tagId: tag.id,
+      }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+    await db.tag.delete({ where: { id: tag.id } });
+  });
 });

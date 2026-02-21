@@ -16,7 +16,13 @@ import {
   PHOTO_ACCEPTED_MIMES,
   PHOTO_MAX_BYTES,
   uploadPhotoSchema,
-} from "@/lib/validations/candidate";
+} from "@/lib/validations/candidate"
+import {
+  addTagSchema,
+  removeTagSchema,
+  MAX_TAGS_PER_CANDIDATE,
+} from "@/lib/validations/tag"
+import { getTagColor } from "@/lib/tag-colors"
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -387,6 +393,96 @@ export const candidateRouter = router({
         throw new TRPCError({ code: "NOT_FOUND" });
       }
       await ctx.db.formation.delete({ where: { id: input.formationId } });
+      return { success: true };
+    }),
+
+  /**
+   * Ajoute un tag à un candidat.
+   * Si le tag n'existe pas pour le cabinet, le crée avec une couleur issue de la palette.
+   * Max 20 tags par candidat.
+   */
+  addTag: protectedProcedure
+    .input(addTagSchema)
+    .mutation(async ({ ctx, input }) => {
+      const candidate = await ctx.db.candidate.findFirst({
+        where: { id: input.candidateId, companyId: ctx.companyId },
+        include: { tags: true },
+      });
+      if (!candidate) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+      if (candidate.tags.length >= MAX_TAGS_PER_CANDIDATE) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            "Maximum 20 tags par élément. Supprimez un tag existant pour en ajouter un nouveau.",
+        });
+      }
+      const tagName = input.tagName;
+      let tag = await ctx.db.tag.findUnique({
+        where: {
+          name_companyId: { name: tagName, companyId: ctx.companyId },
+        },
+      });
+      if (!tag) {
+        tag = await ctx.db.tag.create({
+          data: {
+            name: tagName,
+            color: getTagColor(tagName),
+            companyId: ctx.companyId,
+          },
+        });
+      }
+      const existingLink = await ctx.db.candidateTag.findUnique({
+        where: {
+          candidateId_tagId: {
+            candidateId: input.candidateId,
+            tagId: tag.id,
+          },
+        },
+      });
+      if (existingLink) {
+        return { tag };
+      }
+      await ctx.db.candidateTag.create({
+        data: { candidateId: input.candidateId, tagId: tag.id },
+      });
+      return { tag };
+    }),
+
+  /**
+   * Supprime un tag d'un candidat.
+   * Vérifie que le candidat appartient au cabinet et que le tag lui est associé.
+   */
+  removeTag: protectedProcedure
+    .input(removeTagSchema)
+    .mutation(async ({ ctx, input }) => {
+      const candidate = await ctx.db.candidate.findFirst({
+        where: { id: input.candidateId, companyId: ctx.companyId },
+      });
+      if (!candidate) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+      const existing = await ctx.db.candidateTag.findUnique({
+        where: {
+          candidateId_tagId: {
+            candidateId: input.candidateId,
+            tagId: input.tagId,
+          },
+        },
+        include: { tag: true },
+      });
+      if (!existing || existing.tag.companyId !== ctx.companyId) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+      await ctx.db.candidateTag.delete({
+        where: {
+          candidateId_tagId: {
+            candidateId: input.candidateId,
+            tagId: input.tagId,
+          },
+        },
+      });
       return { success: true };
     }),
 
