@@ -15,6 +15,7 @@ Ce document décrit l'architecture technique complète du projet **Claritee ATS*
 | 2026-02-14 | 1.0     | Création architecture initiale | Architect |
 | 2026-02-17 | 1.1     | Ajout principes DRY et composants partagés | - |
 | 2026-02-19 | 1.2     | Ajout convention point-virgule (pas de ; si inutile) | - |
+| 2026-02-21 | 1.3     | TanStack Query : staleTime 5 minutes, convention isLoading (pas isFetching) pour skeletons | - |
 
 ---
 
@@ -363,8 +364,8 @@ Pour les composants client qui doivent afficher l'état de connexion (ex. `SiteN
 
 ### 8.1 Buckets
 
-- **`photos`** : photos candidats (JPG, PNG, WebP ; max 2 Mo).
-- **`cvs`** : CV (PDF, DOC, DOCX ; max 5 Mo).
+- **`photos`** : photos candidats (JPG, PNG, WebP ; max 2 Mo). Bucket **public** ; URLs directes utilisables.
+- **`cvs`** : CV (PDF, DOC, DOCX ; max 5 Mo). Bucket **privé** ; accès via URLs signées à la demande (cf. §8.5).
 
 ### 8.2 Structure par company
 
@@ -376,16 +377,25 @@ Cela permet des policies Storage par `companyId` (prefix) et évite les collisio
 
 ### 8.3 Policies Storage (concept)
 
-- Lecture : utilisateur authentifié dont le `companyId` correspond au préfixe du chemin.
-- Écriture : idem (upload limité aux chemins de sa company).
-- Suppression : idem.
+- **Bucket photos** (public) : policies SELECT publiques ou par chemin selon besoin.
+- **Bucket cvs** (privé) : policies SELECT restreintes (utilisateur authentifié + `companyId` dans le chemin). L'API utilise le service role pour upload/suppression ; le téléchargement passe par des URLs signées générées côté serveur.
 
-Les policies Supabase Storage se définissent par bucket et par opération (SELECT = read, INSERT = upload, etc.) en fonction du chemin et du `company_id` de l’utilisateur (récupéré via une table ou JWT custom si besoin).
+Les policies Supabase Storage se définissent par bucket et par opération (SELECT, INSERT, DELETE) en fonction du chemin et du `company_id` de l’utilisateur (récupéré via la table `User`).
 
 ### 8.4 URLs en base
 
-- `Candidate.photoUrl` : URL signée ou publique Supabase (après upload).
-- `Candidate.cvUrl` : idem pour le CV.
+- `Candidate.photoUrl` : URL publique Supabase (après upload) ; lien direct utilisable.
+- `Candidate.cvUrl` : URL de référence stockée (générée par `getPublicUrl` à l'upload). Avec un bucket privé, cette URL ne permet pas l'accès direct ; le téléchargement réel passe par les procédures d'URLs signées (§8.5).
+
+### 8.5 Téléchargement des CVs (bucket privé)
+
+Les CVs sont des données personnelles sensibles. L'approche retenue est un **bucket privé** avec **URLs signées** à la demande :
+
+- **Upload / suppression** : via `uploadCv` et `deleteCv` (service role ; contourne les policies Storage).
+- **Téléchargement** : au clic de l'utilisateur, l'app appelle `getCvDownloadUrl` (fiche candidat authentifiée) ou `getCvDownloadUrlByShareToken` (page partagée publique) ; la procédure génère une URL signée (durée de vie 15 min) et la retourne au client.
+- **Cache client** : le hook `useCvDownloadUrl` met en cache l'URL signée 14 min pour limiter les appels répétés.
+- **Contexte page partagée** : la procédure `getCvDownloadUrlByShareToken` valide le token et l'expiration du ShareLink ; rate limit 30 req/min par IP.
+- **Configuration** : voir `docs/supabase-cvs-bucket-config-prompt.md` pour la création et les policies du bucket `cvs`.
 
 ---
 
@@ -418,7 +428,7 @@ Chaque router utilise des schémas Zod (depuis `src/lib/validations/`) pour les 
 
 - **Cible :** premier chargement < 3 s, réponse API < 500 ms (P95).
 - **DB :** index sur `(companyId, createdAt)` (ou id) pour listes ; index sur `Candidate` (recherche nom, titre, résumé) si recherche full-text ou LIKE.
-- **Frontend :** TanStack Query (staleTime approprié), lazy loading des routes, images optimisées (Next.js Image + URLs Supabase).
+- **Frontend :** TanStack Query (staleTime 5 minutes par défaut, voir `docs/frontend-architecture.md` §3.1.1), lazy loading des routes, images optimisées (Next.js Image + URLs Supabase). Skeleton : utiliser `isLoading` uniquement, pas `isFetching` (évite les flashes lors de la navigation).
 - **Vercel :** utiliser les régions proches du projet Supabase (ex. EU).
 
 #### 10.2.1 Performance du serveur de développement (Turbopack)

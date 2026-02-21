@@ -3,20 +3,31 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import { appRouter } from "@/server/trpc/routers/_app";
 import type { Context } from "@/server/trpc/context";
-import { PHOTO_MAX_BYTES } from "@/lib/validations/candidate";
+import {
+  PHOTO_MAX_BYTES,
+  CV_MAX_BYTES,
+} from "@/lib/validations/candidate";
 
 const connectionString = process.env.DATABASE_URL;
 
 vi.mock("@/lib/supabase/admin", () => ({
   createAdminClient: () => ({
     storage: {
-      from: () => ({
+      from: (bucket: string) => ({
         upload: () => Promise.resolve({ error: null }),
+        remove: () => Promise.resolve({ error: null }),
         getPublicUrl: (path: string) => ({
           data: {
-            publicUrl: `https://storage.example.com/photos/${path}`,
+            publicUrl: `https://storage.example.com/${bucket}/${path}`,
           },
         }),
+        createSignedUrl: (path: string) =>
+          Promise.resolve({
+            data: {
+              signedUrl: `https://storage.example.com/${bucket}/${path}?signed`,
+            },
+            error: null,
+          }),
       }),
     },
   }),
@@ -310,6 +321,266 @@ describe.runIf(!!connectionString)("candidate", () => {
     ).rejects.toMatchObject({
       code: "BAD_REQUEST",
       message: expect.stringContaining("Format de fichier non supporté"),
+    });
+  });
+
+  // ─── uploadCv / deleteCv ───
+
+  /** Minimal valid PDF (%PDF) */
+  const minimalPdfBase64 = Buffer.from([0x25, 0x50, 0x44, 0x46, ...Array(20).fill(0)]).toString("base64");
+
+  it("uploadCv: updates Candidate.cvUrl and cvFileName after upload", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const result = await caller.candidate.uploadCv({
+      candidateId: candidateA2Id,
+      fileBase64: minimalPdfBase64,
+      mimeType: "application/pdf",
+      fileName: "Mon CV.pdf",
+    });
+
+    expect(result.cvUrl).toContain(
+      `https://storage.example.com/cvs/${companyAId}/candidates/${candidateA2Id}/cv.pdf`,
+    );
+    expect(result.cvFileName).toBe("Mon CV.pdf");
+
+    const inDb = await db.candidate.findUniqueOrThrow({
+      where: { id: candidateA2Id },
+    });
+    expect(inDb.cvUrl).toBe(result.cvUrl);
+    expect(inDb.cvFileName).toBe("Mon CV.pdf");
+
+    await db.candidate.update({
+      where: { id: candidateA2Id },
+      data: { cvUrl: null, cvFileName: null },
+    });
+  });
+
+  it("uploadCv: replaces existing CV (upsert)", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    await caller.candidate.uploadCv({
+      candidateId: candidateA2Id,
+      fileBase64: minimalPdfBase64,
+      mimeType: "application/pdf",
+      fileName: "v1.pdf",
+    });
+
+    const result = await caller.candidate.uploadCv({
+      candidateId: candidateA2Id,
+      fileBase64: minimalPdfBase64,
+      mimeType: "application/pdf",
+      fileName: "v2.pdf",
+    });
+
+    expect(result.cvFileName).toBe("v2.pdf");
+    const inDb = await db.candidate.findUniqueOrThrow({
+      where: { id: candidateA2Id },
+    });
+    expect(inDb.cvFileName).toBe("v2.pdf");
+
+    await db.candidate.update({
+      where: { id: candidateA2Id },
+      data: { cvUrl: null, cvFileName: null },
+    });
+  });
+
+  it("uploadCv: rejects file exceeding 5 MB with PRD message", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+    const oversizedBuffer = Buffer.alloc(CV_MAX_BYTES + 1, "x");
+    const oversizedBase64 = oversizedBuffer.toString("base64");
+
+    await expect(
+      caller.candidate.uploadCv({
+        candidateId: candidateA2Id,
+        fileBase64: oversizedBase64,
+        mimeType: "application/pdf",
+        fileName: "big.pdf",
+      }),
+    ).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+      message: expect.stringContaining(
+        "Le fichier dépasse la taille maximale autorisée (2 Mo pour les photos, 5 Mo pour les CVs)",
+      ),
+    });
+  });
+
+  it("uploadCv: rejects invalid mime type with PRD message", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    await expect(
+      caller.candidate.uploadCv({
+        candidateId: candidateA2Id,
+        fileBase64: minimalPdfBase64,
+        mimeType: "text/plain" as "application/pdf",
+        fileName: "doc.txt",
+      }),
+    ).rejects.toThrow(/Format de fichier non supporté/);
+  });
+
+  it("uploadCv: rejects PDF mimeType with non-PDF content (magic bytes)", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+    const notPdfBase64 = Buffer.from("not a pdf").toString("base64");
+
+    await expect(
+      caller.candidate.uploadCv({
+        candidateId: candidateA2Id,
+        fileBase64: notPdfBase64,
+        mimeType: "application/pdf",
+        fileName: "fake.pdf",
+      }),
+    ).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+      message: expect.stringContaining("Format de fichier non supporté"),
+    });
+  });
+
+  it("uploadCv: throws NOT_FOUND when candidate belongs to another company", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    await expect(
+      caller.candidate.uploadCv({
+        candidateId: candidateB1Id,
+        fileBase64: minimalPdfBase64,
+        mimeType: "application/pdf",
+        fileName: "cv.pdf",
+      }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+
+  it("deleteCv: clears cvUrl and cvFileName", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    await caller.candidate.uploadCv({
+      candidateId: candidateA2Id,
+      fileBase64: minimalPdfBase64,
+      mimeType: "application/pdf",
+      fileName: "to-delete.pdf",
+    });
+
+    const result = await caller.candidate.deleteCv({ candidateId: candidateA2Id });
+    expect(result.success).toBe(true);
+
+    const inDb = await db.candidate.findUniqueOrThrow({
+      where: { id: candidateA2Id },
+    });
+    expect(inDb.cvUrl).toBeNull();
+    expect(inDb.cvFileName).toBeNull();
+  });
+
+  it("deleteCv: succeeds when no CV present (idempotent)", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const result = await caller.candidate.deleteCv({ candidateId: candidateA2Id });
+    expect(result.success).toBe(true);
+  });
+
+  it("deleteCv: throws NOT_FOUND when candidate belongs to another company", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    await expect(
+      caller.candidate.deleteCv({ candidateId: candidateB1Id }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+
+  it("getCvDownloadUrl: returns signed URL for own candidate with CV", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    await caller.candidate.uploadCv({
+      candidateId: candidateA2Id,
+      fileBase64: minimalPdfBase64,
+      mimeType: "application/pdf",
+      fileName: "cv.pdf",
+    });
+
+    const result = await caller.candidate.getCvDownloadUrl({
+      candidateId: candidateA2Id,
+    });
+    expect(result.url).toContain(
+      `https://storage.example.com/cvs/${companyAId}/candidates/${candidateA2Id}/cv.pdf?signed`,
+    );
+
+    await db.candidate.update({
+      where: { id: candidateA2Id },
+      data: { cvUrl: null, cvFileName: null },
+    });
+  });
+
+  it("getCvDownloadUrl: throws NOT_FOUND when no CV", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    await expect(
+      caller.candidate.getCvDownloadUrl({ candidateId: candidateA2Id }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+
+  it("getCvDownloadUrl: throws NOT_FOUND for candidate of another company", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    await expect(
+      caller.candidate.getCvDownloadUrl({ candidateId: candidateB1Id }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+
+  it("getCvDownloadUrlByShareToken: throws NOT_FOUND when token expired", async () => {
+    const shareLink = await db.shareLink.create({
+      data: {
+        candidateId: candidateA2Id,
+        token: `expired-${Date.now()}`,
+        type: "NORMAL",
+        expiresAt: new Date(Date.now() - 60000),
+      },
+    });
+    const publicCtx = createContext(null);
+    const publicCaller = appRouter.createCaller(publicCtx);
+
+    await expect(
+      publicCaller.candidate.getCvDownloadUrlByShareToken({
+        token: shareLink.token,
+      }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+    await db.shareLink.delete({ where: { id: shareLink.id } });
+  });
+
+  it("getCvDownloadUrlByShareToken: returns signed URL when token valid", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+    await caller.candidate.uploadCv({
+      candidateId: candidateA2Id,
+      fileBase64: minimalPdfBase64,
+      mimeType: "application/pdf",
+      fileName: "cv.pdf",
+    });
+    const shareLink = await db.shareLink.create({
+      data: {
+        candidateId: candidateA2Id,
+        token: `share-${Date.now()}`,
+        type: "NORMAL",
+      },
+    });
+    const publicCtx = createContext(null);
+    const publicCaller = appRouter.createCaller(publicCtx);
+    const result = await publicCaller.candidate.getCvDownloadUrlByShareToken({
+      token: shareLink.token,
+    });
+    expect(result.url).toContain("cv.pdf?signed");
+    await db.shareLink.delete({ where: { id: shareLink.id } });
+    await db.candidate.update({
+      where: { id: candidateA2Id },
+      data: { cvUrl: null, cvFileName: null },
     });
   });
 

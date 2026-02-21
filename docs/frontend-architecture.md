@@ -60,6 +60,14 @@ Référence structure : `docs/architecture/source-tree.md` et `docs/architecture
 - **Stale time** : adapter par type (ex. listes 30–60 s, détail candidat 1–2 min) ; invalidation après mutations (create/update/delete).
 - Les mutations utilisent les hooks tRPC (`useMutation`) et invalident les queries concernées (ex. `utils.candidate.list.invalidate()`).
 
+#### 3.1.1 Configuration du QueryClient (staleTime)
+
+Le QueryClient est configuré dans `src/components/providers.tsx` avec un **staleTime par défaut** (actuellement 5 min) :
+
+- **Objectif** : éviter les refetch inutiles lors des navigations ou du retour sur l'onglet du site.
+- **Comportement** : tant que les données sont « fraîches » (< 5 minutes), TanStack Query ne relance pas de requête au remount du composant ni au focus de la fenêtre.
+- **Personnalisation** : pour une query donnée, on peut surcharger le staleTime (ex. `candidate.getById` à 2 min via l'option `staleTime` du hook).
+
 ### 3.2 État local UI
 
 - État de formulaire : **React Hook Form** (pas de duplication dans React state).
@@ -168,6 +176,8 @@ Référence : `docs/architecture/source-tree.md` et `docs/architecture/coding-st
 - **Hooks** : `trpc.candidate.list.useQuery()`, `trpc.candidate.create.useMutation()`, etc. ; types inférés automatiquement.
 - **Erreurs** : afficher les messages génériques côté UI (voir PRD « Standard Error Messages ») ; ne pas exposer le détail technique (aligné avec `docs/architecture.md` §10.1).
 - **Loading / erreur** : gérer `isLoading` / `isError` et `error.message` dans chaque page ou composant de liste/détail ; toasts pour les erreurs de mutation.
+
+**Convention loading (skeleton)** : utiliser uniquement `isLoading` pour afficher un skeleton, **jamais** `isFetching`. `isFetching` est vrai pendant tout refetch (y compris en arrière-plan quand des données sont déjà en cache) ; l'utiliser provoquerait un flash de skeleton à chaque navigation ou retour sur l'onglet. `isLoading` indique uniquement l'absence de données en cache pendant une requête initiale.
 - **Contexte** : le client tRPC envoie les cookies ; le serveur résout la session et `companyId`. Aucune clé API à gérer côté front.
 
 Configuration du client tRPC : typiquement dans un Provider (React Query + tRPC) au root layout ; voir exemples officiels tRPC + Next.js App Router.
@@ -236,4 +246,4 @@ Référence visuelle et tokens : `docs/design-system.md`.
 
 ---
 
-*Dernière mise à jour : 2026-02-17. Principes DRY et composants partagés (§4.4). Aligné avec `docs/architecture.md`.*
+*Dernière mise à jour : 2026-02-21. TanStack Query : staleTime 5 minutes, convention isLoading vs isFetching (§3.1.1, §5). Aligné avec `docs/architecture.md`.*

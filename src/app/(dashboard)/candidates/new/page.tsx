@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { fileToBase64 } from "@/lib/file-utils";
 
 /** Type du formulaire : champs optionnels pour compatibilité avec useForm + zodResolver */
 type NewCandidateFormValues = {
@@ -29,20 +30,6 @@ type NewCandidateFormValues = {
 
 const GENERIC_ERROR_MESSAGE = "Une erreur est survenue. Réessayez.";
 const PHOTO_ACCEPT_ATTR = ".jpg,.jpeg,.png,.webp";
-
-const fileToBase64 = (file: File): Promise<{ base64: string; mimeType: string }> =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = reader.result as string;
-      const [header, base64] = dataUrl.split(",");
-      const mimeMatch = header?.match(/:(.+);/);
-      const mimeType = (mimeMatch?.[1] ?? "image/jpeg") as string;
-      resolve({ base64: base64 ?? "", mimeType });
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
 
 const getInitials = (firstName: string, lastName: string) =>
   `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || "?";
@@ -147,7 +134,7 @@ export default function NewCandidatePage() {
       }
 
       if (photoFile && candidateId) {
-        const { base64, mimeType } = await fileToBase64(photoFile);
+        const { base64, mimeType } = await fileToBase64(photoFile, "image/jpeg");
         await uploadPhotoMutation.mutateAsync({
           candidateId,
           fileBase64: base64,

@@ -1,6 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { router, protectedProcedure } from "../trpc";
+import { router, protectedProcedure, publicProcedure } from "../trpc";
 import {
   candidateListInputSchema,
   createCandidateSchema,
@@ -16,6 +16,9 @@ import {
   PHOTO_ACCEPTED_MIMES,
   PHOTO_MAX_BYTES,
   uploadPhotoSchema,
+  CV_ACCEPTED_MIMES,
+  CV_MAX_BYTES,
+  uploadCvSchema,
 } from "@/lib/validations/candidate"
 import {
   addTagSchema,
@@ -25,6 +28,14 @@ import {
 import { getTagColor } from "@/lib/tag-colors"
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
+
+/** Magic bytes PDF (%PDF) */
+const PDF_SIGNATURE = (buf: Buffer) =>
+  buf.length >= 4 &&
+  buf[0] === 0x25 &&
+  buf[1] === 0x50 &&
+  buf[2] === 0x44 &&
+  buf[3] === 0x46;
 
 /** Magic bytes pour valider que le contenu correspond au type déclaré */
 const IMAGE_SIGNATURES: Record<
@@ -53,6 +64,40 @@ const IMAGE_SIGNATURES: Record<
     buf[9] === 0x45 &&
     buf[10] === 0x42 &&
     buf[11] === 0x50,
+};
+
+/** Dérive l'extension valide pour le chemin Storage CV */
+const getCvStorageExt = (cvFileName: string | null): string => {
+  const ext = cvFileName?.split(".").pop()?.toLowerCase();
+  return ["pdf", "doc", "docx"].includes(ext ?? "") ? (ext as string) : "pdf";
+};
+
+/** Génère une URL signée (15 min) pour le CV dans le bucket cvs */
+const createCvSignedUrl = async (
+  companyId: string,
+  candidateId: string,
+  cvFileName: string | null,
+): Promise<string> => {
+  const ext = getCvStorageExt(cvFileName);
+  const storagePath = `${companyId}/candidates/${candidateId}/cv.${ext}`;
+  const supabase = createAdminClient();
+  const { data, error } = await supabase.storage
+    .from("cvs")
+    .createSignedUrl(storagePath, 15 * 60);
+  if (error) {
+    console.error("[createCvSignedUrl] Supabase error:", error);
+    throw new TRPCError({
+      code: "INTERNAL_SERVER_ERROR",
+      message: "Une erreur est survenue. Réessayez.",
+    });
+  }
+  if (!data?.signedUrl) {
+    throw new TRPCError({
+      code: "INTERNAL_SERVER_ERROR",
+      message: "Une erreur est survenue. Réessayez.",
+    });
+  }
+  return data.signedUrl;
 };
 
 export const candidateRouter = router({
@@ -568,5 +613,192 @@ export const candidateRouter = router({
         data: { photoUrl: publicUrl },
       });
       return updated;
+    }),
+
+  /**
+   * Upload un CV pour un candidat existant.
+   * Rate limit : 30 uploads/heure par utilisateur (partagé avec photo). Formats : PDF, DOC, DOCX. Max 5 Mo.
+   */
+  uploadCv: protectedProcedure
+    .input(uploadCvSchema)
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.user?.id;
+      if (!userId) {
+        throw new TRPCError({ code: "UNAUTHORIZED" });
+      }
+
+      const rateResult = await checkRateLimit(
+        `upload:${userId}`,
+        RATE_LIMITS.UPLOAD_PER_USER.limit,
+        RATE_LIMITS.UPLOAD_PER_USER.windowMs,
+      );
+      if (!rateResult.success) {
+        throw new TRPCError({
+          code: "TOO_MANY_REQUESTS",
+          message: "Trop de requêtes. Réessayez dans quelques minutes.",
+        });
+      }
+
+      const candidate = await ctx.db.candidate.findFirst({
+        where: { id: input.candidateId, companyId: ctx.companyId },
+      });
+      if (!candidate) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+
+      const buffer = Buffer.from(input.fileBase64, "base64");
+      if (buffer.length > CV_MAX_BYTES) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            "Le fichier dépasse la taille maximale autorisée (2 Mo pour les photos, 5 Mo pour les CVs).",
+        });
+      }
+
+      if (input.mimeType === "application/pdf" && !PDF_SIGNATURE(buffer)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            "Format de fichier non supporté. Formats acceptés : PDF, DOC, DOCX.",
+        });
+      }
+
+      const extMap: Record<(typeof CV_ACCEPTED_MIMES)[number], string> = {
+        "application/pdf": "pdf",
+        "application/msword": "doc",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+          "docx",
+      };
+      const ext = extMap[input.mimeType];
+      const storagePath = `${ctx.companyId}/candidates/${input.candidateId}/cv.${ext}`;
+
+      const supabase = createAdminClient();
+      const { error } = await supabase.storage
+        .from("cvs")
+        .upload(storagePath, buffer, {
+          contentType: input.mimeType,
+          upsert: true,
+        });
+
+      if (error) {
+        console.error("[uploadCv] Supabase Storage error:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Une erreur est survenue. Réessayez.",
+        });
+      }
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("cvs").getPublicUrl(storagePath);
+
+      const updated = await ctx.db.candidate.update({
+        where: { id: input.candidateId },
+        data: { cvUrl: publicUrl, cvFileName: input.fileName },
+      });
+      return updated;
+    }),
+
+  /**
+   * Supprime le CV d'un candidat. Retire le fichier du bucket et met à jour le record.
+   */
+  deleteCv: protectedProcedure
+    .input(z.object({ candidateId: z.uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const candidate = await ctx.db.candidate.findFirst({
+        where: { id: input.candidateId, companyId: ctx.companyId },
+      });
+      if (!candidate) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+
+      if (candidate.cvUrl || candidate.cvFileName) {
+        const ext =
+          candidate.cvFileName?.split(".").pop()?.toLowerCase();
+        const validExt = ["pdf", "doc", "docx"].includes(ext ?? "")
+          ? ext
+          : "pdf";
+        const storagePath = `${ctx.companyId}/candidates/${input.candidateId}/cv.${validExt}`;
+        const supabase = createAdminClient();
+        const { error } = await supabase.storage.from("cvs").remove([storagePath]);
+        if (error) {
+          console.warn("[deleteCv] Storage remove failed (continuing):", error);
+        }
+      }
+
+      await ctx.db.candidate.update({
+        where: { id: input.candidateId },
+        data: { cvUrl: null, cvFileName: null },
+      });
+      return { success: true };
+    }),
+
+  /**
+   * Retourne une URL signée (15 min) pour télécharger le CV.
+   * Pour utilisateurs authentifiés (fiche candidat).
+   */
+  getCvDownloadUrl: protectedProcedure
+    .input(z.object({ candidateId: z.uuid() }))
+    .query(async ({ ctx, input }) => {
+      const candidate = await ctx.db.candidate.findFirst({
+        where: { id: input.candidateId, companyId: ctx.companyId },
+        select: { cvUrl: true, cvFileName: true },
+      });
+      if (!candidate || !candidate.cvUrl) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+      const url = await createCvSignedUrl(
+        ctx.companyId,
+        input.candidateId,
+        candidate.cvFileName,
+      );
+      return { url };
+    }),
+
+  /**
+   * Retourne une URL signée (15 min) pour télécharger le CV via un lien de partage.
+   * Procédure publique ; valide le token et l'expiration. Rate limit par IP.
+   */
+  getCvDownloadUrlByShareToken: publicProcedure
+    .input(z.object({ token: z.string().min(1) }))
+    .query(async ({ ctx, input }) => {
+      const ip =
+        ctx.headers?.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+        ctx.headers?.get("x-real-ip") ??
+        "unknown";
+      const rateResult = await checkRateLimit(
+        `cv-share:${ip}`,
+        RATE_LIMITS.CV_DOWNLOAD_SHARE_PER_IP.limit,
+        RATE_LIMITS.CV_DOWNLOAD_SHARE_PER_IP.windowMs,
+      );
+      if (!rateResult.success) {
+        throw new TRPCError({
+          code: "TOO_MANY_REQUESTS",
+          message: "Trop de requêtes. Réessayez dans quelques minutes.",
+        });
+      }
+      const shareLink = await ctx.db.shareLink.findUnique({
+        where: { token: input.token },
+        include: { candidate: true },
+      });
+      if (!shareLink) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+      if (
+        shareLink.expiresAt &&
+        shareLink.expiresAt.getTime() < Date.now()
+      ) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+      const candidate = shareLink.candidate;
+      if (!candidate.cvUrl) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+      const url = await createCvSignedUrl(
+        candidate.companyId,
+        candidate.id,
+        candidate.cvFileName,
+      );
+      return { url };
     }),
 });

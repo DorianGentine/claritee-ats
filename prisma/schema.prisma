@@ -101,6 +101,7 @@ model Candidate {
   summary    String?  @db.Text
   photoUrl   String?
   cvUrl      String?
+  cvFileName String?
   companyId  String
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt

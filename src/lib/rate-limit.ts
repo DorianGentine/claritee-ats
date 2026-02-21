@@ -59,6 +59,8 @@ export const RATE_LIMITS = {
   SHARE_LINK_PER_USER: { limit: 20, windowMs: 60 * 60 * 1000 },
   /** Upload (photo + CV) par utilisateur : 30 / heure */
   UPLOAD_PER_USER: { limit: 30, windowMs: 60 * 60 * 1000 },
+  /** Téléchargement CV par token de partage : 30 req / minute par IP */
+  CV_DOWNLOAD_SHARE_PER_IP: { limit: 30, windowMs: 60 * 1000 },
 } as const;
 
 /**
