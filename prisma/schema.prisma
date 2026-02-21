@@ -239,7 +239,7 @@ model JobOffer {
   candidatures   Candidature[]
   notes          Note[]
 
-  @@index([companyId, title, location])
+  @@index([companyId, title])
 }
 
 // ============ OFFER <-> TAG (N-N) ============
