@@ -66,6 +66,40 @@ const IMAGE_SIGNATURES: Record<
     buf[11] === 0x50,
 };
 
+/** Dérive l'extension valide pour le chemin Storage CV */
+const getCvStorageExt = (cvFileName: string | null): string => {
+  const ext = cvFileName?.split(".").pop()?.toLowerCase();
+  return ["pdf", "doc", "docx"].includes(ext ?? "") ? (ext as string) : "pdf";
+};
+
+/** Génère une URL signée (15 min) pour le CV dans le bucket cvs */
+const createCvSignedUrl = async (
+  companyId: string,
+  candidateId: string,
+  cvFileName: string | null,
+): Promise<string> => {
+  const ext = getCvStorageExt(cvFileName);
+  const storagePath = `${companyId}/candidates/${candidateId}/cv.${ext}`;
+  const supabase = createAdminClient();
+  const { data, error } = await supabase.storage
+    .from("cvs")
+    .createSignedUrl(storagePath, 15 * 60);
+  if (error) {
+    console.error("[createCvSignedUrl] Supabase error:", error);
+    throw new TRPCError({
+      code: "INTERNAL_SERVER_ERROR",
+      message: "Une erreur est survenue. Réessayez.",
+    });
+  }
+  if (!data?.signedUrl) {
+    throw new TRPCError({
+      code: "INTERNAL_SERVER_ERROR",
+      message: "Une erreur est survenue. Réessayez.",
+    });
+  }
+  return data.signedUrl;
+};
+
 export const candidateRouter = router({
   /**
    * Liste paginée des candidats du cabinet (cursor-based).
@@ -713,39 +747,36 @@ export const candidateRouter = router({
       if (!candidate || !candidate.cvUrl) {
         throw new TRPCError({ code: "NOT_FOUND" });
       }
-      const ext =
-        candidate.cvFileName?.split(".").pop()?.toLowerCase();
-      const validExt = ["pdf", "doc", "docx"].includes(ext ?? "")
-        ? ext
-        : "pdf";
-      const storagePath = `${ctx.companyId}/candidates/${input.candidateId}/cv.${validExt}`;
-      const supabase = createAdminClient();
-      const { data, error } = await supabase.storage
-        .from("cvs")
-        .createSignedUrl(storagePath, 15 * 60);
-      if (error) {
-        console.error("[getCvDownloadUrl] Supabase error:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Une erreur est survenue. Réessayez.",
-        });
-      }
-      if (!data?.signedUrl) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Une erreur est survenue. Réessayez.",
-        });
-      }
-      return { url: data.signedUrl };
+      const url = await createCvSignedUrl(
+        ctx.companyId,
+        input.candidateId,
+        candidate.cvFileName,
+      );
+      return { url };
     }),
 
   /**
    * Retourne une URL signée (15 min) pour télécharger le CV via un lien de partage.
-   * Procédure publique ; valide le token et l'expiration.
+   * Procédure publique ; valide le token et l'expiration. Rate limit par IP.
    */
   getCvDownloadUrlByShareToken: publicProcedure
     .input(z.object({ token: z.string().min(1) }))
     .query(async ({ ctx, input }) => {
+      const ip =
+        ctx.headers?.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+        ctx.headers?.get("x-real-ip") ??
+        "unknown";
+      const rateResult = await checkRateLimit(
+        `cv-share:${ip}`,
+        RATE_LIMITS.CV_DOWNLOAD_SHARE_PER_IP.limit,
+        RATE_LIMITS.CV_DOWNLOAD_SHARE_PER_IP.windowMs,
+      );
+      if (!rateResult.success) {
+        throw new TRPCError({
+          code: "TOO_MANY_REQUESTS",
+          message: "Trop de requêtes. Réessayez dans quelques minutes.",
+        });
+      }
       const shareLink = await ctx.db.shareLink.findUnique({
         where: { token: input.token },
         include: { candidate: true },
@@ -763,28 +794,11 @@ export const candidateRouter = router({
       if (!candidate.cvUrl) {
         throw new TRPCError({ code: "NOT_FOUND" });
       }
-      const ext = candidate.cvFileName?.split(".").pop()?.toLowerCase();
-      const validExt = ["pdf", "doc", "docx"].includes(ext ?? "")
-        ? ext
-        : "pdf";
-      const storagePath = `${candidate.companyId}/candidates/${candidate.id}/cv.${validExt}`;
-      const supabase = createAdminClient();
-      const { data, error } = await supabase.storage
-        .from("cvs")
-        .createSignedUrl(storagePath, 15 * 60);
-      if (error) {
-        console.error("[getCvDownloadUrlByShareToken] Supabase error:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Une erreur est survenue. Réessayez.",
-        });
-      }
-      if (!data?.signedUrl) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Une erreur est survenue. Réessayez.",
-        });
-      }
-      return { url: data.signedUrl };
+      const url = await createCvSignedUrl(
+        candidate.companyId,
+        candidate.id,
+        candidate.cvFileName,
+      );
+      return { url };
     }),
 });

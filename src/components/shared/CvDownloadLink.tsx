@@ -31,12 +31,12 @@ export const CvDownloadLink = (props: Props) => {
   }
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex min-w-0 w-full flex-col gap-1">
       <button
         type="button"
         onClick={handleClick}
         disabled={loading}
-        className="inline-flex w-fit items-center gap-2 rounded-md border border-border bg-muted/50 px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+        className="inline-flex w-full items-center gap-2 rounded-md border border-border bg-muted/50 px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors disabled:opacity-50"
         aria-label={`Télécharger ${displayName}`}
       >
         <FileUp className="h-4 w-4 shrink-0" aria-hidden />

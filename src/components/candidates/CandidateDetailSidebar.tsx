@@ -25,7 +25,7 @@ export const CandidateDetailSidebar = ({
   cvUrl,
   cvFileName,
 }: CandidateDetailSidebarProps) => (
-  <aside className="space-y-6 rounded-lg border border-border bg-card p-6 shadow-sm print:shadow-none">
+  <aside className="min-w-0 space-y-6 rounded-lg border border-border bg-card p-6 shadow-sm print:shadow-none">
     <CandidateSummarySection candidateId={candidateId} summary={summary} />
     <CandidateCvSection
       candidateId={candidateId}

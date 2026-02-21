@@ -534,6 +534,27 @@ describe.runIf(!!connectionString)("candidate", () => {
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 
+  it("getCvDownloadUrlByShareToken: throws NOT_FOUND when token expired", async () => {
+    const shareLink = await db.shareLink.create({
+      data: {
+        candidateId: candidateA2Id,
+        token: `expired-${Date.now()}`,
+        type: "NORMAL",
+        expiresAt: new Date(Date.now() - 60000),
+      },
+    });
+    const publicCtx = createContext(null);
+    const publicCaller = appRouter.createCaller(publicCtx);
+
+    await expect(
+      publicCaller.candidate.getCvDownloadUrlByShareToken({
+        token: shareLink.token,
+      }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+    await db.shareLink.delete({ where: { id: shareLink.id } });
+  });
+
   it("getCvDownloadUrlByShareToken: returns signed URL when token valid", async () => {
     const ctx = createContext(companyAId);
     const caller = appRouter.createCaller(ctx);

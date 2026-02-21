@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { api } from "@/lib/trpc/client";
 
 /** Cache TTL : 14 min (URL signée expire à 15 min) */
@@ -15,11 +15,16 @@ const getCacheKey = (candidateId?: string, shareToken?: string) =>
 
 export const useCvDownloadUrl = () => {
   const utils = api.useUtils();
+  const utilsRef = useRef(utils);
+  useEffect(() => {
+    utilsRef.current = utils;
+  }, [utils]);
 
   const getUrl = useCallback(
     async (
       opts: { candidateId: string } | { shareToken: string },
     ): Promise<string> => {
+      const currentUtils = utilsRef.current;
       const key = getCacheKey(
         "candidateId" in opts ? opts.candidateId : undefined,
         "shareToken" in opts ? opts.shareToken : undefined,
@@ -31,18 +36,18 @@ export const useCvDownloadUrl = () => {
       }
       let result: { url: string };
       if ("candidateId" in opts) {
-        result = await utils.candidate.getCvDownloadUrl.fetch({
+        result = await currentUtils.candidate.getCvDownloadUrl.fetch({
           candidateId: opts.candidateId,
         });
       } else {
-        result = await utils.candidate.getCvDownloadUrlByShareToken.fetch({
+        result = await currentUtils.candidate.getCvDownloadUrlByShareToken.fetch({
           token: opts.shareToken,
         });
       }
       cache.set(key, { url: result.url, expiresAt: now + CACHE_TTL_MS });
       return result.url;
     },
-    [utils],
+    [],
   );
 
   return { getUrl };
