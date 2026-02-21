@@ -92,6 +92,8 @@ export const CandidateDetailView = ({ candidateId }: Props) => {
             languages={candidate.languages}
             tags={candidate.tags}
             summary={candidate.summary}
+            cvUrl={candidate.cvUrl}
+            cvFileName={candidate.cvFileName}
           />
           <CandidateDetailContent
             candidateId={candidateId}

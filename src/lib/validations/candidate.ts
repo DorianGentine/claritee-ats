@@ -126,6 +126,31 @@ export const uploadPhotoSchema = z.object({
 
 export type UploadPhotoInput = z.infer<typeof uploadPhotoSchema>;
 
+/** Formats MIME acceptés pour les CV candidat */
+export const CV_ACCEPTED_MIMES = [
+  "application/pdf",
+  "application/msword", // .doc
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
+] as const;
+
+export const CV_MAX_BYTES = 5 * 1024 * 1024; // 5 Mo
+
+/** Schéma pour l'upload de CV candidat */
+export const uploadCvSchema = z.object({
+  candidateId: z.uuid(),
+  fileBase64: z.string().min(1, "Fichier requis"),
+  mimeType: z.enum(CV_ACCEPTED_MIMES, {
+    message:
+      "Format de fichier non supporté. Formats acceptés : PDF, DOC, DOCX.",
+  }),
+  fileName: z
+    .string()
+    .min(1, "Nom de fichier requis")
+    .max(255, "Nom de fichier trop long"),
+});
+
+export type UploadCvInput = z.infer<typeof uploadCvSchema>;
+
 /** Date optionnelle (premier jour du mois côté UI → DateTime en base). z.coerce.date() accepte Date ou chaîne ISO. */
 const optionalDate = z.coerce.date().optional().nullable();
 
