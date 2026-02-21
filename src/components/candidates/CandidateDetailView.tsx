@@ -30,7 +30,7 @@ export const CandidateDetailView = ({ candidateId }: Props) => {
     deleteMutation.mutate({ id: candidateId });
   };
 
-  if (getByIdQuery.isLoading || getByIdQuery.isFetching) {
+  if (getByIdQuery.isLoading) {
     return (
       <main className="min-h-[calc(100vh-3.5rem)] bg-background p-6">
         <CandidateDetailSkeleton />

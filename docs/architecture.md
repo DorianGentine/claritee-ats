@@ -15,6 +15,7 @@ Ce document décrit l'architecture technique complète du projet **Claritee ATS*
 | 2026-02-14 | 1.0     | Création architecture initiale | Architect |
 | 2026-02-17 | 1.1     | Ajout principes DRY et composants partagés | - |
 | 2026-02-19 | 1.2     | Ajout convention point-virgule (pas de ; si inutile) | - |
+| 2026-02-21 | 1.3     | TanStack Query : staleTime 5 minutes, convention isLoading (pas isFetching) pour skeletons | - |
 
 ---
 
@@ -427,7 +428,7 @@ Chaque router utilise des schémas Zod (depuis `src/lib/validations/`) pour les 
 
 - **Cible :** premier chargement < 3 s, réponse API < 500 ms (P95).
 - **DB :** index sur `(companyId, createdAt)` (ou id) pour listes ; index sur `Candidate` (recherche nom, titre, résumé) si recherche full-text ou LIKE.
-- **Frontend :** TanStack Query (staleTime approprié), lazy loading des routes, images optimisées (Next.js Image + URLs Supabase).
+- **Frontend :** TanStack Query (staleTime 5 minutes par défaut, voir `docs/frontend-architecture.md` §3.1.1), lazy loading des routes, images optimisées (Next.js Image + URLs Supabase). Skeleton : utiliser `isLoading` uniquement, pas `isFetching` (évite les flashes lors de la navigation).
 - **Vercel :** utiliser les régions proches du projet Supabase (ex. EU).
 
 #### 10.2.1 Performance du serveur de développement (Turbopack)
