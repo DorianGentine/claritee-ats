@@ -114,6 +114,8 @@ model Candidate {
   candidatures Candidature[]
   notes       Note[]
   shareLinks  ShareLink[]
+
+  @@index([companyId, firstName, lastName, title, city])
 }
 
 // ============ EXPERIENCE ============
@@ -236,6 +238,8 @@ model JobOffer {
   tags           OfferTag[]
   candidatures   Candidature[]
   notes          Note[]
+
+  @@index([companyId, title, location])
 }
 
 // ============ OFFER <-> TAG (N-N) ============

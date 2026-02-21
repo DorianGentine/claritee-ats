@@ -17,6 +17,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { Menu } from "lucide-react";
+import { GlobalSearchBar } from "./GlobalSearchBar";
 
 const getInitials = (user: User): string => {
   const name =
@@ -81,7 +82,8 @@ export const SiteNavbar = () => {
     pathname?.startsWith("/candidates") ||
     pathname?.startsWith("/offers") ||
     pathname?.startsWith("/clients") ||
-    pathname?.startsWith("/settings");
+    pathname?.startsWith("/settings") ||
+    pathname?.startsWith("/search");
 
   const companyQuery = api.company.getMyCompany.useQuery(undefined, {
     enabled: !!user && user !== "loading" && isDashboard,
@@ -102,8 +104,8 @@ export const SiteNavbar = () => {
   }));
 
   return (
-    <header className="sticky top-0 z-10 flex h-14 items-center justify-between gap-4 border-b border-border bg-card px-4 shadow-sm">
-      <div className="flex items-center gap-6">
+    <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b border-border bg-card px-4 shadow-sm">
+      <div className="flex min-w-0 flex-1 items-center gap-6">
         <Link
           href={user && user !== "loading" && isDashboard ? "/dashboard" : "/"}
           className="text-lg font-semibold tracking-tight text-foreground transition-colors hover:text-primary"
@@ -196,6 +198,12 @@ export const SiteNavbar = () => {
           </>
         )}
       </div>
+
+      {user && user !== "loading" && isDashboard && (
+        <div className="ml-auto shrink-0">
+          <GlobalSearchBar />
+        </div>
+      )}
 
       <nav
         className="flex items-center gap-3"
