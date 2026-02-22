@@ -3,6 +3,7 @@ import { authRouter } from "./auth"
 import { candidateRouter } from "./candidate"
 import { companyRouter } from "./company"
 import { invitationRouter } from "./invitation"
+import { noteRouter } from "./note"
 import { searchRouter } from "./search"
 import { tagRouter } from "./tag"
 
@@ -11,6 +12,7 @@ export const appRouter = router({
   candidate: candidateRouter,
   company: companyRouter,
   invitation: invitationRouter,
+  note: noteRouter,
   search: searchRouter,
   tag: tagRouter,
 })

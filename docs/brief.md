@@ -246,17 +246,12 @@ Le MVP sera considéré comme réussi si :
 
 **Priorité haute :**
 
-1. **Éditeur de texte riche (BlockNote)**
-   - Intégration de BlockNote pour une prise de notes inspirée de Notion
-   - Blocs modulaires (texte, listes, titres)
-   - Interface discrète et non intrusive
-
-2. **Vue Kanban pour suivi candidats**
+1. **Vue Kanban pour suivi candidats**
    - Vue en colonnes par statut (drag & drop)
    - Organisation visuelle du pipeline de candidats
    - Toggle entre vue liste et vue Kanban
 
-3. **Fusion notes + statuts en timeline unifiée**
+2. **Fusion notes + statuts en timeline unifiée**
    - Historique chronologique combinant notes et statuts
    - Vue d'ensemble de toutes les interactions avec un candidat
    - Filtrage par type (notes, statuts, tout)
@@ -399,7 +394,7 @@ Le MVP sera considéré comme réussi si :
 - Les fiches candidats anonymisées sont une pratique courante et attendue par les cabinets français
 - La saisie manuelle est acceptable pour le MVP si elle est rapide et fluide
 - Les utilisateurs n'ont pas besoin de rôles/permissions différenciés dans un premier temps
-- Un éditeur de texte simple (textarea) est suffisant pour le MVP, BlockNote peut attendre Phase 2
+- Les notes utilisent BlockNote (éditeur riche bloc-based type Notion) dès le MVP — Story 3.9
 
 ## Risks & Open Questions
 

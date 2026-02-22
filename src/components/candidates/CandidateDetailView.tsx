@@ -10,6 +10,7 @@ import { CandidateDetailSkeleton } from "./CandidateDetailSkeleton";
 import { CandidateDetailHeader } from "./CandidateDetailHeader";
 import { CandidateDetailSidebar } from "./CandidateDetailSidebar";
 import { CandidateDetailContent } from "./CandidateDetailContent";
+import { CandidateNotesSection } from "./CandidateNotesSection";
 
 type Props = { candidateId: string };
 
@@ -101,6 +102,8 @@ export const CandidateDetailView = ({ candidateId }: Props) => {
             formations={candidate.formations}
           />
         </div>
+
+        <CandidateNotesSection candidateId={candidateId} />
       </div>
 
       <ConfirmDialog
