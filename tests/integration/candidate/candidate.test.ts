@@ -164,6 +164,213 @@ describe.runIf(!!connectionString)("candidate", () => {
     expect(page2.items[0].id).not.toBe(page1.items[0].id);
   });
 
+  it("list: filters by city (case insensitive, partial match contains)", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const result = await caller.candidate.list({
+      limit: 20,
+      city: "paris",
+    });
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0].id).toBe(candidateA1Id);
+    expect(result.items[0].city).toBe("Paris");
+
+    const partialResult = await caller.candidate.list({
+      limit: 20,
+      city: "Par",
+    });
+    expect(partialResult.items).toHaveLength(1);
+    expect(partialResult.items[0].city).toBe("Paris");
+
+    const lyonResult = await caller.candidate.list({
+      limit: 20,
+      city: "Lyon",
+    });
+    expect(lyonResult.items).toHaveLength(1);
+    expect(lyonResult.items[0].id).toBe(candidateA2Id);
+  });
+
+  it("list: filters by tagIds (AND logic - candidate must have ALL tags)", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const [tag1, tag2] = await Promise.all([
+      db.tag.create({
+        data: {
+          name: `FilterTag1-${Date.now()}`,
+          color: "#9B8BA8",
+          companyId: companyAId,
+        },
+      }),
+      db.tag.create({
+        data: {
+          name: `FilterTag2-${Date.now()}`,
+          color: "#D4A5A5",
+          companyId: companyAId,
+        },
+      }),
+    ]);
+
+    await db.candidateTag.create({
+      data: { candidateId: candidateA1Id, tagId: tag1.id },
+    });
+    await db.candidateTag.create({
+      data: { candidateId: candidateA1Id, tagId: tag2.id },
+    });
+    await db.candidateTag.create({
+      data: { candidateId: candidateA2Id, tagId: tag1.id },
+    });
+
+    const bothTags = await caller.candidate.list({
+      limit: 20,
+      tagIds: [tag1.id, tag2.id],
+    });
+    expect(bothTags.items).toHaveLength(1);
+    expect(bothTags.items[0].id).toBe(candidateA1Id);
+
+    const oneTag = await caller.candidate.list({
+      limit: 20,
+      tagIds: [tag1.id],
+    });
+    expect(oneTag.items).toHaveLength(2);
+
+    await db.candidateTag.deleteMany({
+      where: {
+        candidateId: { in: [candidateA1Id, candidateA2Id] },
+        tagId: { in: [tag1.id, tag2.id] },
+      },
+    });
+    await db.tag.deleteMany({ where: { id: { in: [tag1.id, tag2.id] } } });
+  });
+
+  it("list: combines city and tagIds filters", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const tag = await db.tag.create({
+      data: {
+        name: `CityTag-${Date.now()}`,
+        color: "#9B8BA8",
+        companyId: companyAId,
+      },
+    });
+    await db.candidateTag.create({
+      data: { candidateId: candidateA1Id, tagId: tag.id },
+    });
+
+    const result = await caller.candidate.list({
+      limit: 20,
+      city: "Paris",
+      tagIds: [tag.id],
+    });
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0].id).toBe(candidateA1Id);
+
+    const noMatch = await caller.candidate.list({
+      limit: 20,
+      city: "Lyon",
+      tagIds: [tag.id],
+    });
+    expect(noMatch.items).toHaveLength(0);
+
+    await db.candidateTag.delete({
+      where: {
+        candidateId_tagId: { candidateId: candidateA1Id, tagId: tag.id },
+      },
+    });
+    await db.tag.delete({ where: { id: tag.id } });
+  });
+
+  it("list: filters by languageNames (AND logic)", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const [langFrA1, langEnA2, langFrA2] = await Promise.all([
+      db.language.create({
+        data: {
+          candidateId: candidateA1Id,
+          name: "Français",
+          level: "NATIVE",
+        },
+      }),
+      db.language.create({
+        data: {
+          candidateId: candidateA2Id,
+          name: "Anglais",
+          level: "FLUENT",
+        },
+      }),
+      db.language.create({
+        data: {
+          candidateId: candidateA2Id,
+          name: "Français",
+          level: "INTERMEDIATE",
+        },
+      }),
+    ]);
+
+    const oneLang = await caller.candidate.list({
+      limit: 20,
+      languageNames: ["Français"],
+    });
+    expect(oneLang.items).toHaveLength(2);
+
+    const bothLangs = await caller.candidate.list({
+      limit: 20,
+      languageNames: ["Français", "Anglais"],
+    });
+    expect(bothLangs.items).toHaveLength(1);
+    expect(bothLangs.items[0].id).toBe(candidateA2Id);
+
+    await db.language.deleteMany({
+      where: { id: { in: [langFrA1.id, langEnA2.id, langFrA2.id] } },
+    });
+  });
+
+  it("listDistinctLanguageNames: returns distinct language names for the cabinet only", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    await db.language.createMany({
+      data: [
+        { candidateId: candidateA1Id, name: "Français", level: "NATIVE" },
+        { candidateId: candidateA2Id, name: "Anglais", level: "FLUENT" },
+      ],
+    });
+
+    const names = await caller.candidate.listDistinctLanguageNames();
+    expect(names).toContain("Français");
+    expect(names).toContain("Anglais");
+
+    await db.language.deleteMany({
+      where: {
+        candidateId: { in: [candidateA1Id, candidateA2Id] },
+        name: { in: ["Français", "Anglais"] },
+      },
+    });
+  });
+
+  it("listDistinctCities: returns distinct cities for the cabinet only", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const cities = await caller.candidate.listDistinctCities();
+
+    expect(cities).toContain("Paris");
+    expect(cities).toContain("Lyon");
+    expect(cities).not.toContain("Marseille");
+  });
+
+  it("listDistinctCities: throws UNAUTHORIZED when not authenticated", async () => {
+    const ctx = createContext(null);
+    const caller = appRouter.createCaller(ctx);
+
+    await expect(caller.candidate.listDistinctCities()).rejects.toMatchObject({
+      code: "UNAUTHORIZED",
+    });
+  });
+
   it("list: throws UNAUTHORIZED when not authenticated", async () => {
     const ctx = createContext(null);
     const caller = appRouter.createCaller(ctx);

@@ -38,6 +38,7 @@
 ## 3. API et backend (tRPC + Prisma)
 
 - **Validation** : tous les inputs tRPC passent par des schémas **Zod** définis dans `src/lib/validations/` (ex. `candidate.ts`, `offer.ts`). Réutiliser ces schémas côté formulaires (React Hook Form) quand c'est pertinent.
+- **Zod v4 — formats string** : les méthodes comme `z.string().uuid()`, `z.string().email()`, etc. sont **dépréciées**. Utiliser les APIs top-level : `z.uuid()`, `z.email()`, `z.url()`, etc. Ces APIs sont moins verbeuses et plus tree-shakables. Pour un validateur plus permissif que l’UUID RFC 9562/4122 (ex. GUID quelconque), préférer `z.guid()`.
 - **Procédures métier** : utiliser **`protectedProcedure`** et s'appuyer sur **`ctx.companyId`** pour toutes les queries/mutations candidats, offres, clients, notes, partages. Ne jamais exposer de données d'un autre cabinet.
 - **Erreurs** : côté client, afficher des **messages génériques** (ex. « Identifiants invalides », « Une erreur est survenue »). Détails techniques uniquement en logs serveur (voir `docs/architecture.md` §10.1).
 - **Mots de passe** : jamais stockés en base applicative ; auth via **Supabase Auth** uniquement.
@@ -64,7 +65,7 @@ export const exampleRouter = router({
   }),
 
   getById: protectedProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(z.object({ id: z.uuid() }))
     .query(async ({ ctx, input }) => {
       const row = await ctx.db.example.findFirst({
         where: { id: input.id, companyId: ctx.companyId },
@@ -82,7 +83,7 @@ export const exampleRouter = router({
     }),
 
   update: protectedProcedure
-    .input(z.object({ id: z.string().uuid() }).merge(createExampleSchema.partial()))
+    .input(z.object({ id: z.uuid() }).merge(createExampleSchema.partial()))
     .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input;
       const existing = await ctx.db.example.findFirst({
@@ -93,7 +94,7 @@ export const exampleRouter = router({
     }),
 
   delete: protectedProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(z.object({ id: z.uuid() }))
     .mutation(async ({ ctx, input }) => {
       await ctx.db.example.deleteMany({
         where: { id: input.id, companyId: ctx.companyId },
