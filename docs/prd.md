@@ -26,6 +26,7 @@ Les ATS existants sur le marché sont généralement trop chers, trop complexes 
 | 2026-02-14 | 1.3 | Alignement epics/stories avec doc architecture : rate limiting (Stories 1.3, 1.4, 2.3, 2.9, 4.4), références frontend-architecture, rate-limiting, coding-standards, source-tree, tech-stack ; a11y (Story 1.7) | John (PM) |
 | 2026-02-21 | 1.4 | Association offre d'emploi à un contact client (FR16b, modèle JobOffer + clientContactId, Stories 3.4 & 3.6) | John (PM) |
 | 2026-02-21 | 1.5 | Priorisation : Recherche (4.1, 4.2) et Notes (3.9, 3.11) avant Offres/Clients ; section Ordre de priorités, Next Steps | John (PM) |
+| 2026-02-21 | 1.6 | Éditeur BlockNote pour les notes (Story 3.9) — retiré de Out of Scope | John (PM) |
 
 ---
 
@@ -141,7 +142,6 @@ Les ATS existants sur le marché sont généralement trop chers, trop complexes 
 - FR21: Notes libres non associées (reporté en Phase 2)
 - Scraping/parsing automatique de CV
 - Scraping/parsing LinkedIn
-- Éditeur de texte riche (BlockNote/TipTap) pour les notes
 - Vue Kanban pour le suivi des candidats
 - Envoi d'emails depuis la plateforme
 - Système de compétences structurées (remplacement des tags)
@@ -310,6 +310,7 @@ Le projet utilisera une structure **Monorepo** avec frontend et backend dans le 
 - **Validation** : Zod partagé entre frontend (forms) et backend (tRPC inputs)
 - **Icons** : Lucide React
 - **Date Handling** : date-fns
+- **Notes (éditeur riche)** : BlockNote ([blocknotejs.org](https://www.blocknotejs.org/docs)) — éditeur bloc-based type Notion pour les notes candidats/offres (texte, listes, titres). Contenu stocké en JSON en base. Intégré dans Story 3.9.
 - **File Upload** : Upload direct vers Supabase Storage via SDK client
 - **Environment** : Variables d'environnement pour les clés Supabase
 - **Code Quality** : ESLint + Prettier, TypeScript strict mode
@@ -1109,7 +1110,7 @@ Permettre la gestion complète des offres d'emploi et des entreprises clientes, 
 
 1. Notes section on candidate detail page
 2. "Ajouter une note" button or inline input
-3. Note content: plain text (multi-line)
+3. Note content: éditeur riche BlockNote (blocs texte, listes, titres — inspiration Notion)
 4. Note metadata: author (user), createdAt timestamp
 5. Notes displayed in reverse chronological order (newest first)
 6. Author name displayed on each note

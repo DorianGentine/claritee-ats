@@ -62,6 +62,7 @@ Ce document décrit l'architecture technique complète du projet **Claritee ATS*
 | Validation       | Zod            | 4.3.6         | Partagé front/back     |
 | State / Data     | TanStack Query | 5.59          | Cache, mutations       |
 | Formulaires      | React Hook Form| 7.53          | Forms + Zod            |
+| Notes (éditeur riche) | BlockNote   | -             | Blocs texte, listes, titres (Story 3.9) |
 | Dates            | date-fns       | 2.30          | Formatage / calculs    |
 | Tests unitaires / intégration | Vitest | 2.1    | Logique + API          |
 | E2E (optionnel)  | Playwright     | 1.49          | Parcours critiques     |
