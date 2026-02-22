@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
+  candidateListInputSchema,
   createCandidateSchema,
   updateCandidateSchema,
   addLanguageSchema,
@@ -12,6 +13,89 @@ import {
 } from "@/lib/validations/candidate";
 
 describe("candidate validations", () => {
+  describe("candidateListInputSchema", () => {
+    const validUuid1 = "550e8400-e29b-41d4-a716-446655440001";
+    const validUuid2 = "550e8400-e29b-41d4-a716-446655440002";
+
+    it("accepts base list input (cursor, limit)", () => {
+      const result = candidateListInputSchema.parse({ limit: 20 });
+      expect(result.limit).toBe(20);
+      expect(result.cursor).toBeUndefined();
+      expect(result.tagIds).toBeUndefined();
+      expect(result.city).toBeUndefined();
+    });
+
+    it("accepts tagIds array of UUIDs", () => {
+      const result = candidateListInputSchema.parse({
+        limit: 10,
+        tagIds: [validUuid1, validUuid2],
+      });
+      expect(result.tagIds).toEqual([validUuid1, validUuid2]);
+    });
+
+    it("accepts city string and trims whitespace", () => {
+      const result = candidateListInputSchema.parse({
+        limit: 10,
+        city: "  Paris  ",
+      });
+      expect(result.city).toBe("Paris");
+    });
+
+    it("converts empty city to undefined", () => {
+      const result = candidateListInputSchema.parse({
+        limit: 10,
+        city: "   ",
+      });
+      expect(result.city).toBeUndefined();
+    });
+
+    it("rejects invalid tagIds (non-UUID)", () => {
+      expect(() =>
+        candidateListInputSchema.parse({
+          limit: 10,
+          tagIds: ["not-a-uuid"],
+        }),
+      ).toThrow();
+    });
+
+    it("rejects invalid cursor (non-UUID)", () => {
+      expect(() =>
+        candidateListInputSchema.parse({
+          limit: 10,
+          cursor: "invalid",
+        }),
+      ).toThrow();
+    });
+
+    it("accepts languageNames array", () => {
+      const result = candidateListInputSchema.parse({
+        limit: 10,
+        languageNames: ["Français", "Anglais"],
+      })
+      expect(result.languageNames).toEqual(["Français", "Anglais"])
+    })
+
+    it("trims and filters empty languageNames", () => {
+      const result = candidateListInputSchema.parse({
+        limit: 10,
+        languageNames: ["  Français  ", "", "  ", "Anglais"],
+      })
+      expect(result.languageNames).toEqual(["Français", "Anglais"])
+    })
+
+    it("rejects tagIds array exceeding 20 elements", () => {
+      const manyUuids = Array.from({ length: 21 }, (_, i) =>
+        `550e8400-e29b-41d4-a716-4466554400${String(i).padStart(2, "0")}`,
+      );
+      expect(() =>
+        candidateListInputSchema.parse({
+          limit: 10,
+          tagIds: manyUuids,
+        }),
+      ).toThrow(/Maximum 20 tags/);
+    });
+  });
+
   describe("createCandidateSchema", () => {
     const base = {
       firstName: "Jean",

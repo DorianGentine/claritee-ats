@@ -6,6 +6,28 @@ const LIST_PAGE_SIZE = 20;
 export const candidateListInputSchema = z.object({
   cursor: z.uuid().optional(),
   limit: z.number().int().min(1).max(100).default(LIST_PAGE_SIZE),
+  tagIds: z
+    .array(z.uuid())
+    .max(20, "Maximum 20 tags pour le filtre")
+    .optional(),
+  city: z
+    .string()
+    .optional()
+    .transform((s) =>
+      typeof s === "string" ? (s.trim() || undefined) : undefined
+    ),
+  languageNames: z
+    .array(z.string().max(50))
+    .max(20, "Maximum 20 langues pour le filtre")
+    .optional()
+    .transform((arr) => {
+      if (!arr?.length) return undefined
+      const filtered = arr
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0)
+        .slice(0, 20)
+      return filtered.length ? filtered : undefined
+    }),
 });
 
 export type CandidateListInput = z.infer<typeof candidateListInputSchema>;

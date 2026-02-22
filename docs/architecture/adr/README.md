@@ -8,6 +8,7 @@ Ce dossier contient les décisions d’architecture importantes du projet Clarit
 | [0002](0002-multi-tenancy-rls-par-ligne.md) | Multi-tenancy par ligne (RLS + companyId) | 2026-02-14 |
 | [0003](0003-api-trpc-vs-rest.md) | API : tRPC plutôt que REST | 2026-02-14 |
 | [0004](0004-recherche-tsvector-vs-ilike.md) | Recherche full-text : tsvector vs ilike/contains | 2026-02-21 |
+| [0005](0005-villes-structurees-table-city-api-photon.md) | Villes structurées : table City + API Photon | 2026-02-21 |
 
 ---
 

@@ -111,8 +111,37 @@ export const candidateRouter = router({
       const limit = input.limit;
       const take = limit + 1;
 
+      const tagIds = input.tagIds?.filter(Boolean).length
+        ? input.tagIds
+        : undefined;
+      const city = input.city;
+      const languageNames = input.languageNames?.filter(Boolean).length
+        ? input.languageNames
+        : undefined;
+
+      const whereConditions = [
+        { companyId: ctx.companyId },
+        ...(tagIds?.length
+          ? tagIds.map((tagId) => ({
+              tags: { some: { tagId } },
+            }))
+          : []),
+        ...(city
+          ? [{ city: { contains: city, mode: "insensitive" as const } }]
+          : []),
+        ...(languageNames?.length
+          ? languageNames.map((name) => ({
+              languages: {
+                some: {
+                  name: { equals: name, mode: "insensitive" as const },
+                },
+              },
+            }))
+          : []),
+      ];
+
       const candidates = await ctx.db.candidate.findMany({
-        where: { companyId: ctx.companyId },
+        where: { AND: whereConditions },
         orderBy: { createdAt: "desc" },
         take,
         ...(input.cursor ? { cursor: { id: input.cursor }, skip: 1 } : {}),
@@ -153,6 +182,39 @@ export const candidateRouter = router({
         hasMore: !!nextCursor,
       };
     }),
+
+  /**
+   * Retourne les noms de langues distincts des candidats du cabinet (pour filtre).
+   */
+  listDistinctLanguageNames: protectedProcedure.query(async ({ ctx }) => {
+    const rows = await ctx.db.language.findMany({
+      where: {
+        candidate: { companyId: ctx.companyId },
+      },
+      distinct: ["name"],
+      select: { name: true },
+      orderBy: { name: "asc" },
+    });
+    return rows.map((r) => r.name);
+  }),
+
+  /**
+   * Retourne les villes distinctes non nulles des candidats du cabinet (pour autocomplete filtre).
+   */
+  listDistinctCities: protectedProcedure.query(async ({ ctx }) => {
+    const rows = await ctx.db.candidate.findMany({
+      where: {
+        companyId: ctx.companyId,
+        city: { not: null },
+      },
+      distinct: ["city"],
+      select: { city: true },
+      orderBy: { city: "asc" },
+    });
+    return rows
+      .map((r) => r.city)
+      .filter((c): c is string => typeof c === "string" && c.length > 0);
+  }),
 
   /**
    * Récupère un candidat par id avec toutes les relations nécessaires au layout CV.
