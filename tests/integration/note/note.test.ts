@@ -20,6 +20,7 @@ describe.runIf(!!connectionString)("note", () => {
   let userCId: string;
   let candidateA1Id: string;
   let candidateB1Id: string;
+  let offerA1Id: string;
 
   const createContext = (companyId: string | null, userId?: string): Context =>
     ({
@@ -99,14 +100,26 @@ describe.runIf(!!connectionString)("note", () => {
     ]);
     candidateA1Id = cA1.id;
     candidateB1Id = cB1.id;
+
+    const offerA1 = await db.jobOffer.create({
+      data: {
+        title: "Offer A1",
+        companyId: companyAId,
+      },
+    });
+    offerA1Id = offerA1.id;
   });
 
   afterAll(async () => {
     await db.note.deleteMany({
       where: {
-        candidateId: { in: [candidateA1Id, candidateB1Id] },
+        OR: [
+          { candidateId: { in: [candidateA1Id, candidateB1Id] } },
+          { offerId: offerA1Id },
+        ],
       },
     });
+    await db.jobOffer.deleteMany({ where: { id: offerA1Id } });
     await db.candidate.deleteMany({
       where: { id: { in: [candidateA1Id, candidateB1Id] } },
     });
@@ -355,6 +368,118 @@ describe.runIf(!!connectionString)("note", () => {
     });
 
     expect(updated.title).toBe("Titre modifié");
+
+    await db.note.delete({ where: { id: created.id } });
+  });
+
+  it("moveToCandidate: assigns note to candidate and clears offerId (Story 3.12)", async () => {
+    const ctx = createContext(companyAId, userAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const created = await caller.note.create({
+      content: blockNoteContent,
+      title: "Note à déplacer",
+    });
+    expect(created.candidateId).toBeNull();
+    expect(created.offerId).toBeNull();
+
+    const moved = await caller.note.moveToCandidate({
+      id: created.id,
+      candidateId: candidateA1Id,
+    });
+
+    expect(moved.candidateId).toBe(candidateA1Id);
+    expect(moved.offerId).toBeNull();
+
+    const listFree = await caller.note.listFree();
+    expect(listFree.some((n) => n.id === created.id)).toBe(false);
+
+    const listCandidate = await caller.note.list({ candidateId: candidateA1Id });
+    expect(listCandidate.some((n) => n.id === created.id)).toBe(true);
+
+    await db.note.delete({ where: { id: created.id } });
+  });
+
+  it("moveToCandidate: throws NOT_FOUND when candidate belongs to another company", async () => {
+    const ctx = createContext(companyAId, userAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const created = await caller.note.create({
+      content: blockNoteContent,
+      title: "Note libre",
+    });
+
+    await expect(
+      caller.note.moveToCandidate({
+        id: created.id,
+        candidateId: candidateB1Id,
+      })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+    await db.note.delete({ where: { id: created.id } });
+  });
+
+  it("moveToCandidate: throws FORBIDDEN when non-author tries to move", async () => {
+    const ctxA = createContext(companyAId, userAId);
+    const callerA = appRouter.createCaller(ctxA);
+    const created = await callerA.note.create({
+      content: blockNoteContent,
+      title: "Note libre",
+    });
+
+    const ctxB = createContext(companyAId, userBId);
+    const callerB = appRouter.createCaller(ctxB);
+
+    await expect(
+      callerB.note.moveToCandidate({
+        id: created.id,
+        candidateId: candidateA1Id,
+      })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+
+    await db.note.delete({ where: { id: created.id } });
+  });
+
+  it("moveToOffer: assigns note to offer and clears candidateId (Story 3.12)", async () => {
+    const ctx = createContext(companyAId, userAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const created = await caller.note.create({
+      content: blockNoteContent,
+      title: "Note à déplacer vers offre",
+    });
+    expect(created.candidateId).toBeNull();
+    expect(created.offerId).toBeNull();
+
+    const moved = await caller.note.moveToOffer({
+      id: created.id,
+      offerId: offerA1Id,
+    });
+
+    expect(moved.offerId).toBe(offerA1Id);
+    expect(moved.candidateId).toBeNull();
+
+    const listFree = await caller.note.listFree();
+    expect(listFree.some((n) => n.id === created.id)).toBe(false);
+
+    await db.note.delete({ where: { id: created.id } });
+  });
+
+  it("moveToOffer: throws NOT_FOUND when offer belongs to another company", async () => {
+    const ctx = createContext(companyBId, userCId);
+    const caller = appRouter.createCaller(ctx);
+
+    const created = await caller.note.create({
+      content: blockNoteContent,
+      title: "Note libre B",
+    });
+
+    await expect(
+      caller.note.moveToOffer({
+        id: created.id,
+        offerId: offerA1Id,
+      })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
 
     await db.note.delete({ where: { id: created.id } });
   });
