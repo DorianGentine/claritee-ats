@@ -94,7 +94,7 @@ export const SiteNavbar = () => {
     { href: "/dashboard", label: "Dashboard", pathMatch: "/dashboard" },
     { href: "/candidates", label: "Candidats", pathMatch: "/candidates" },
     { href: "#", label: "Offres (Bientôt)", disabled: true },
-    { href: "#", label: "Clients (Bientôt)", disabled: true },
+    { href: "/clients", label: "Clients", pathMatch: "/clients" },
     { href: "/settings", label: "Paramètres", pathMatch: "/settings" },
   ].map((link) => ({
     ...link,
