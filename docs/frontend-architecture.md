@@ -198,7 +198,7 @@ Configuration du client tRPC : typiquement dans un Provider (React Query + tRPC)
 - **Liens** : `next/link` pour toute navigation interne ; pas de `window.location` pour les parcours standards.
 - **Protection** : les routes `(dashboard)/**` sont protégées par le proxy Next.js (`src/proxy.ts`) ; si la session est absente, l’utilisateur est redirigé vers `/login`.
 - **Deep linking** : la page `/share/[token]` est conçue pour être ouverte par lien direct (mail, message) ; pas de dépendance à un état en mémoire.
-- **Raccourcis** : Cmd+K pour la recherche globale, Cmd+N pour la note rapide (FAB) — à implémenter dans le layout (keyboard listener).
+- **Raccourcis** : Cmd+K pour la recherche globale, Cmd+J pour le widget de note rapide — à implémenter dans le layout (keyboard listener).
 
 ---
 

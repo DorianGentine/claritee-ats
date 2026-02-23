@@ -274,6 +274,7 @@ model Candidature {
 
 model Note {
   id          String   @id @default(uuid())
+  title       String?
   content     String   @db.Text
   authorId    String
   candidateId String?

@@ -74,7 +74,9 @@ Les ATS existants sur le marché sont généralement trop chers, trop complexes 
 
 **FR19:** Le système doit permettre l'ajout de notes partagées sur les offres d'emploi
 
-**FR20:** Le système doit offrir un mécanisme de prise de notes rapide accessible depuis n'importe quelle page (bouton flottant FAB)
+**FR20:** Le système doit offrir un mécanisme de prise de notes rapide accessible depuis n'importe quelle page (widget type chat, non bloquant)
+
+**FR21:** Le système doit permettre les notes libres (non associées) et une page « Mes notes » pour les organiser et les déplacer vers candidats/offres
 
 **FR22:** Le système doit permettre la recherche de candidats par nom, prénom, titre, résumé
 
@@ -139,7 +141,6 @@ Les ATS existants sur le marché sont généralement trop chers, trop complexes 
 
 ### Out of Scope (MVP)
 
-- FR21: Notes libres non associées (reporté en Phase 2)
 - Scraping/parsing automatique de CV
 - Scraping/parsing LinkedIn
 - Vue Kanban pour le suivi des candidats
@@ -535,7 +536,7 @@ L'ordre de développement recommandé privilégie la **recherche** et la **gesti
 |-------|-------|---------|
 | **1** | Foundation | Epic 1 (1.1 → 1.7) |
 | **2** | Candidats | Epic 2 (2.1 → 2.10) |
-| **3** | **Recherche & Notes** | 4.1 Barre de recherche globale, 4.2 Filtres liste candidats, 3.9 Notes sur candidats, 3.11 Note rapide FAB |
+| **3** | **Recherche & Notes** | 4.1 Barre de recherche globale, 4.2 Filtres liste candidats, 3.9 Notes sur candidats, 3.11 Widget note rapide (chat), 3.12 Page Mes notes |
 | **4** | Offres, Clients & Pipeline | Epic 3 (3.1 → 3.8, 3.10) + 4.3 Filtres offres |
 | **5** | Partage & finalisation | 4.4 → 4.8 (Partage, Dashboard final, Paramètres) |
 
@@ -1140,26 +1141,47 @@ Permettre la gestion complète des offres d'emploi et des entreprises clientes, 
 
 **Réf.** Wireframes §5 section Notes ; router `note` (offerId).
 
-### Story 3.11: Quick Note Floating Button
+### Story 3.11: Quick Note Widget (type chat)
 
 **As a** recruiter,  
-**I want** to quickly create a note from anywhere in the app,  
-**so that** I can capture information without leaving my current context.
+**I want** to quickly create and edit notes from anywhere via a floating widget,  
+**so that** I can capture information without blocking navigation.
 
 **Acceptance Criteria:**
 
-1. Floating action button (FAB) visible on all authenticated pages
-2. FAB positioned bottom-right, styled with terracotta accent
-3. Click FAB opens quick note modal/drawer
-4. Quick note form: textarea for content
-5. Optional: associate with candidate (dropdown) or offer (dropdown)
-6. If on candidate page, pre-select that candidate
-7. If on offer page, pre-select that offer
-8. "Enregistrer" saves note and closes modal
-9. Keyboard shortcut: Cmd/Ctrl + N opens quick note
-10. Success toast confirms note saved
+1. Bouton flottant visible sur toutes les pages authentifiées
+2. Bouton positionné bas-droite, style terracotta
+3. Clic ouvre un panneau type chat widget (non bloquant, navigation possible)
+4. Le widget reste ouvert et conserve son état lors de la navigation
+5. Zone de saisie : éditeur BlockNote
+6. Menu/liste déroulante des notes existantes, triées par dernière modification
+7. Liste au-dessus de la zone de saisie ; clic sur une note l'ouvre dans le widget
+8. Notes libres (non associées) ; champ titre optionnel (si vide : 30 premiers caractères)
+9. Auto-save : debounce 2 secondes après dernière modification
+10. Raccourci : Cmd/Ctrl + J
+11. Lien vers page "Mes notes" accessible depuis le widget
 
-**Réf.** Wireframes « Modal Note rapide (FAB / Cmd+N) » : textarea, association optionnelle Candidat/Offre, pré-sélection selon page ; FAB terracotta (Design System).
+**Réf.** Design chat widget : panneau flottant non bloquant ; Design System § FAB.
+
+### Story 3.12: Page Mes notes
+
+**As a** recruiter,  
+**I want** a dedicated "Mes notes" page to view, organize, edit and move my free-standing notes to candidates or offers,  
+**so that** I can manage my quick notes before associating them.
+
+**Acceptance Criteria:**
+
+1. Page "Mes notes" accessible depuis la navbar et le widget
+2. Liste des notes libres triées par dernière modification
+3. Affichage : titre (ou 30 premiers caractères), extrait, date
+4. Clic ouvre l'édition (inline ou panneau)
+5. Édition : titre, contenu BlockNote ; sauvegarde
+6. Suppression avec confirmation
+7. Possibilité de "déplacer" une note vers un candidat ou une offre
+8. Empty state : "Aucune note"
+9. Lien rapide pour ouvrir le widget depuis la page
+
+**Réf.** Stories 3.9, 3.11 (notes libres, champ titre).
 
 ---
 

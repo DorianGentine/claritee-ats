@@ -50,7 +50,7 @@ Tous les écrans authentifiés partagent ce shell :
 
 - **Header** : Logo, barre de recherche globale (Cmd+K), avatar + menu utilisateur (paramètres, déconnexion)
 - **Sidebar** : Navigation principale, item actif en surbrillance (secondaire)
-- **FAB** : Fixe bas-droite, ouvre la modal de note rapide (Cmd+N)
+- **FAB Notes** : Fixe bas-droite, ouvre le widget de note rapide type chat (Cmd+J, non bloquant)
 
 ---
 
@@ -535,20 +535,13 @@ Gérer les infos du cabinet, l’équipe et les invitations.
 
 ## Modals & composants récurrents
 
-### Modal Note rapide (FAB / Cmd+N)
+### Widget Note rapide (FAB / Cmd+J)
 
-```
-┌─────────────────────────────────────────┐
-│  Nouvelle note rapide            [X]    │
-├─────────────────────────────────────────┤
-│  [Textarea - saisie du contenu]         │
-│                                         │
-│  Associer à (optionnel)                 │
-│  Candidat [▼]   Offre [▼]               │
-│                                         │
-│  [Annuler]              [Enregistrer]   │
-└─────────────────────────────────────────┘
-```
+Panneau flottant type chat (non bloquant, navigation possible) :
+- Header : titre, menu "Mes notes" (liste déroulante), bouton fermer
+- Liste des notes (au-dessus de la saisie) : tri par dernière modification
+- Zone saisie : éditeur BlockNote
+- Auto-save (debounce 2 s)
 
 ### Modal Partager (depuis fiche candidat)
 
