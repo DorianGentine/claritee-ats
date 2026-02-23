@@ -8,6 +8,7 @@ import { fr } from "@blocknote/core/locales"
 
 export type NoteBlockNoteEditorRef = {
   getContent: () => string
+  focus: () => void
 }
 
 /** Vérifie si le document BlockNote est vide (pas de texte significatif) */
@@ -66,6 +67,9 @@ export const NoteBlockNoteEditor = forwardRef<
       const e = editorRef.current
       if (!e?.document) return "[]"
       return JSON.stringify(e.document)
+    },
+    focus: () => {
+      editorRef.current?.focus()
     },
   }))
 

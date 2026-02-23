@@ -20,18 +20,20 @@ const extractTextFromBlocks = (blocks: unknown): string => {
     .join(" ")
 }
 
+const EXCERPT_MAX_LEN = 80
+
 /**
- * Dérive un titre à enregistrer à partir du contenu BlockNote : 30 premiers caractères (texte brut), ou null si vide.
+ * Retourne un extrait du contenu (texte brut tronqué) pour l'affichage en liste.
  */
-export const getNoteTitleFromContent = (content: string): string | null => {
+export const getNoteExcerpt = (content: string): string => {
   try {
     const parsed = JSON.parse(content) as unknown
     const text = extractTextFromBlocks(Array.isArray(parsed) ? parsed : [parsed])
     const plain = text.replace(/\s+/g, " ").trim()
-    if (!plain) return null
-    return plain.length > DISPLAY_TITLE_MAX_LEN ? plain.slice(0, DISPLAY_TITLE_MAX_LEN) : plain
+    if (!plain) return ""
+    return plain.length > EXCERPT_MAX_LEN ? plain.slice(0, EXCERPT_MAX_LEN) + "…" : plain
   } catch {
-    return null
+    return ""
   }
 }
 

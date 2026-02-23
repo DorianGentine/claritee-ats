@@ -5,25 +5,28 @@ import Link from "next/link"
 import { api } from "@/lib/trpc/client"
 import {
   NoteBlockNoteEditor,
+  type NoteBlockNoteEditorRef,
   isBlockNoteContentEmpty,
 } from "@/components/shared/NoteBlockNoteEditor"
-import { getNoteDisplayTitle, getNoteTitleFromContent } from "@/lib/note-utils"
+import { getNoteDisplayTitle } from "@/lib/note-utils"
 import { Button } from "@/components/ui/button"
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { StickyNote, X, ChevronDown, FileText } from "lucide-react"
+import { StickyNote, X, ChevronDown, FileText, Maximize2, Minimize2 } from "lucide-react"
 
 const DEBOUNCE_MS = 2000
 
 export const NoteChatWidget = () => {
   const [isOpen, setIsOpen] = useState(false)
+  const [isFullscreen, setIsFullscreen] = useState(false)
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null)
   const [listOpen, setListOpen] = useState(false)
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const pendingContentRef = useRef<string | null>(null)
+  const editorRef = useRef<NoteBlockNoteEditorRef>(null)
   const [saveError, setSaveError] = useState<string | null>(null)
   const utils = api.useUtils()
 
@@ -56,12 +59,10 @@ export const NoteChatWidget = () => {
     const content = pendingContentRef.current
     if (!content || isBlockNoteContentEmpty(content)) return
 
-    const title = getNoteTitleFromContent(content)
-
     if (selectedNoteId) {
-      updateMutation.mutate({ id: selectedNoteId, content, title: title ?? undefined })
+      updateMutation.mutate({ id: selectedNoteId, content })
     } else {
-      createMutation.mutate({ content, title: title ?? undefined })
+      createMutation.mutate({ content })
     }
     pendingContentRef.current = null
   }, [selectedNoteId, updateMutation, createMutation])
@@ -87,10 +88,20 @@ export const NoteChatWidget = () => {
   }, [])
 
   useEffect(() => {
+    if (!isOpen) return
+    const id = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        editorRef.current?.focus()
+      })
+    })
+    return () => cancelAnimationFrame(id)
+  }, [isOpen])
+
+  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "j") {
         e.preventDefault()
-        setIsOpen((o) => !o)
+        setIsOpen(!isOpen)
       }
       if (e.key === "Escape" && isOpen) {
         if (saveTimeoutRef.current) {
@@ -103,7 +114,7 @@ export const NoteChatWidget = () => {
     }
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [isOpen])
+  }, [isOpen, setIsOpen])
 
   const handleSelectNote = (noteId: string | null) => {
     setSaveError(null)
@@ -134,7 +145,7 @@ export const NoteChatWidget = () => {
         variant="default"
         size="icon"
         className="fixed bottom-4 right-4 size-8 rounded-full shadow-md"
-        onClick={() => setIsOpen((o) => !o)}
+        onClick={() => setIsOpen(!isOpen)}
         aria-label="Ouvrir les notes rapides"
       >
         <StickyNote className="size-4" aria-hidden />
@@ -142,7 +153,11 @@ export const NoteChatWidget = () => {
 
       {isOpen && (
         <div
-          className="fixed bottom-14 right-4 z-50 flex min-h-[80vh] max-h-[90vh] w-[350px] max-w-[90vw] flex-col overflow-hidden rounded-lg border border-border bg-card shadow-lg"
+          className={
+            isFullscreen
+              ? "fixed inset-x-4 bottom-14 z-50 flex min-h-[80vh] max-h-[90vh] max-w-none flex-col overflow-hidden rounded-lg border border-border bg-card shadow-lg"
+              : "fixed bottom-14 right-4 z-50 flex min-h-[80vh] max-h-[90vh] w-[350px] max-w-[90vw] flex-col overflow-hidden rounded-lg border border-border bg-card shadow-lg"
+          }
           role="dialog"
           aria-label="Notes rapides"
         >
@@ -156,6 +171,21 @@ export const NoteChatWidget = () => {
                 Mes notes
               </Link>
             </div>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="hidden min-[500px]:inline-flex"
+              onClick={() => setIsFullscreen((v) => !v)}
+              aria-label={
+                isFullscreen ? "Réduire le panneau de notes" : "Agrandir le panneau de notes"
+              }
+            >
+              {isFullscreen ? (
+                <Minimize2 className="size-4" aria-hidden />
+              ) : (
+                <Maximize2 className="size-4" aria-hidden />
+              )}
+            </Button>
             <Button
               variant="ghost"
               size="icon-sm"
@@ -225,6 +255,7 @@ export const NoteChatWidget = () => {
               )}
               <div className="bg-white rounded-md flex-1 min-h-0">
                 <NoteBlockNoteEditor
+                  ref={editorRef}
                   key={editorKey}
                   initialContent={currentContent}
                   editable

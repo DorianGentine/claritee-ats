@@ -107,4 +107,48 @@ export const noteRouter = router({
       await ctx.db.note.delete({ where: { id: input.id } })
       return { success: true }
     }),
+
+  moveToCandidate: protectedProcedure
+    .input(z.object({ id: z.uuid(), candidateId: z.uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" })
+      const existing = await ctx.db.note.findFirst({
+        where: { id: input.id, companyId: ctx.companyId },
+      })
+      if (!existing) throw new TRPCError({ code: "NOT_FOUND" })
+      if (existing.authorId !== ctx.user.id) {
+        throw new TRPCError({ code: "FORBIDDEN" })
+      }
+      const candidate = await ctx.db.candidate.findFirst({
+        where: { id: input.candidateId, companyId: ctx.companyId },
+      })
+      if (!candidate) throw new TRPCError({ code: "NOT_FOUND" })
+      return ctx.db.note.update({
+        where: { id: input.id },
+        data: { candidateId: input.candidateId, offerId: null },
+        include: noteAuthorInclude,
+      })
+    }),
+
+  moveToOffer: protectedProcedure
+    .input(z.object({ id: z.uuid(), offerId: z.uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" })
+      const existing = await ctx.db.note.findFirst({
+        where: { id: input.id, companyId: ctx.companyId },
+      })
+      if (!existing) throw new TRPCError({ code: "NOT_FOUND" })
+      if (existing.authorId !== ctx.user.id) {
+        throw new TRPCError({ code: "FORBIDDEN" })
+      }
+      const offer = await ctx.db.jobOffer.findFirst({
+        where: { id: input.offerId, companyId: ctx.companyId },
+      })
+      if (!offer) throw new TRPCError({ code: "NOT_FOUND" })
+      return ctx.db.note.update({
+        where: { id: input.id },
+        data: { offerId: input.offerId, candidateId: null },
+        include: noteAuthorInclude,
+      })
+    }),
 })
