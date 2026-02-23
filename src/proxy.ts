@@ -60,7 +60,8 @@ export const proxy = async (request: NextRequest) => {
     pathname.startsWith("/candidates") ||
     pathname.startsWith("/offers") ||
     pathname.startsWith("/clients") ||
-    pathname.startsWith("/settings");
+    pathname.startsWith("/settings") ||
+    pathname.startsWith("/notes")
 
   if (isDashboard && !user) {
     const redirectUrl = new URL(LOGIN_URL, request.url);

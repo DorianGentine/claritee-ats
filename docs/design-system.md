@@ -243,7 +243,7 @@ Cycle d’assignation : `colorIndex = hash(tagName) % 8`.
 - **Couleur** : primaire (terracotta).
 - **Icône** : Plus ou Note (Lucide).
 - **Ombre** : md pour le détacher du fond.
-- **Raccourci** : Cmd/Ctrl + N ouvre la modal de note rapide.
+- **Raccourci** : Cmd/Ctrl + J ouvre le widget de note rapide (éviter Cmd+N qui ouvre un nouvel onglet).
 
 ### Barre de recherche globale (Cmd+K)
 

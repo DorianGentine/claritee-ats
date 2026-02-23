@@ -18,6 +18,10 @@
 - Suivre les règles ESLint/Prettier du projet. Pas de console.log en prod ; utiliser un logger structuré si besoin (voir observabilité dans `architecture.md`).
 - Corriger toutes les erreurs de lint et TypeScript avant de considérer une tâche ou une story terminée.
 
+### Dépendances (package.json)
+
+- **Versions exactes** : utiliser des **versions stables (sans préfixe `^`)** pour toutes les dépendances dans `package.json`. Exemple : `"@radix-ui/react-avatar": "1.1.2"` et non `"^1.1.2"`. Cela évite qu’un `npm install` (ou équivalent) tire une montée de version non désirée (minor/patch) et casse la production. Les mises à jour de dépendances doivent être explicites (changement de version dans le fichier, review, tests).
+
 ---
 
 ## 2. Nommage
@@ -178,4 +182,4 @@ export const createExampleSchema = z.object({
 
 ---
 
-*Dernière mise à jour : 2026-02-21. Aligné avec `docs/architecture.md`, `docs/design-system.md` et `docs/frontend-architecture.md`.*
+*Dernière mise à jour : 2026-02-23. Aligné avec `docs/architecture.md`, `docs/design-system.md` et `docs/frontend-architecture.md`.*

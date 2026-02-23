@@ -303,4 +303,59 @@ describe.runIf(!!connectionString)("note", () => {
 
     await db.note.delete({ where: { id: created.id } });
   });
+
+  it("create: creates free note without candidateId or offerId (Story 3.11)", async () => {
+    const ctx = createContext(companyAId, userAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const created = await caller.note.create({
+      content: blockNoteContent,
+      title: "Ma note libre",
+    });
+
+    expect(created.id).toBeDefined();
+    expect(created.candidateId).toBeNull();
+    expect(created.offerId).toBeNull();
+    expect(created.title).toBe("Ma note libre");
+    expect(created.content).toBe(blockNoteContent);
+
+    await db.note.delete({ where: { id: created.id } });
+  });
+
+  it("listFree: returns free notes ordered by updatedAt desc", async () => {
+    const ctx = createContext(companyAId, userAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const n1 = await caller.note.create({ content: blockNoteContent, title: "Note 1" });
+    const n2 = await caller.note.create({
+      content: JSON.stringify([{ id: "b2", type: "paragraph", content: [{ type: "text", text: "Note 2", styles: {} }], children: [] }]),
+      title: "Note 2",
+    });
+
+    const list = await caller.note.listFree();
+    expect(list.length).toBeGreaterThanOrEqual(2);
+    expect(list[0].id).toBe(n2.id);
+    expect(list[1].id).toBe(n1.id);
+
+    await db.note.deleteMany({ where: { id: { in: [n1.id, n2.id] } } });
+  });
+
+  it("update: accepts title (Story 3.11)", async () => {
+    const ctx = createContext(companyAId, userAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const created = await caller.note.create({
+      content: blockNoteContent,
+      title: "Titre initial",
+    });
+
+    const updated = await caller.note.update({
+      id: created.id,
+      title: "Titre modifié",
+    });
+
+    expect(updated.title).toBe("Titre modifié");
+
+    await db.note.delete({ where: { id: created.id } });
+  });
 });

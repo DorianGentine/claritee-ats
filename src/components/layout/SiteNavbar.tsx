@@ -83,7 +83,8 @@ export const SiteNavbar = () => {
     pathname?.startsWith("/offers") ||
     pathname?.startsWith("/clients") ||
     pathname?.startsWith("/settings") ||
-    pathname?.startsWith("/search");
+    pathname?.startsWith("/search") ||
+    pathname?.startsWith("/notes")
 
   const companyQuery = api.company.getMyCompany.useQuery(undefined, {
     enabled: !!user && user !== "loading" && isDashboard,
@@ -241,6 +242,9 @@ export const SiteNavbar = () => {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild className="justify-end">
                     <Link href="/settings/team">Équipe</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild className="justify-end">
+                    <Link href="/notes">Mes notes</Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem

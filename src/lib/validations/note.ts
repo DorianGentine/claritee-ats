@@ -20,8 +20,11 @@ const blockNoteContentSchema = z
     { message: "Format de contenu invalide" }
   )
 
+/** Schéma pour les notes liées à un candidat (Story 3.9) ou notes libres (Story 3.11) */
 export const createNoteSchema = z.object({
-  candidateId: z.uuid(),
+  candidateId: z.uuid().optional(),
+  offerId: z.uuid().optional(),
+  title: z.string().trim().optional(),
   content: blockNoteContentSchema,
 })
 
@@ -29,7 +32,8 @@ export type CreateNoteInput = z.infer<typeof createNoteSchema>
 
 export const updateNoteSchema = z.object({
   id: z.uuid(),
-  content: blockNoteContentSchema,
+  title: z.string().trim().optional(),
+  content: blockNoteContentSchema.optional(),
 })
 
 export type UpdateNoteInput = z.infer<typeof updateNoteSchema>

@@ -32,17 +32,20 @@ type Props = {
   editable?: boolean
   /** Appelé quand le contenu change (pour activer/désactiver le bouton Enregistrer) */
   onContentChange?: (isEmpty: boolean) => void
+  /** Appelé avec le contenu JSON brut à chaque modification (pour auto-save debounced) */
+  onRawContentChange?: (content: string) => void
 }
 
 export const NoteBlockNoteEditor = forwardRef<
   NoteBlockNoteEditorRef,
   Props
->(({ initialContent, editable = true, onContentChange }, ref) => {
+>(({ initialContent, editable = true, onContentChange, onRawContentChange }, ref) => {
   const initialBlocks = (() => {
     if (!initialContent?.trim()) return undefined
     try {
       const parsed = JSON.parse(initialContent) as unknown
-      return Array.isArray(parsed) ? (parsed as Partial<Block>[]) : undefined
+      const blocks = Array.isArray(parsed) ? (parsed as Partial<Block>[]) : undefined
+      return blocks?.length ? blocks : undefined
     } catch {
       return undefined
     }
@@ -67,10 +70,10 @@ export const NoteBlockNoteEditor = forwardRef<
   }))
 
   const notifyContentChange = useCallback(() => {
-    if (!onContentChange) return
     const content = JSON.stringify(editor.document)
-    onContentChange(isBlockNoteContentEmpty(content))
-  }, [editor, onContentChange])
+    onContentChange?.(isBlockNoteContentEmpty(content))
+    onRawContentChange?.(content)
+  }, [editor, onContentChange, onRawContentChange])
 
   useEffect(() => {
     notifyContentChange()
