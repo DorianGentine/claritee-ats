@@ -6,10 +6,12 @@ import { invitationRouter } from "./invitation"
 import { noteRouter } from "./note"
 import { searchRouter } from "./search"
 import { tagRouter } from "./tag"
+import { clientRouter } from "./client"
 
 export const appRouter = router({
   auth: authRouter,
   candidate: candidateRouter,
+  clientCompany: clientRouter,
   company: companyRouter,
   invitation: invitationRouter,
   note: noteRouter,
