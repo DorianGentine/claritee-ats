@@ -198,7 +198,7 @@ describe.runIf(!!connectionString)("client", () => {
     });
   });
 
-  it("getById: returns client for own company with counts", async () => {
+  it("getById: returns client for own company with counts and contacts", async () => {
     const ctx = createContext(companyAId);
     const caller = appRouter.createCaller(ctx);
 
@@ -206,7 +206,9 @@ describe.runIf(!!connectionString)("client", () => {
 
     expect(result.id).toBe(clientA1Id);
     expect(result.name).toBe("Client A1");
-    expect(result.contactsCount).toBeGreaterThanOrEqual(0);
+    expect(result.contacts).toBeDefined();
+    expect(Array.isArray(result.contacts)).toBe(true);
+    expect(result.contactsCount).toBe(result.contacts.length);
     expect(result.offersCount).toBeGreaterThanOrEqual(0);
   });
 
@@ -228,6 +230,223 @@ describe.runIf(!!connectionString)("client", () => {
         id: "00000000-0000-0000-0000-000000000000",
       }),
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+
+  describe("createContact", () => {
+    it("creates contact for own company client", async () => {
+      const ctx = createContext(companyAId);
+      const caller = appRouter.createCaller(ctx);
+
+      const created = await caller.clientCompany.createContact({
+        clientCompanyId: clientA1Id,
+        firstName: "Jean",
+        lastName: "Dupont",
+        email: "jean.dupont@example.com",
+        phone: "+33612345678",
+        position: "DRH",
+        linkedinUrl: "https://linkedin.com/in/jeandupont",
+      });
+
+      expect(created.id).toBeDefined();
+      expect(created.firstName).toBe("Jean");
+      expect(created.lastName).toBe("Dupont");
+      expect(created.email).toBe("jean.dupont@example.com");
+      expect(created.phone).toBe("+33612345678");
+      expect(created.position).toBe("DRH");
+      expect(created.linkedinUrl).toBe("https://linkedin.com/in/jeandupont");
+      expect(created.clientCompanyId).toBe(clientA1Id);
+
+      const getById = await caller.clientCompany.getById({ id: clientA1Id });
+      expect(getById.contacts.some((c) => c.id === created.id)).toBe(true);
+
+      await db.clientContact.delete({ where: { id: created.id } });
+    });
+
+    it("rejects when firstName is missing", async () => {
+      const ctx = createContext(companyAId);
+      const caller = appRouter.createCaller(ctx);
+
+      await expect(
+        caller.clientCompany.createContact({
+          clientCompanyId: clientA1Id,
+          firstName: "",
+          lastName: "Dupont",
+        }),
+      ).rejects.toMatchObject({
+        message: expect.stringContaining("prénom"),
+      });
+    });
+
+    it("rejects when lastName is missing", async () => {
+      const ctx = createContext(companyAId);
+      const caller = appRouter.createCaller(ctx);
+
+      await expect(
+        caller.clientCompany.createContact({
+          clientCompanyId: clientA1Id,
+          firstName: "Jean",
+          lastName: "",
+        }),
+      ).rejects.toMatchObject({
+        message: expect.stringContaining("nom"),
+      });
+    });
+
+    it("rejects invalid email format", async () => {
+      const ctx = createContext(companyAId);
+      const caller = appRouter.createCaller(ctx);
+
+      await expect(
+        caller.clientCompany.createContact({
+          clientCompanyId: clientA1Id,
+          firstName: "Jean",
+          lastName: "Dupont",
+          email: "invalid-email",
+        }),
+      ).rejects.toMatchObject({
+        message: expect.stringContaining("email"),
+      });
+    });
+
+    it("rejects invalid LinkedIn URL format", async () => {
+      const ctx = createContext(companyAId);
+      const caller = appRouter.createCaller(ctx);
+
+      await expect(
+        caller.clientCompany.createContact({
+          clientCompanyId: clientA1Id,
+          firstName: "Jean",
+          lastName: "Dupont",
+          linkedinUrl: "https://example.com/not-linkedin",
+        }),
+      ).rejects.toMatchObject({
+        message: expect.stringContaining("LinkedIn"),
+      });
+    });
+
+    it("throws NOT_FOUND when clientCompany belongs to another company", async () => {
+      const ctx = createContext(companyAId);
+      const caller = appRouter.createCaller(ctx);
+
+      await expect(
+        caller.clientCompany.createContact({
+          clientCompanyId: clientB1Id,
+          firstName: "Jean",
+          lastName: "Dupont",
+        }),
+      ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    });
+
+    it("throws NOT_FOUND for non-existent clientCompanyId", async () => {
+      const ctx = createContext(companyAId);
+      const caller = appRouter.createCaller(ctx);
+
+      await expect(
+        caller.clientCompany.createContact({
+          clientCompanyId: "00000000-0000-0000-0000-000000000000",
+          firstName: "Jean",
+          lastName: "Dupont",
+        }),
+      ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    });
+  });
+
+  describe("updateContact", () => {
+    it("updates contact for own company", async () => {
+      const ctx = createContext(companyAId);
+      const caller = appRouter.createCaller(ctx);
+
+      const created = await caller.clientCompany.createContact({
+        clientCompanyId: clientA1Id,
+        firstName: "Jean",
+        lastName: "Dupont",
+      });
+
+      const updated = await caller.clientCompany.updateContact({
+        id: created.id,
+        firstName: "Jean-Pierre",
+        position: "DRH",
+      });
+
+      expect(updated.firstName).toBe("Jean-Pierre");
+      expect(updated.lastName).toBe("Dupont");
+      expect(updated.position).toBe("DRH");
+
+      await db.clientContact.delete({ where: { id: created.id } });
+    });
+
+    it("throws NOT_FOUND when contact belongs to another company", async () => {
+      const ctxA = createContext(companyAId);
+      const ctxB = createContext(companyBId);
+      const callerA = appRouter.createCaller(ctxA);
+      const callerB = appRouter.createCaller(ctxB);
+
+      const created = await callerB.clientCompany.createContact({
+        clientCompanyId: clientB1Id,
+        firstName: "Marie",
+        lastName: "Martin",
+      });
+
+      await expect(
+        callerA.clientCompany.updateContact({
+          id: created.id,
+          firstName: "Hacked",
+        }),
+      ).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+      await db.clientContact.delete({ where: { id: created.id } });
+    });
+  });
+
+  describe("deleteContact", () => {
+    it("deletes contact for own company", async () => {
+      const ctx = createContext(companyAId);
+      const caller = appRouter.createCaller(ctx);
+
+      const created = await caller.clientCompany.createContact({
+        clientCompanyId: clientA1Id,
+        firstName: "ToDelete",
+        lastName: "Contact",
+      });
+
+      const result = await caller.clientCompany.deleteContact({ id: created.id });
+      expect(result.success).toBe(true);
+
+      const inDb = await db.clientContact.findUnique({
+        where: { id: created.id },
+      });
+      expect(inDb).toBeNull();
+    });
+
+    it("throws NOT_FOUND when contact belongs to another company", async () => {
+      const ctxA = createContext(companyAId);
+      const ctxB = createContext(companyBId);
+      const callerA = appRouter.createCaller(ctxA);
+      const callerB = appRouter.createCaller(ctxB);
+
+      const created = await callerB.clientCompany.createContact({
+        clientCompanyId: clientB1Id,
+        firstName: "Marie",
+        lastName: "Martin",
+      });
+
+      await expect(
+        callerA.clientCompany.deleteContact({ id: created.id }),
+      ).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+      await db.clientContact.delete({ where: { id: created.id } });
+    });
+
+    it("throws NOT_FOUND for non-existent contact id", async () => {
+      const ctx = createContext(companyAId);
+      const caller = appRouter.createCaller(ctx);
+
+      await expect(
+        caller.clientCompany.deleteContact({
+          id: "00000000-0000-0000-0000-000000000000",
+        }),
+      ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    });
   });
 });
 
