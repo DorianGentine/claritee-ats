@@ -216,6 +216,7 @@ model ClientContact {
   createdAt      DateTime @default(now())
 
   clientCompany ClientCompany @relation(fields: [clientCompanyId], references: [id], onDelete: Cascade)
+  jobOffers     JobOffer[]
 }
 
 // ============ JOB OFFER ============
@@ -229,12 +230,14 @@ model JobOffer {
   salaryMax        Int?
   status           JobOfferStatus  @default(TODO)
   clientCompanyId  String?
+  clientContactId  String?
   companyId        String
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
 
   company        Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
   clientCompany  ClientCompany?  @relation(fields: [clientCompanyId], references: [id], onDelete: SetNull)
+   clientContact  ClientContact?  @relation(fields: [clientContactId], references: [id], onDelete: SetNull)
   tags           OfferTag[]
   candidatures   Candidature[]
   notes          Note[]
