@@ -48,10 +48,56 @@ export const createClientContactSchema = z.object({
 
 export type CreateClientContactInput = z.infer<typeof createClientContactSchema>;
 
-/** Schéma de mise à jour d'un contact client (partial + id) */
-export const updateClientContactSchema = z
-  .object({ id: z.uuid() })
-  .merge(createClientContactSchema.partial());
+/**
+ * Variantes des champs optionnels pour la mise à jour :
+ * - string: mettre à jour avec une valeur non vide
+ * - null: forcer l'effacement (set null en base)
+ * - undefined: ne pas toucher au champ
+ */
+const updatableOptionalString = z
+  .union([z.string(), z.null()])
+  .optional()
+  .transform((v) => {
+    if (v === null) return v;
+    return trimToUndefined(v);
+  });
+
+const updatableOptionalEmail = z
+  .union([z.string(), z.null()])
+  .optional()
+  .transform((v) => {
+    if (v === null) return v;
+    return trimToUndefined(v);
+  })
+  .refine((v) => v === null || !v || z.email().safeParse(v).success, {
+    message: "Veuillez entrer une adresse email valide.",
+  });
+
+const updatableOptionalLinkedInUrl = z
+  .union([z.string(), z.null()])
+  .optional()
+  .transform((v) => {
+    if (v === null) return v;
+    return trimToUndefined(v);
+  })
+  .refine(
+    (v) =>
+      v === null ||
+      !v ||
+      /^https?:\/\/(www\.)?linkedin\.com\/in\/[a-zA-Z0-9_-]+\/?$/i.test(v),
+    { message: "L'URL LinkedIn doit être au format linkedin.com/in/..." }
+  );
+
+/** Schéma de mise à jour d'un contact client */
+export const updateClientContactSchema = z.object({
+  id: z.uuid(),
+  firstName: z.string().min(1, "Le prénom est requis.").optional(),
+  lastName: z.string().min(1, "Le nom est requis.").optional(),
+  email: updatableOptionalEmail,
+  phone: updatableOptionalString,
+  position: updatableOptionalString,
+  linkedinUrl: updatableOptionalLinkedInUrl,
+});
 
 export type UpdateClientContactInput = z.infer<typeof updateClientContactSchema>;
 
