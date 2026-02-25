@@ -101,18 +101,28 @@ export const ClientContactFormModal = ({
   });
 
   const onSubmit = (values: ClientContactFormInput) => {
-    const payload = {
-      firstName: values.firstName,
-      lastName: values.lastName,
-      email: values.email ?? undefined,
-      phone: values.phone ?? undefined,
-      position: values.position ?? undefined,
-      linkedinUrl: values.linkedinUrl ?? undefined,
-    };
     if (isEdit && contact) {
-      updateMutation.mutate({ id: contact.id, ...payload });
+      // For update: send null for cleared optional fields so they are present in JSON
+      // (undefined is stripped by JSON.stringify). Server uses null to clear DB fields.
+      updateMutation.mutate({
+        id: contact.id,
+        firstName: values.firstName,
+        lastName: values.lastName,
+        email: values.email ?? null,
+        phone: values.phone ?? null,
+        position: values.position ?? null,
+        linkedinUrl: values.linkedinUrl ?? null,
+      });
     } else {
-      createMutation.mutate({ clientCompanyId, ...payload });
+      createMutation.mutate({
+        clientCompanyId,
+        firstName: values.firstName,
+        lastName: values.lastName,
+        email: values.email ?? undefined,
+        phone: values.phone ?? undefined,
+        position: values.position ?? undefined,
+        linkedinUrl: values.linkedinUrl ?? undefined,
+      });
     }
   };
 
