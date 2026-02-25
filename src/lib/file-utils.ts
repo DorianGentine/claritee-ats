@@ -5,17 +5,17 @@
  */
 export const fileToBase64 = (
   file: File,
-  defaultMime = "application/octet-stream",
+  defaultMime = "application/octet-stream"
 ): Promise<{ base64: string; mimeType: string }> =>
   new Promise((resolve, reject) => {
-    const reader = new FileReader()
+    const reader = new FileReader();
     reader.onload = () => {
-      const dataUrl = reader.result as string
-      const [header, base64] = dataUrl.split(",")
-      const mimeMatch = header?.match(/:(.+);/)
-      const mimeType = (mimeMatch?.[1] ?? defaultMime) as string
-      resolve({ base64: base64 ?? "", mimeType })
-    }
-    reader.onerror = reject
-    reader.readAsDataURL(file)
-  })
+      const dataUrl = reader.result as string;
+      const [header, base64] = dataUrl.split(",");
+      const mimeMatch = header?.match(/:(.+);/);
+      const mimeType = (mimeMatch?.[1] ?? defaultMime) as string;
+      resolve({ base64: base64 ?? "", mimeType });
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });

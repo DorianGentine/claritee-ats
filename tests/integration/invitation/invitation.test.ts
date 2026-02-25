@@ -79,7 +79,9 @@ describe.runIf(!!connectionString)("invitation", () => {
     const ctx = createPublicContext();
     const caller = appRouter.createCaller(ctx);
 
-    const result = await caller.invitation.getByToken({ token: invitationToken });
+    const result = await caller.invitation.getByToken({
+      token: invitationToken,
+    });
 
     expect(result).not.toBeNull();
     expect(result?.email).toContain("invite-");
@@ -148,7 +150,9 @@ describe.runIf(!!connectionString)("invitation", () => {
     const ctx = createPublicContext();
     const caller = appRouter.createCaller(ctx);
 
-    const result = await caller.invitation.getByToken({ token: invitationToken });
+    const result = await caller.invitation.getByToken({
+      token: invitationToken,
+    });
 
     expect(result).not.toBeNull();
     expect(result?.revokedAt).not.toBeNull();

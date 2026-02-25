@@ -3,11 +3,7 @@ import { readFileSync, existsSync } from "fs";
 import { join } from "path";
 
 describe("RLS migration", () => {
-  const migrationsPath = join(
-    process.cwd(),
-    "prisma",
-    "migrations",
-  );
+  const migrationsPath = join(process.cwd(), "prisma", "migrations");
 
   const expectedPolicies = [
     "company_select_own",
@@ -21,7 +17,10 @@ describe("RLS migration", () => {
   ];
 
   it("has migration folder for RLS policies", () => {
-    const rlsMigration = join(migrationsPath, "20300101000000_add_rls_policies");
+    const rlsMigration = join(
+      migrationsPath,
+      "20300101000000_add_rls_policies"
+    );
     expect(existsSync(rlsMigration)).toBe(true);
   });
 
@@ -29,26 +28,28 @@ describe("RLS migration", () => {
     const rlsMigrationPath = join(
       migrationsPath,
       "20300101000000_add_rls_policies",
-      "migration.sql",
+      "migration.sql"
     );
     const content = readFileSync(rlsMigrationPath, "utf-8");
-    expect(content).toContain('ALTER TABLE "Company" ENABLE ROW LEVEL SECURITY');
+    expect(content).toContain(
+      'ALTER TABLE "Company" ENABLE ROW LEVEL SECURITY'
+    );
     expect(content).toContain('ALTER TABLE "User" ENABLE ROW LEVEL SECURITY');
-    expect(content).toContain('ALTER TABLE "Invitation" ENABLE ROW LEVEL SECURITY');
+    expect(content).toContain(
+      'ALTER TABLE "Invitation" ENABLE ROW LEVEL SECURITY'
+    );
   });
 
   it("contains expected RLS policies", () => {
     const rlsMigrationPath = join(
       migrationsPath,
       "20300101000000_add_rls_policies",
-      "migration.sql",
+      "migration.sql"
     );
     const content = readFileSync(rlsMigrationPath, "utf-8");
 
     for (const policy of expectedPolicies) {
-      expect(content, `Missing policy: ${policy}`).toContain(
-        `"${policy}"`,
-      );
+      expect(content, `Missing policy: ${policy}`).toContain(`"${policy}"`);
     }
   });
 });

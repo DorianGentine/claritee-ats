@@ -6,8 +6,7 @@ import type { Context } from "@/server/trpc/context";
 
 const connectionString = process.env.DATABASE_URL;
 const hasSupabase =
-  !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
-  !!process.env.SUPABASE_SECRET_KEY;
+  !!process.env.NEXT_PUBLIC_SUPABASE_URL && !!process.env.SUPABASE_SECRET_KEY;
 
 describe.runIf(!!connectionString && hasSupabase)("auth.register", () => {
   let db: PrismaClient;
@@ -71,7 +70,7 @@ describe.runIf(!!connectionString && hasSupabase)("auth.register", () => {
         siren: testSiren,
         firstName: "Other",
         lastName: "User",
-      }),
+      })
     ).rejects.toMatchObject({
       message: expect.stringMatching(/disponible/),
     });

@@ -18,15 +18,15 @@ Les ATS existants sur le marché sont généralement trop chers, trop complexes 
 
 ### Change Log
 
-| Date | Version | Description | Author |
-|------|---------|-------------|--------|
-| 2026-01-24 | 1.0 | Initial PRD creation | John (PM) |
-| 2026-01-24 | 1.1 | Added Data Model, User Flows, Testing Matrix, Observability, Error Messages | John (PM) |
-| 2026-02-14 | 1.2 | Repasse epics/stories : intégration livrables UX (wireframes, design-system) et Architecture ; références par epic et story ; Next Steps mis à jour | John (PM) |
-| 2026-02-14 | 1.3 | Alignement epics/stories avec doc architecture : rate limiting (Stories 1.3, 1.4, 2.3, 2.9, 4.4), références frontend-architecture, rate-limiting, coding-standards, source-tree, tech-stack ; a11y (Story 1.7) | John (PM) |
-| 2026-02-21 | 1.4 | Association offre d'emploi à un contact client (FR16b, modèle JobOffer + clientContactId, Stories 3.4 & 3.6) | John (PM) |
-| 2026-02-21 | 1.5 | Priorisation : Recherche (4.1, 4.2) et Notes (3.9, 3.11) avant Offres/Clients ; section Ordre de priorités, Next Steps | John (PM) |
-| 2026-02-21 | 1.6 | Éditeur BlockNote pour les notes (Story 3.9) — retiré de Out of Scope | John (PM) |
+| Date       | Version | Description                                                                                                                                                                                                     | Author    |
+| ---------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| 2026-01-24 | 1.0     | Initial PRD creation                                                                                                                                                                                            | John (PM) |
+| 2026-01-24 | 1.1     | Added Data Model, User Flows, Testing Matrix, Observability, Error Messages                                                                                                                                     | John (PM) |
+| 2026-02-14 | 1.2     | Repasse epics/stories : intégration livrables UX (wireframes, design-system) et Architecture ; références par epic et story ; Next Steps mis à jour                                                             | John (PM) |
+| 2026-02-14 | 1.3     | Alignement epics/stories avec doc architecture : rate limiting (Stories 1.3, 1.4, 2.3, 2.9, 4.4), références frontend-architecture, rate-limiting, coding-standards, source-tree, tech-stack ; a11y (Story 1.7) | John (PM) |
+| 2026-02-21 | 1.4     | Association offre d'emploi à un contact client (FR16b, modèle JobOffer + clientContactId, Stories 3.4 & 3.6)                                                                                                    | John (PM) |
+| 2026-02-21 | 1.5     | Priorisation : Recherche (4.1, 4.2) et Notes (3.9, 3.11) avant Offres/Clients ; section Ordre de priorités, Next Steps                                                                                          | John (PM) |
+| 2026-02-21 | 1.6     | Éditeur BlockNote pour les notes (Story 3.9) — retiré de Out of Scope                                                                                                                                           | John (PM) |
 
 ---
 
@@ -122,22 +122,22 @@ Les ATS existants sur le marché sont généralement trop chers, trop complexes 
 
 ### Standard Error Messages
 
-| Situation | Message utilisateur |
-|-----------|---------------------|
-| Inscription : email ou SIREN indisponible | "Cette combinaison n'est pas disponible. Utilisez un autre email ou un autre numéro SIREN." |
-| Identifiants invalides | "Email ou mot de passe incorrect." |
-| Invitation expirée | "Cette invitation a expiré. Demandez une nouvelle invitation à votre administrateur." |
-| Invitation déjà utilisée | "Cette invitation a déjà été utilisée." |
-| Lien partage expiré | "Ce lien de partage a expiré. Contactez le cabinet pour obtenir un nouveau lien." |
-| Lien partage invalide | "Ce lien de partage n'existe pas ou a été supprimé." |
-| Limite tags atteinte | "Maximum 20 tags par élément. Supprimez un tag existant pour en ajouter un nouveau." |
-| Fichier trop volumineux | "Le fichier dépasse la taille maximale autorisée (2 Mo pour les photos, 5 Mo pour les CVs)." |
-| Format fichier invalide | "Format de fichier non supporté. Formats acceptés : [liste]." |
-| Candidat déjà associé | "Ce candidat est déjà associé à cette offre." |
-| Champ requis manquant | "[Nom du champ] est requis." |
-| Format email invalide | "Veuillez entrer une adresse email valide." |
-| Format SIREN invalide | "Le SIREN doit contenir exactement 9 chiffres." |
-| Trop de requêtes (rate limit) | "Trop de requêtes. Réessayez dans quelques minutes." |
+| Situation                                 | Message utilisateur                                                                          |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Inscription : email ou SIREN indisponible | "Cette combinaison n'est pas disponible. Utilisez un autre email ou un autre numéro SIREN."  |
+| Identifiants invalides                    | "Email ou mot de passe incorrect."                                                           |
+| Invitation expirée                        | "Cette invitation a expiré. Demandez une nouvelle invitation à votre administrateur."        |
+| Invitation déjà utilisée                  | "Cette invitation a déjà été utilisée."                                                      |
+| Lien partage expiré                       | "Ce lien de partage a expiré. Contactez le cabinet pour obtenir un nouveau lien."            |
+| Lien partage invalide                     | "Ce lien de partage n'existe pas ou a été supprimé."                                         |
+| Limite tags atteinte                      | "Maximum 20 tags par élément. Supprimez un tag existant pour en ajouter un nouveau."         |
+| Fichier trop volumineux                   | "Le fichier dépasse la taille maximale autorisée (2 Mo pour les photos, 5 Mo pour les CVs)." |
+| Format fichier invalide                   | "Format de fichier non supporté. Formats acceptés : [liste]."                                |
+| Candidat déjà associé                     | "Ce candidat est déjà associé à cette offre."                                                |
+| Champ requis manquant                     | "[Nom du champ] est requis."                                                                 |
+| Format email invalide                     | "Veuillez entrer une adresse email valide."                                                  |
+| Format SIREN invalide                     | "Le SIREN doit contenir exactement 9 chiffres."                                              |
+| Trop de requêtes (rate limit)             | "Trop de requêtes. Réessayez dans quelques minutes."                                         |
 
 ### Out of Scope (MVP)
 
@@ -185,6 +185,7 @@ L'application doit donner une impression de **"centre de contrôle"** où tout e
 ### Accessibility: WCAG AA
 
 L'application doit respecter les standards WCAG AA pour garantir une accessibilité de base :
+
 - Contraste suffisant entre texte et fond
 - Navigation au clavier possible
 - Labels et alt-text appropriés
@@ -205,7 +206,7 @@ L'application adoptera une identité visuelle **chaleureuse et professionnelle**
 - **Style** : Look & feel chaleureux, humain, inspiré de l'illustration (formes organiques, tons naturels)
 - **Différenciation** : Cette palette se distingue des ATS traditionnels (bleus froids corporates) et renforce le positionnement "simple et humain" de Claritee
 
-*Note: L'illustration de référence servira de base pour le Design System à créer par le UX Expert.*
+_Note: L'illustration de référence servira de base pour le Design System à créer par le UX Expert._
 
 ### Target Device and Platforms: Web Responsive (Desktop-first)
 
@@ -216,27 +217,32 @@ L'application adoptera une identité visuelle **chaleureuse et professionnelle**
 ### Key User Flows
 
 **Flow 1: Onboarding Cabinet**
+
 ```
 Landing Page → Inscription (form) → Création Company + User → Dashboard (vide) → Paramètres → Invitation collaborateurs → Copier URL
 ```
 
 **Flow 2: Ajout et partage candidat**
+
 ```
 Dashboard → Liste Candidats → Nouveau Candidat (form) → Fiche Candidat (création) → Ajout expériences → Ajout formations → Ajout tags → Partager → Choisir type (normal/anonyme) → Copier URL → Envoi au client
 ```
 
 **Flow 3: Pipeline recrutement**
+
 ```
 Liste Offres → Nouvelle Offre (form + client) → Fiche Offre → Associer Candidats (sélection multiple) → Modifier statuts candidats → Ajouter notes → Suivi pipeline
 ```
 
 **Flow 4: Recherche et découverte**
+
 ```
 N'importe quelle page → Barre recherche (Cmd+K) → Saisie requête → Résultats dropdown → Clic résultat → Fiche détail
                       → Liste Candidats → Filtres (tags, ville) → Liste filtrée → Fiche candidat
 ```
 
 **Flow 5: Note rapide**
+
 ```
 N'importe quelle page → FAB (ou Cmd+N) → Modal note → Saisie contenu → Association optionnelle (candidat/offre) → Enregistrer → Toast confirmation
 ```
@@ -250,6 +256,7 @@ N'importe quelle page → FAB (ou Cmd+N) → Modal note → Saisie contenu → A
 Le projet utilisera une structure **Monorepo** avec frontend et backend dans le même repository.
 
 **Rationale :**
+
 - Partage facilité des types TypeScript entre frontend et backend
 - Déploiement simplifié sur Vercel (un seul repo)
 - Cohérence des versions et dépendances
@@ -259,17 +266,18 @@ Le projet utilisera une structure **Monorepo** avec frontend et backend dans le 
 
 **Architecture Monolithique** avec les composants suivants :
 
-| Composant | Technologie | Justification |
-|-----------|-------------|---------------|
-| **Frontend** | React + TypeScript + Next.js | Framework moderne, SSR/SSG, déploiement Vercel natif |
-| **Backend/API** | tRPC | API type-safe de bout en bout, intégré à Next.js |
-| **ORM** | Prisma | Typage TypeScript natif, migrations déclaratives |
-| **Database** | PostgreSQL (Supabase) | Instance dédiée gratuite, 500 Mo |
-| **Auth** | Supabase Auth | Intégré à Supabase, gratuit, sessions sécurisées |
-| **Storage** | Supabase Storage | Stockage fichiers (CVs, photos), 1 Go gratuit |
-| **Hosting** | Vercel | Déploiement automatique, serverless, gratuit |
+| Composant       | Technologie                  | Justification                                        |
+| --------------- | ---------------------------- | ---------------------------------------------------- |
+| **Frontend**    | React + TypeScript + Next.js | Framework moderne, SSR/SSG, déploiement Vercel natif |
+| **Backend/API** | tRPC                         | API type-safe de bout en bout, intégré à Next.js     |
+| **ORM**         | Prisma                       | Typage TypeScript natif, migrations déclaratives     |
+| **Database**    | PostgreSQL (Supabase)        | Instance dédiée gratuite, 500 Mo                     |
+| **Auth**        | Supabase Auth                | Intégré à Supabase, gratuit, sessions sécurisées     |
+| **Storage**     | Supabase Storage             | Stockage fichiers (CVs, photos), 1 Go gratuit        |
+| **Hosting**     | Vercel                       | Déploiement automatique, serverless, gratuit         |
 
 **Rationale :**
+
 - Pas de microservices → complexité inutile pour un MVP avec un seul développeur
 - tRPC intégré dans Next.js API routes → un seul déploiement
 - Supabase Auth choisi car il unifie auth, DB et storage sous un même écosystème
@@ -278,29 +286,30 @@ Le projet utilisera une structure **Monorepo** avec frontend et backend dans le 
 
 **Stratégie de test pour le MVP :**
 
-| Type | Scope | Outils suggérés |
-|------|-------|-----------------|
-| **Unit Tests** | Fonctions utilitaires, logique métier | Vitest |
-| **Integration Tests** | API tRPC, interactions DB | Vitest + Prisma test utils |
-| **E2E Tests** | Parcours utilisateur critiques (optionnel) | Playwright |
+| Type                  | Scope                                      | Outils suggérés            |
+| --------------------- | ------------------------------------------ | -------------------------- |
+| **Unit Tests**        | Fonctions utilitaires, logique métier      | Vitest                     |
+| **Integration Tests** | API tRPC, interactions DB                  | Vitest + Prisma test utils |
+| **E2E Tests**         | Parcours utilisateur critiques (optionnel) | Playwright                 |
 
 **Priorité MVP :**
+
 1. Tests unitaires sur la logique métier critique (validation SIREN, génération URLs partage)
 2. Tests d'intégration sur les endpoints tRPC principaux
 3. E2E optionnel - focus sur les happy paths critiques si temps disponible
 
 **Testing Strategy Matrix:**
 
-| Priorité | Type | Scope | Exemples |
-|----------|------|-------|----------|
-| **P1** | Unit | Logique métier critique | Validation SIREN (9 digits), génération tokens partage (UUID), formatage dates, calcul expiration |
-| **P1** | Integration | Auth flow complet | Register, login, logout, session persistence, protected routes |
-| **P1** | Integration | CRUD Candidats | Create, read, update, delete, RLS isolation |
-| **P2** | Integration | CRUD Offres | Create, read, update, delete, association client |
-| **P2** | Integration | Candidatures | Association candidat-offre, changement statut, dissociation |
-| **P2** | Integration | Notes | Create, read, update (own), delete (own), association |
-| **P3** | E2E | Happy path principal | Inscription → Création candidat → Ajout expérience → Partage → Vérification page publique |
-| **P3** | E2E | Pipeline recrutement | Création offre → Association candidats → Changement statuts |
+| Priorité | Type        | Scope                   | Exemples                                                                                          |
+| -------- | ----------- | ----------------------- | ------------------------------------------------------------------------------------------------- |
+| **P1**   | Unit        | Logique métier critique | Validation SIREN (9 digits), génération tokens partage (UUID), formatage dates, calcul expiration |
+| **P1**   | Integration | Auth flow complet       | Register, login, logout, session persistence, protected routes                                    |
+| **P1**   | Integration | CRUD Candidats          | Create, read, update, delete, RLS isolation                                                       |
+| **P2**   | Integration | CRUD Offres             | Create, read, update, delete, association client                                                  |
+| **P2**   | Integration | Candidatures            | Association candidat-offre, changement statut, dissociation                                       |
+| **P2**   | Integration | Notes                   | Create, read, update (own), delete (own), association                                             |
+| **P3**   | E2E         | Happy path principal    | Inscription → Création candidat → Ajout expérience → Partage → Vérification page publique         |
+| **P3**   | E2E         | Pipeline recrutement    | Création offre → Association candidats → Changement statuts                                       |
 
 ### Additional Technical Assumptions and Requests
 
@@ -319,21 +328,23 @@ Le projet utilisera une structure **Monorepo** avec frontend et backend dans le 
 
 ### Observability Requirements
 
-| Métrique | Seuil d'alerte | Action |
-|----------|----------------|--------|
-| Temps de réponse API | > 500ms (P95) | Alert → Investigation |
-| Taux d'erreurs 5xx | > 1% sur 5 min | Alert → Investigation immédiate |
-| Taux d'erreurs 4xx | > 10% sur 5 min | Warning → Review logs |
-| Espace DB utilisé | > 400 Mo | Warning (limite free tier: 500 Mo) |
-| Espace Storage utilisé | > 800 Mo | Warning (limite free tier: 1 Go) |
-| Bandwidth Vercel | > 80 Go/mois | Warning (limite: 100 Go) |
+| Métrique               | Seuil d'alerte  | Action                             |
+| ---------------------- | --------------- | ---------------------------------- |
+| Temps de réponse API   | > 500ms (P95)   | Alert → Investigation              |
+| Taux d'erreurs 5xx     | > 1% sur 5 min  | Alert → Investigation immédiate    |
+| Taux d'erreurs 4xx     | > 10% sur 5 min | Warning → Review logs              |
+| Espace DB utilisé      | > 400 Mo        | Warning (limite free tier: 500 Mo) |
+| Espace Storage utilisé | > 800 Mo        | Warning (limite free tier: 1 Go)   |
+| Bandwidth Vercel       | > 80 Go/mois    | Warning (limite: 100 Go)           |
 
 **Outils de monitoring (gratuits) :**
+
 - Vercel Analytics : Performance frontend, Core Web Vitals
 - Supabase Dashboard : Métriques DB, requêtes lentes, storage
 - Vercel Logs : Logs serverless functions, erreurs
 
 **Métriques business à tracker :**
+
 - Cabinets actifs (connexion < 7 jours)
 - Candidats créés / cabinet
 - Offres créées / cabinet
@@ -510,37 +521,37 @@ ShareLink
 
 Les epics et stories s’appuient sur les livrables suivants ; les critères d’acceptation doivent être alignés avec ces références :
 
-| Livrable | Fichier | Contenu clé |
-|----------|---------|-------------|
-| **Architecture** | `docs/architecture.md` | Stack (Next.js, tRPC v11, Prisma, Supabase), multi-tenancy RLS, schéma de données, structure monorepo `src/`, routers tRPC, Auth, Storage (buckets `photos` / `cvs`), déploiement Vercel |
-| **Architecture Frontend** | `docs/frontend-architecture.md` | Stack frontend, état (TanStack Query), routing (tableau routes), composants (props/events §4.2), intégration API, accessibilité |
-| **Rate Limiting** | `docs/architecture/rate-limiting.md` | Seuils (auth IP, share userId, upload userId), où brancher, guide d'intégration `src/lib/rate-limit.ts` |
-| **Coding Standards** | `docs/architecture/coding-standards.md` | Pièges courants §5.1, template router §3.1, outils a11y (jest-axe, Pa11y) §7 |
-| **Source Tree** | `docs/architecture/source-tree.md` | Structure dossiers, « où placer quoi » pour nouveaux composants/routers |
-| **Tech Stack** | `docs/architecture/tech-stack.md` | Versions pinnées des dépendances |
-| **Wireframes** | `docs/wireframes.md` | Layout global (shell), 8 écrans (Dashboard, Liste/Fiche Candidats, …), modals (note rapide, partager, recherche Cmd+K) |
-| **Design System** | `docs/design-system.md` | Palette (background, primary terracotta, secondary sauge), typo (DM Sans), composants shadcn/ui, WCAG AA |
+| Livrable                  | Fichier                                 | Contenu clé                                                                                                                                                                              |
+| ------------------------- | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Architecture**          | `docs/architecture.md`                  | Stack (Next.js, tRPC v11, Prisma, Supabase), multi-tenancy RLS, schéma de données, structure monorepo `src/`, routers tRPC, Auth, Storage (buckets `photos` / `cvs`), déploiement Vercel |
+| **Architecture Frontend** | `docs/frontend-architecture.md`         | Stack frontend, état (TanStack Query), routing (tableau routes), composants (props/events §4.2), intégration API, accessibilité                                                          |
+| **Rate Limiting**         | `docs/architecture/rate-limiting.md`    | Seuils (auth IP, share userId, upload userId), où brancher, guide d'intégration `src/lib/rate-limit.ts`                                                                                  |
+| **Coding Standards**      | `docs/architecture/coding-standards.md` | Pièges courants §5.1, template router §3.1, outils a11y (jest-axe, Pa11y) §7                                                                                                             |
+| **Source Tree**           | `docs/architecture/source-tree.md`      | Structure dossiers, « où placer quoi » pour nouveaux composants/routers                                                                                                                  |
+| **Tech Stack**            | `docs/architecture/tech-stack.md`       | Versions pinnées des dépendances                                                                                                                                                         |
+| **Wireframes**            | `docs/wireframes.md`                    | Layout global (shell), 8 écrans (Dashboard, Liste/Fiche Candidats, …), modals (note rapide, partager, recherche Cmd+K)                                                                   |
+| **Design System**         | `docs/design-system.md`                 | Palette (background, primary terracotta, secondary sauge), typo (DM Sans), composants shadcn/ui, WCAG AA                                                                                 |
 
-| # | Epic | Goal Statement |
-|---|------|----------------|
+| #          | Epic                          | Goal Statement                                                                                                                                                  |
+| ---------- | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Epic 1** | Foundation & Authentification | Établir l'infrastructure projet (Next.js, Prisma, Supabase) et implémenter l'authentification complète avec création de cabinet et invitation de collaborateurs |
-| **Epic 2** | Gestion des Candidats | Permettre la création, consultation et gestion complète des fiches candidats avec expériences, formations, CV, tags et layout professionnel type CV |
-| **Epic 3** | Offres, Clients & Pipeline | Gérer les offres d'emploi et entreprises clientes, et permettre le suivi des candidats par offre avec statuts et notes partagées |
-| **Epic 4** | Recherche, Filtres & Partage | Implémenter la recherche/filtrage des candidats et offres, et permettre le partage de fiches candidats (normales et anonymisées) via URLs publiques |
+| **Epic 2** | Gestion des Candidats         | Permettre la création, consultation et gestion complète des fiches candidats avec expériences, formations, CV, tags et layout professionnel type CV             |
+| **Epic 3** | Offres, Clients & Pipeline    | Gérer les offres d'emploi et entreprises clientes, et permettre le suivi des candidats par offre avec statuts et notes partagées                                |
+| **Epic 4** | Recherche, Filtres & Partage  | Implémenter la recherche/filtrage des candidats et offres, et permettre le partage de fiches candidats (normales et anonymisées) via URLs publiques             |
 
 ### Ordre de priorités de développement
 
 L'ordre de développement recommandé privilégie la **recherche** et la **gestion des notes** avant les onglets Offres et Clients :
 
-| Phase | Focus | Stories |
-|-------|-------|---------|
-| **1** | Foundation | Epic 1 (1.1 → 1.7) |
-| **2** | Candidats | Epic 2 (2.1 → 2.10) |
-| **3** | **Recherche & Notes** | 4.1 Barre de recherche globale, 4.2 Filtres liste candidats, 3.9 Notes sur candidats, 3.11 Widget note rapide (chat), 3.12 Page Mes notes |
-| **4** | Offres, Clients & Pipeline | Epic 3 (3.1 → 3.8, 3.10) + 4.3 Filtres offres |
-| **5** | Partage & finalisation | 4.4 → 4.8 (Partage, Dashboard final, Paramètres) |
+| Phase | Focus                      | Stories                                                                                                                                   |
+| ----- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| **1** | Foundation                 | Epic 1 (1.1 → 1.7)                                                                                                                        |
+| **2** | Candidats                  | Epic 2 (2.1 → 2.10)                                                                                                                       |
+| **3** | **Recherche & Notes**      | 4.1 Barre de recherche globale, 4.2 Filtres liste candidats, 3.9 Notes sur candidats, 3.11 Widget note rapide (chat), 3.12 Page Mes notes |
+| **4** | Offres, Clients & Pipeline | Epic 3 (3.1 → 3.8, 3.10) + 4.3 Filtres offres                                                                                             |
+| **5** | Partage & finalisation     | 4.4 → 4.8 (Partage, Dashboard final, Paramètres)                                                                                          |
 
-*Les onglets Offres et Clients (3.1–3.8) peuvent être désactivés ou masqués en navigation tant que la phase 4 n’est pas engagée.*
+_Les onglets Offres et Clients (3.1–3.8) peuvent être désactivés ou masqués en navigation tant que la phase 4 n’est pas engagée._
 
 ---
 
@@ -653,7 +664,7 @@ L'ordre de développement recommandé privilégie la **recherche** et la **gesti
 9. Admin can see list of pending invitations
 10. Admin can revoke pending invitations
 
-*Note: Email sending not included - URL generation only (admin shares manually)*
+_Note: Email sending not included - URL generation only (admin shares manually)_
 
 **Réf.** Architecture §7.3 (Invitation), router `invitation` ; wireframes §9 Paramètres (équipe, invitations).
 
@@ -828,7 +839,7 @@ Permettre la création, consultation, modification et suppression complète des 
 
 1. Experiences section on candidate detail page
 2. "Ajouter une expérience" button
-3. Experience form fields: title*, company*, startDate*, endDate (optional = current), description
+3. Experience form fields: title*, company*, startDate\*, endDate (optional = current), description
 4. Date picker for start/end dates (month + year)
 5. "Poste actuel" checkbox auto-clears endDate
 6. Plain text for description (textarea)
@@ -944,7 +955,7 @@ Permettre la gestion complète des offres d'emploi et des entreprises clientes, 
 2. Displays list of client companies as cards or table
 3. Each client shows: company name, SIREN, number of contacts, number of offers
 4. "Nouveau client" button (terracotta CTA)
-5. Creation form: companyName*, siren (optional for clients)
+5. Creation form: companyName\*, siren (optional for clients)
 6. SIREN format validation if provided
 7. Click on client navigates to client detail page
 8. Empty state: "Aucun client ajouté"
@@ -1004,7 +1015,7 @@ Permettre la gestion complète des offres d'emploi et des entreprises clientes, 
 **Acceptance Criteria:**
 
 1. "Nouvelle offre" opens creation form
-2. Form fields: title*, description (textarea), location, salaryMin, salaryMax, status, clientCompanyId, clientContactId
+2. Form fields: title\*, description (textarea), location, salaryMin, salaryMax, status, clientCompanyId, clientContactId
 3. Client company dropdown populated from existing clients
 4. Contact dropdown populated from contacts of selected client (optionnel ; si pas de client sélectionné, masqué ou vide)
 5. Option to create offer without client (client optional)
@@ -1385,23 +1396,23 @@ Les points ci-dessous sont hors périmètre du MVP mais documentés pour les év
 
 - **Affichage de l’historique de recherche dans la modal de recherche globale**  
   Inspiré de Notion : dans la grande modal de recherche (ancrée en haut de l'écran à 20vh), afficher les recherches récentes (ex. « 30 derniers jours », « Plus ancien ») lorsque l’utilisateur n’a pas encore saisi de requête ou lorsqu’il n’y a pas de résultats.  
-  *Prérequis :* persister les recherches par utilisateur/cabinet (table `SearchHistory` ou similaire), API pour récupérer l’historique, affichage dans la modal avant les résultats live.
+  _Prérequis :_ persister les recherches par utilisateur/cabinet (table `SearchHistory` ou similaire), API pour récupérer l’historique, affichage dans la modal avant les résultats live.
 
 ### Villes structurées (table City + API Photon)
 
 - **Remplacement des champs ville/localisation texte par une table City et des relations structurées**  
   Actuellement : `Candidate.city` et `JobOffer.location` sont des champs texte libres. Évolution vers une table `City` globale (name, region, country, latitude, longitude), des tables de liaison (`CandidateCity` avec ordre + drag & drop, `ClientCompanyCity` N–N sans ordre), et `JobOffer.cityId` pour une seule ville.  
-  *API externe :* Photon (Komoot), gratuite, pas de clé, Europe, français, adaptée à l'autocomplétion.  
-  *Flux :* recherche locale en base (seed 200–300 villes) puis fallback API Photon ; création à la volée des villes non référencées.  
-  *Prérequis :* migration Prisma (suppression city/location, création City + liaisons), seed initial, procédure tRPC `city.autocomplete`, refonte filtres candidats (`cityIds`), refonte formulaires candidat/offre/client.  
-  *Détail :* ADR 0005.
+  _API externe :_ Photon (Komoot), gratuite, pas de clé, Europe, français, adaptée à l'autocomplétion.  
+  _Flux :_ recherche locale en base (seed 200–300 villes) puis fallback API Photon ; création à la volée des villes non référencées.  
+  _Prérequis :_ migration Prisma (suppression city/location, création City + liaisons), seed initial, procédure tRPC `city.autocomplete`, refonte filtres candidats (`cityIds`), refonte formulaires candidat/offre/client.  
+  _Détail :_ ADR 0005.
 
 ### Rôles et permissions
 
 - **Restriction de la page Settings/Team aux admins du cabinet**  
   Actuellement, tous les utilisateurs d’un cabinet peuvent accéder à `/settings/team` et gérer les invitations.  
-  *Amélioration envisagée :* restreindre cette page et les actions d’invitation (créer, révoquer, lister) aux administrateurs du cabinet.  
-  *Prérequis :* ajout d’un champ de rôle dans le modèle `User` (ex. `role: "ADMIN" | "MEMBER"` ou `isAdmin: Boolean`), migration Prisma, procédure `adminProcedure` pour les procédures concernées.
+  _Amélioration envisagée :_ restreindre cette page et les actions d’invitation (créer, révoquer, lister) aux administrateurs du cabinet.  
+  _Prérequis :_ ajout d’un champ de rôle dans le modèle `User` (ex. `role: "ADMIN" | "MEMBER"` ou `isAdmin: Boolean`), migration Prisma, procédure `adminProcedure` pour les procédures concernées.
 
 ---
 

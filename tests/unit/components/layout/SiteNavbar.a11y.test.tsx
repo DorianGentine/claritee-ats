@@ -20,8 +20,11 @@ const mockUser = vi.hoisted(() => ({
 vi.mock("@/lib/supabase/client", () => ({
   createClient: () => ({
     auth: {
-      getSession: () => Promise.resolve({ data: { session: { user: mockUser } } }),
-      onAuthStateChange: (cb: (_e: string, s: { user: unknown } | null) => void) => {
+      getSession: () =>
+        Promise.resolve({ data: { session: { user: mockUser } } }),
+      onAuthStateChange: (
+        cb: (_e: string, s: { user: unknown } | null) => void
+      ) => {
         cb("INITIAL_SESSION", { user: mockUser });
         return { data: { subscription: { unsubscribe: () => {} } } };
       },
@@ -34,12 +37,18 @@ vi.mock("@/lib/trpc/client", () => ({
   api: {
     company: {
       getMyCompany: {
-        useQuery: () => ({ data: { id: "c1", name: "Cabinet Test" }, isLoading: false }),
+        useQuery: () => ({
+          data: { id: "c1", name: "Cabinet Test" },
+          isLoading: false,
+        }),
       },
     },
     search: {
       search: {
-        useQuery: () => ({ data: { candidates: [], offers: [] }, isLoading: false }),
+        useQuery: () => ({
+          data: { candidates: [], offers: [] },
+          isLoading: false,
+        }),
       },
     },
   },

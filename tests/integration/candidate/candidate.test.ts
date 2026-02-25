@@ -3,10 +3,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import { appRouter } from "@/server/trpc/routers/_app";
 import type { Context } from "@/server/trpc/context";
-import {
-  PHOTO_MAX_BYTES,
-  CV_MAX_BYTES,
-} from "@/lib/validations/candidate";
+import { PHOTO_MAX_BYTES, CV_MAX_BYTES } from "@/lib/validations/candidate";
 
 const connectionString = process.env.DATABASE_URL;
 
@@ -433,13 +430,16 @@ describe.runIf(!!connectionString)("candidate", () => {
     const caller = appRouter.createCaller(ctx);
 
     await expect(
-      caller.candidate.create({ firstName: "X", lastName: "Y" }),
+      caller.candidate.create({ firstName: "X", lastName: "Y" })
     ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
   });
 
   /** Minimal valid JPEG (magic bytes FF D8 FF) */
   const minimalJpegBase64 = Buffer.from([
-    0xff, 0xd8, 0xff, ...Array(20).fill(0),
+    0xff,
+    0xd8,
+    0xff,
+    ...Array(20).fill(0),
   ]).toString("base64");
 
   it("uploadPhoto: updates Candidate.photoUrl after upload", async () => {
@@ -453,7 +453,7 @@ describe.runIf(!!connectionString)("candidate", () => {
     });
 
     expect(result.photoUrl).toContain(
-      `https://storage.example.com/photos/${companyAId}/candidates/${candidateA1Id}/photo.jpg`,
+      `https://storage.example.com/photos/${companyAId}/candidates/${candidateA1Id}/photo.jpg`
     );
 
     const inDb = await db.candidate.findUniqueOrThrow({
@@ -478,11 +478,11 @@ describe.runIf(!!connectionString)("candidate", () => {
         candidateId: candidateA1Id,
         fileBase64: oversizedBase64,
         mimeType: "image/jpeg",
-      }),
+      })
     ).rejects.toMatchObject({
       code: "BAD_REQUEST",
       message: expect.stringContaining(
-        "Le fichier dépasse la taille maximale autorisée (2 Mo pour les photos, 5 Mo pour les CVs)",
+        "Le fichier dépasse la taille maximale autorisée (2 Mo pour les photos, 5 Mo pour les CVs)"
       ),
     });
   });
@@ -497,7 +497,7 @@ describe.runIf(!!connectionString)("candidate", () => {
         candidateId: candidateA1Id,
         fileBase64: smallBase64,
         mimeType: "image/gif" as "image/jpeg",
-      }),
+      })
     ).rejects.toThrow(/Format de fichier non supporté/);
   });
 
@@ -510,7 +510,7 @@ describe.runIf(!!connectionString)("candidate", () => {
         candidateId: candidateB1Id,
         fileBase64: minimalJpegBase64,
         mimeType: "image/jpeg",
-      }),
+      })
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 
@@ -524,7 +524,7 @@ describe.runIf(!!connectionString)("candidate", () => {
         candidateId: candidateA1Id,
         fileBase64: notJpegBase64,
         mimeType: "image/jpeg",
-      }),
+      })
     ).rejects.toMatchObject({
       code: "BAD_REQUEST",
       message: expect.stringContaining("Format de fichier non supporté"),
@@ -534,7 +534,13 @@ describe.runIf(!!connectionString)("candidate", () => {
   // ─── uploadCv / deleteCv ───
 
   /** Minimal valid PDF (%PDF) */
-  const minimalPdfBase64 = Buffer.from([0x25, 0x50, 0x44, 0x46, ...Array(20).fill(0)]).toString("base64");
+  const minimalPdfBase64 = Buffer.from([
+    0x25,
+    0x50,
+    0x44,
+    0x46,
+    ...Array(20).fill(0),
+  ]).toString("base64");
 
   it("uploadCv: updates Candidate.cvUrl and cvFileName after upload", async () => {
     const ctx = createContext(companyAId);
@@ -548,7 +554,7 @@ describe.runIf(!!connectionString)("candidate", () => {
     });
 
     expect(result.cvUrl).toContain(
-      `https://storage.example.com/cvs/${companyAId}/candidates/${candidateA2Id}/cv.pdf`,
+      `https://storage.example.com/cvs/${companyAId}/candidates/${candidateA2Id}/cv.pdf`
     );
     expect(result.cvFileName).toBe("Mon CV.pdf");
 
@@ -606,11 +612,11 @@ describe.runIf(!!connectionString)("candidate", () => {
         fileBase64: oversizedBase64,
         mimeType: "application/pdf",
         fileName: "big.pdf",
-      }),
+      })
     ).rejects.toMatchObject({
       code: "BAD_REQUEST",
       message: expect.stringContaining(
-        "Le fichier dépasse la taille maximale autorisée (2 Mo pour les photos, 5 Mo pour les CVs)",
+        "Le fichier dépasse la taille maximale autorisée (2 Mo pour les photos, 5 Mo pour les CVs)"
       ),
     });
   });
@@ -625,7 +631,7 @@ describe.runIf(!!connectionString)("candidate", () => {
         fileBase64: minimalPdfBase64,
         mimeType: "text/plain" as "application/pdf",
         fileName: "doc.txt",
-      }),
+      })
     ).rejects.toThrow(/Format de fichier non supporté/);
   });
 
@@ -640,7 +646,7 @@ describe.runIf(!!connectionString)("candidate", () => {
         fileBase64: notPdfBase64,
         mimeType: "application/pdf",
         fileName: "fake.pdf",
-      }),
+      })
     ).rejects.toMatchObject({
       code: "BAD_REQUEST",
       message: expect.stringContaining("Format de fichier non supporté"),
@@ -657,7 +663,7 @@ describe.runIf(!!connectionString)("candidate", () => {
         fileBase64: minimalPdfBase64,
         mimeType: "application/pdf",
         fileName: "cv.pdf",
-      }),
+      })
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 
@@ -672,7 +678,9 @@ describe.runIf(!!connectionString)("candidate", () => {
       fileName: "to-delete.pdf",
     });
 
-    const result = await caller.candidate.deleteCv({ candidateId: candidateA2Id });
+    const result = await caller.candidate.deleteCv({
+      candidateId: candidateA2Id,
+    });
     expect(result.success).toBe(true);
 
     const inDb = await db.candidate.findUniqueOrThrow({
@@ -686,7 +694,9 @@ describe.runIf(!!connectionString)("candidate", () => {
     const ctx = createContext(companyAId);
     const caller = appRouter.createCaller(ctx);
 
-    const result = await caller.candidate.deleteCv({ candidateId: candidateA2Id });
+    const result = await caller.candidate.deleteCv({
+      candidateId: candidateA2Id,
+    });
     expect(result.success).toBe(true);
   });
 
@@ -695,7 +705,7 @@ describe.runIf(!!connectionString)("candidate", () => {
     const caller = appRouter.createCaller(ctx);
 
     await expect(
-      caller.candidate.deleteCv({ candidateId: candidateB1Id }),
+      caller.candidate.deleteCv({ candidateId: candidateB1Id })
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 
@@ -714,7 +724,7 @@ describe.runIf(!!connectionString)("candidate", () => {
       candidateId: candidateA2Id,
     });
     expect(result.url).toContain(
-      `https://storage.example.com/cvs/${companyAId}/candidates/${candidateA2Id}/cv.pdf?signed`,
+      `https://storage.example.com/cvs/${companyAId}/candidates/${candidateA2Id}/cv.pdf?signed`
     );
 
     await db.candidate.update({
@@ -728,7 +738,7 @@ describe.runIf(!!connectionString)("candidate", () => {
     const caller = appRouter.createCaller(ctx);
 
     await expect(
-      caller.candidate.getCvDownloadUrl({ candidateId: candidateA2Id }),
+      caller.candidate.getCvDownloadUrl({ candidateId: candidateA2Id })
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 
@@ -737,7 +747,7 @@ describe.runIf(!!connectionString)("candidate", () => {
     const caller = appRouter.createCaller(ctx);
 
     await expect(
-      caller.candidate.getCvDownloadUrl({ candidateId: candidateB1Id }),
+      caller.candidate.getCvDownloadUrl({ candidateId: candidateB1Id })
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 
@@ -756,7 +766,7 @@ describe.runIf(!!connectionString)("candidate", () => {
     await expect(
       publicCaller.candidate.getCvDownloadUrlByShareToken({
         token: shareLink.token,
-      }),
+      })
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
 
     await db.shareLink.delete({ where: { id: shareLink.id } });
@@ -814,7 +824,7 @@ describe.runIf(!!connectionString)("candidate", () => {
     const caller = appRouter.createCaller(ctx);
 
     await expect(
-      caller.candidate.getById({ id: candidateB1Id }),
+      caller.candidate.getById({ id: candidateB1Id })
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 
@@ -824,7 +834,7 @@ describe.runIf(!!connectionString)("candidate", () => {
     const fakeId = "00000000-0000-0000-0000-000000000000";
 
     await expect(
-      caller.candidate.getById({ id: fakeId }),
+      caller.candidate.getById({ id: fakeId })
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 
@@ -852,7 +862,7 @@ describe.runIf(!!connectionString)("candidate", () => {
     const caller = appRouter.createCaller(ctx);
 
     await expect(
-      caller.candidate.delete({ id: candidateB1Id }),
+      caller.candidate.delete({ id: candidateB1Id })
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
 
     const stillExists = await db.candidate.findUnique({
@@ -958,7 +968,7 @@ describe.runIf(!!connectionString)("candidate", () => {
     const caller = appRouter.createCaller(ctx);
 
     await expect(
-      caller.candidate.update({ id: candidateB1Id, summary: "Nope" }),
+      caller.candidate.update({ id: candidateB1Id, summary: "Nope" })
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 
@@ -1005,7 +1015,7 @@ describe.runIf(!!connectionString)("candidate", () => {
         candidateId: candidateB1Id,
         name: "Français",
         level: "NATIVE",
-      }),
+      })
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 
@@ -1033,14 +1043,18 @@ describe.runIf(!!connectionString)("candidate", () => {
     const caller = appRouter.createCaller(ctx);
 
     const lang = await db.language.create({
-      data: { candidateId: candidateB1Id, name: "Allemand", level: "INTERMEDIATE" },
+      data: {
+        candidateId: candidateB1Id,
+        name: "Allemand",
+        level: "INTERMEDIATE",
+      },
     });
 
     await expect(
       caller.candidate.removeLanguage({
         candidateId: candidateB1Id,
         languageId: lang.id,
-      }),
+      })
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
 
     await db.language.delete({ where: { id: lang.id } });
@@ -1058,7 +1072,7 @@ describe.runIf(!!connectionString)("candidate", () => {
       caller.candidate.removeLanguage({
         candidateId: candidateA1Id,
         languageId: lang.id,
-      }),
+      })
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
 
     await db.language.delete({ where: { id: lang.id } });
@@ -1120,7 +1134,7 @@ describe.runIf(!!connectionString)("candidate", () => {
         title: "Dev",
         company: "Other",
         startDate: new Date("2020-01-01"),
-      }),
+      })
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 
@@ -1168,7 +1182,7 @@ describe.runIf(!!connectionString)("candidate", () => {
         candidateId: candidateB1Id,
         experienceId: exp.id,
         title: "Updated",
-      }),
+      })
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
 
     await db.experience.delete({ where: { id: exp.id } });
@@ -1192,7 +1206,7 @@ describe.runIf(!!connectionString)("candidate", () => {
         candidateId: candidateA1Id,
         experienceId: exp.id,
         title: "Hacked",
-      }),
+      })
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
 
     await db.experience.delete({ where: { id: exp.id } });
@@ -1238,7 +1252,7 @@ describe.runIf(!!connectionString)("candidate", () => {
       caller.candidate.deleteExperience({
         candidateId: candidateB1Id,
         experienceId: exp.id,
-      }),
+      })
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
 
     await db.experience.delete({ where: { id: exp.id } });
@@ -1261,7 +1275,7 @@ describe.runIf(!!connectionString)("candidate", () => {
       caller.candidate.deleteExperience({
         candidateId: candidateA1Id,
         experienceId: exp.id,
-      }),
+      })
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
 
     await db.experience.delete({ where: { id: exp.id } });
@@ -1322,7 +1336,9 @@ describe.runIf(!!connectionString)("candidate", () => {
     expect(form.degree).toBe("Master Informatique");
     expect(form.field).toBe("Systèmes distribués");
     expect(form.school).toBe("HEC Paris");
-    expect(new Date(form.startDate!).toISOString()).toBe(startDate.toISOString());
+    expect(new Date(form.startDate!).toISOString()).toBe(
+      startDate.toISOString()
+    );
     expect(new Date(form.endDate!).toISOString()).toBe(endDate.toISOString());
 
     await db.formation.delete({ where: { id: form.id } });
@@ -1356,7 +1372,7 @@ describe.runIf(!!connectionString)("candidate", () => {
         candidateId: candidateB1Id,
         degree: "MBA",
         school: "INSEAD",
-      }),
+      })
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 
@@ -1403,7 +1419,7 @@ describe.runIf(!!connectionString)("candidate", () => {
         candidateId: candidateB1Id,
         formationId: form.id,
         degree: "PhD CS",
-      }),
+      })
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
 
     await db.formation.delete({ where: { id: form.id } });
@@ -1426,7 +1442,7 @@ describe.runIf(!!connectionString)("candidate", () => {
         candidateId: candidateA1Id,
         formationId: form.id,
         degree: "Hacked",
-      }),
+      })
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
 
     await db.formation.delete({ where: { id: form.id } });
@@ -1470,7 +1486,7 @@ describe.runIf(!!connectionString)("candidate", () => {
       caller.candidate.deleteFormation({
         candidateId: candidateB1Id,
         formationId: form.id,
-      }),
+      })
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
 
     await db.formation.delete({ where: { id: form.id } });
@@ -1492,7 +1508,7 @@ describe.runIf(!!connectionString)("candidate", () => {
       caller.candidate.deleteFormation({
         candidateId: candidateA1Id,
         formationId: form.id,
-      }),
+      })
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
 
     await db.formation.delete({ where: { id: form.id } });
@@ -1672,8 +1688,8 @@ describe.runIf(!!connectionString)("candidate", () => {
             color: "#D4A5A5",
             companyId: companyAId,
           },
-        }),
-      ),
+        })
+      )
     );
     await db.candidateTag.createMany({
       data: tags.map((t) => ({
@@ -1686,7 +1702,7 @@ describe.runIf(!!connectionString)("candidate", () => {
       caller.candidate.addTag({
         candidateId: candidateA1Id,
         tagName: "Extra",
-      }),
+      })
     ).rejects.toMatchObject({
       code: "BAD_REQUEST",
       message:
@@ -1694,7 +1710,10 @@ describe.runIf(!!connectionString)("candidate", () => {
     });
 
     await db.candidateTag.deleteMany({
-      where: { candidateId: candidateA1Id, tagId: { in: tags.map((t) => t.id) } },
+      where: {
+        candidateId: candidateA1Id,
+        tagId: { in: tags.map((t) => t.id) },
+      },
     });
     await db.tag.deleteMany({
       where: { id: { in: tags.map((t) => t.id) } },
@@ -1709,7 +1728,7 @@ describe.runIf(!!connectionString)("candidate", () => {
       caller.candidate.addTag({
         candidateId: candidateB1Id,
         tagName: "Python",
-      }),
+      })
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 
@@ -1764,7 +1783,7 @@ describe.runIf(!!connectionString)("candidate", () => {
       caller.candidate.removeTag({
         candidateId: candidateB1Id,
         tagId: tag.id,
-      }),
+      })
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
 
     await db.candidateTag.delete({
@@ -1791,7 +1810,7 @@ describe.runIf(!!connectionString)("candidate", () => {
       caller.candidate.removeTag({
         candidateId: candidateA1Id,
         tagId: tag.id,
-      }),
+      })
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
 
     await db.tag.delete({ where: { id: tag.id } });

@@ -1,36 +1,36 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { useParams, useRouter } from "next/navigation"
-import { api } from "@/lib/trpc/client"
-import { JobOfferForm } from "@/components/offers/JobOfferForm"
-import { Button } from "@/components/ui/button"
-import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
+import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { api } from "@/lib/trpc/client";
+import { JobOfferForm } from "@/components/offers/JobOfferForm";
+import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 
 const EditOfferPage = () => {
-  const params = useParams<{ id: string }>()
-  const router = useRouter()
-  const id = params?.id
+  const params = useParams<{ id: string }>();
+  const router = useRouter();
+  const id = params?.id;
 
-  const utils = api.useUtils()
+  const utils = api.useUtils();
 
   const offerQuery = api.offer.getById.useQuery(
     { id: typeof id === "string" ? id : "" },
-    { enabled: typeof id === "string" && id.length > 0 },
-  )
+    { enabled: typeof id === "string" && id.length > 0 }
+  );
 
   const deleteMutation = api.offer.delete.useMutation({
     onSuccess: async () => {
-      await utils.offer.list.invalidate()
-      router.push("/offers?deleted=1")
+      await utils.offer.list.invalidate();
+      router.push("/offers?deleted=1");
     },
-  })
+  });
 
   useEffect(() => {
     if (offerQuery.isError && !offerQuery.isLoading) {
-      router.push("/offers")
+      router.push("/offers");
     }
-  }, [offerQuery.isError, offerQuery.isLoading, router])
+  }, [offerQuery.isError, offerQuery.isLoading, router]);
 
   if (offerQuery.isLoading || !id || typeof id !== "string") {
     return (
@@ -39,7 +39,7 @@ const EditOfferPage = () => {
           <p className="text-sm text-muted-foreground">Chargement…</p>
         </div>
       </main>
-    )
+    );
   }
 
   if (!offerQuery.data) {
@@ -51,19 +51,19 @@ const EditOfferPage = () => {
           </p>
         </div>
       </main>
-    )
+    );
   }
 
   const offer = offerQuery.data as typeof offerQuery.data & {
-    clientContactId?: string | null
-  }
+    clientContactId?: string | null;
+  };
 
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const handleConfirmDelete = () => {
-    if (!offer?.id) return
-    deleteMutation.mutate({ id: offer.id })
-  }
+    if (!offer?.id) return;
+    deleteMutation.mutate({ id: offer.id });
+  };
 
   return (
     <main className="min-h-[calc(100vh-3.5rem)] bg-background p-6">
@@ -118,9 +118,7 @@ const EditOfferPage = () => {
         </section>
       </div>
     </main>
-  )
-}
+  );
+};
 
-export default EditOfferPage
-
-
+export default EditOfferPage;

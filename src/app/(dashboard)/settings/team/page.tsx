@@ -4,7 +4,10 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { TRPCClientError } from "@trpc/client";
-import { createInvitationSchema, type CreateInvitationInput } from "@/lib/validations/invitation";
+import {
+  createInvitationSchema,
+  type CreateInvitationInput,
+} from "@/lib/validations/invitation";
 import { api } from "@/lib/trpc/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +26,9 @@ export default function SettingsTeamPage() {
       invitationsQuery.refetch();
     },
     onError: (err) => {
-      setServerError(err instanceof TRPCClientError ? err.message : GENERIC_ERROR_MESSAGE);
+      setServerError(
+        err instanceof TRPCClientError ? err.message : GENERIC_ERROR_MESSAGE
+      );
     },
   });
 
@@ -58,13 +63,11 @@ export default function SettingsTeamPage() {
     void navigator.clipboard.writeText(url);
   };
 
-  const getInvitationStatus = (
-    inv: {
-      expiresAt: Date | string;
-      usedAt: Date | string | null;
-      revokedAt?: Date | string | null;
-    },
-  ): "active" | "utilisée" | "expirée" | "révoquée" => {
+  const getInvitationStatus = (inv: {
+    expiresAt: Date | string;
+    usedAt: Date | string | null;
+    revokedAt?: Date | string | null;
+  }): "active" | "utilisée" | "expirée" | "révoquée" => {
     if (inv.usedAt) return "utilisée";
     if (inv.revokedAt) return "révoquée";
     if (new Date(inv.expiresAt) < new Date()) return "expirée";
@@ -82,7 +85,7 @@ export default function SettingsTeamPage() {
     ? [...invitationsQuery.data].sort(
         (a, b) =>
           STATUS_ORDER.indexOf(getInvitationStatus(a)) -
-          STATUS_ORDER.indexOf(getInvitationStatus(b)),
+          STATUS_ORDER.indexOf(getInvitationStatus(b))
       )
     : [];
 
@@ -153,19 +156,17 @@ export default function SettingsTeamPage() {
             disabled={isSubmitting || createMutation.isPending}
             aria-busy={isSubmitting || createMutation.isPending}
           >
-            {createMutation.isPending ? "Création…" : "Inviter un collaborateur"}
+            {createMutation.isPending
+              ? "Création…"
+              : "Inviter un collaborateur"}
           </Button>
         </form>
       </section>
 
       <section className="mt-12">
-        <h2 className="text-lg font-medium text-foreground">
-          Invitations
-        </h2>
+        <h2 className="text-lg font-medium text-foreground">Invitations</h2>
         {invitationsQuery.isLoading ? (
-          <p className="mt-4 text-sm text-muted-foreground">
-            Chargement…
-          </p>
+          <p className="mt-4 text-sm text-muted-foreground">Chargement…</p>
         ) : !invitationsQuery.data?.length ? (
           <p className="mt-4 text-sm text-muted-foreground">
             Aucune invitation.
@@ -239,7 +240,9 @@ export default function SettingsTeamPage() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => revokeMutation.mutate({ id: inv.id })}
+                              onClick={() =>
+                                revokeMutation.mutate({ id: inv.id })
+                              }
                               disabled={
                                 revokeMutation.isPending &&
                                 revokeMutation.variables?.id === inv.id

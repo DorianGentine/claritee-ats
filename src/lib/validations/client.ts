@@ -3,13 +3,13 @@ import { sirenSchema } from "./auth";
 
 /** Schéma de création d'une société cliente (ClientCompany) */
 export const createClientCompanySchema = z.object({
-  name: z
-    .string()
-    .min(1, "Le nom de l'entreprise est requis."),
+  name: z.string().min(1, "Le nom de l'entreprise est requis."),
   siren: z.union([z.literal(""), sirenSchema]).optional(),
 });
 
-export type CreateClientCompanyInput = z.infer<typeof createClientCompanySchema>;
+export type CreateClientCompanyInput = z.infer<
+  typeof createClientCompanySchema
+>;
 
 /** Trim et vide → undefined pour les champs optionnels */
 const trimToUndefined = (s: string | undefined) =>
@@ -46,7 +46,9 @@ export const createClientContactSchema = z.object({
   linkedinUrl: optionalLinkedInUrl,
 });
 
-export type CreateClientContactInput = z.infer<typeof createClientContactSchema>;
+export type CreateClientContactInput = z.infer<
+  typeof createClientContactSchema
+>;
 
 /**
  * Variantes des champs optionnels pour la mise à jour :
@@ -99,5 +101,6 @@ export const updateClientContactSchema = z.object({
   linkedinUrl: updatableOptionalLinkedInUrl,
 });
 
-export type UpdateClientContactInput = z.infer<typeof updateClientContactSchema>;
-
+export type UpdateClientContactInput = z.infer<
+  typeof updateClientContactSchema
+>;

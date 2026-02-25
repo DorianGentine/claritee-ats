@@ -22,7 +22,7 @@ import { GlobalSearchBar } from "./GlobalSearchBar";
 const getInitials = (user: User): string => {
   const name =
     (user.user_metadata?.full_name as string) ||
-    `${(user.user_metadata?.firstName as string)} ${(user.user_metadata?.lastName as string)}` ||
+    `${user.user_metadata?.firstName as string} ${user.user_metadata?.lastName as string}` ||
     user.email?.split("@")[0] ||
     "";
   if (name.includes(" ")) {
@@ -39,7 +39,7 @@ const getInitials = (user: User): string => {
 const getDisplayName = (user: User): string => {
   return (
     (user.user_metadata?.full_name as string) ||
-    `${(user.user_metadata?.firstName as string)} ${(user.user_metadata?.lastName as string)}` ||
+    `${user.user_metadata?.firstName as string} ${user.user_metadata?.lastName as string}` ||
     (user.email ?? "Utilisateur")
   );
 };
@@ -84,7 +84,7 @@ export const SiteNavbar = () => {
     pathname?.startsWith("/clients") ||
     pathname?.startsWith("/settings") ||
     pathname?.startsWith("/search") ||
-    pathname?.startsWith("/notes")
+    pathname?.startsWith("/notes");
 
   const companyQuery = api.company.getMyCompany.useQuery(undefined, {
     enabled: !!user && user !== "loading" && isDashboard,
@@ -100,7 +100,8 @@ export const SiteNavbar = () => {
     ...link,
     active:
       "pathMatch" in link && link.pathMatch
-        ? pathname === link.pathMatch || pathname?.startsWith(link.pathMatch + "/")
+        ? pathname === link.pathMatch ||
+          pathname?.startsWith(link.pathMatch + "/")
         : false,
   }));
 
@@ -117,11 +118,17 @@ export const SiteNavbar = () => {
         {user && user !== "loading" && isDashboard && (
           <>
             {companyQuery.data ? (
-              <span className="hidden text-sm text-muted-foreground min-[800px]:inline" aria-label="Nom du cabinet">
+              <span
+                className="hidden text-sm text-muted-foreground min-[800px]:inline"
+                aria-label="Nom du cabinet"
+              >
                 {companyQuery.data.name}
               </span>
             ) : companyQuery.isLoading ? (
-              <span className="h-4 w-32 animate-pulse rounded bg-muted" aria-hidden />
+              <span
+                className="h-4 w-32 animate-pulse rounded bg-muted"
+                aria-hidden
+              />
             ) : null}
 
             {/* Mobile: hamburger menu */}
@@ -150,7 +157,8 @@ export const SiteNavbar = () => {
                     <Link
                       href={link.href}
                       className={cn(
-                        link.active && "bg-secondary/20 font-medium text-secondary"
+                        link.active &&
+                          "bg-secondary/20 font-medium text-secondary"
                       )}
                       aria-current={link.active ? "page" : undefined}
                     >
@@ -168,16 +176,18 @@ export const SiteNavbar = () => {
               {navLinks.map((link) => (
                 <Link
                   key={link.label}
-                    href={link.href}
-                    className={cn(
-                      "rounded-md px-3 py-2 text-sm font-medium transition-colors hover:text-primary",
-                      link.active ? "bg-secondary/20 text-secondary" : "text-foreground"
-                    )}
-                    aria-current={link.active ? "page" : undefined}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
+                  href={link.href}
+                  className={cn(
+                    "rounded-md px-3 py-2 text-sm font-medium transition-colors hover:text-primary",
+                    link.active
+                      ? "bg-secondary/20 text-secondary"
+                      : "text-foreground"
+                  )}
+                  aria-current={link.active ? "page" : undefined}
+                >
+                  {link.label}
+                </Link>
+              ))}
             </nav>
           </>
         )}
@@ -189,10 +199,7 @@ export const SiteNavbar = () => {
         </div>
       )}
 
-      <nav
-        className="flex items-center gap-3"
-        aria-label="Actions utilisateur"
-      >
+      <nav className="flex items-center gap-3" aria-label="Actions utilisateur">
         {user === "loading" ? (
           <div className="h-8 w-32 animate-pulse rounded-md bg-muted" />
         ) : user ? (
@@ -211,7 +218,10 @@ export const SiteNavbar = () => {
                     aria-label="Menu utilisateur"
                   >
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={user.user_metadata?.avatar_url as string} alt="" />
+                      <AvatarImage
+                        src={user.user_metadata?.avatar_url as string}
+                        alt=""
+                      />
                       <AvatarFallback className="text-xs bg-secondary/80 text-secondary-foreground">
                         {getInitials(user)}
                       </AvatarFallback>

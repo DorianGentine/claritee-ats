@@ -1,63 +1,63 @@
-"use client"
+"use client";
 
-import { useState, useCallback, useEffect, useMemo, useRef } from "react"
-import Link from "next/link"
-import { useSearchParams, useRouter } from "next/navigation"
-import { keepPreviousData } from "@tanstack/react-query"
-import { api } from "@/lib/trpc/client"
-import { Button } from "@/components/ui/button"
-import { CandidateCard } from "@/components/candidates/CandidateCard"
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
+import Link from "next/link";
+import { useSearchParams, useRouter } from "next/navigation";
+import { keepPreviousData } from "@tanstack/react-query";
+import { api } from "@/lib/trpc/client";
+import { Button } from "@/components/ui/button";
+import { CandidateCard } from "@/components/candidates/CandidateCard";
 import {
   CandidateListFilters,
   type CandidateFilters,
-} from "@/components/candidates/CandidateListFilters"
-import { ActiveFilterChips } from "@/components/candidates/ActiveFilterChips"
+} from "@/components/candidates/CandidateListFilters";
+import { ActiveFilterChips } from "@/components/candidates/ActiveFilterChips";
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = 20;
 
-const FILTER_TAGS_PARAM = "tags"
-const FILTER_CITY_PARAM = "city"
-const FILTER_LANGUAGES_PARAM = "languages"
+const FILTER_TAGS_PARAM = "tags";
+const FILTER_CITY_PARAM = "city";
+const FILTER_LANGUAGES_PARAM = "languages";
 
 const parseFiltersFromSearchParams = (
   params: URLSearchParams
 ): CandidateFilters => {
-  const tagsParam = params.get(FILTER_TAGS_PARAM)
+  const tagsParam = params.get(FILTER_TAGS_PARAM);
   const tagIds = tagsParam
     ? tagsParam
         .split(",")
         .map((s) => s.trim())
         .filter((s) => /^[0-9a-f-]{36}$/i.test(s))
         .slice(0, 20)
-    : []
-  const city = params.get(FILTER_CITY_PARAM)?.trim() || undefined
-  const languagesParam = params.get(FILTER_LANGUAGES_PARAM)
+    : [];
+  const city = params.get(FILTER_CITY_PARAM)?.trim() || undefined;
+  const languagesParam = params.get(FILTER_LANGUAGES_PARAM);
   const languageNames = languagesParam
     ? languagesParam
         .split(",")
         .map((s) => decodeURIComponent(s.trim()))
         .filter((s) => s.length > 0 && s.length <= 50)
         .slice(0, 20)
-    : []
-  return { tagIds, city, languageNames }
-}
+    : [];
+  return { tagIds, city, languageNames };
+};
 
 const buildSearchParams = (filters: CandidateFilters): URLSearchParams => {
-  const params = new URLSearchParams()
+  const params = new URLSearchParams();
   if (filters.tagIds.length > 0) {
-    params.set(FILTER_TAGS_PARAM, filters.tagIds.join(","))
+    params.set(FILTER_TAGS_PARAM, filters.tagIds.join(","));
   }
   if (filters.city?.trim()) {
-    params.set(FILTER_CITY_PARAM, filters.city.trim())
+    params.set(FILTER_CITY_PARAM, filters.city.trim());
   }
   if (filters.languageNames.length > 0) {
     params.set(
       FILTER_LANGUAGES_PARAM,
       filters.languageNames.map((n) => encodeURIComponent(n)).join(",")
-    )
+    );
   }
-  return params
-}
+  return params;
+};
 
 const CandidateListSkeleton = () => (
   <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-hidden>
@@ -77,70 +77,70 @@ const CandidateListSkeleton = () => (
       </li>
     ))}
   </ul>
-)
+);
 
 export default function CandidatesPage() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const [cursor, setCursor] = useState<string | undefined>(undefined)
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [cursor, setCursor] = useState<string | undefined>(undefined);
   const filters = useMemo(
     () => parseFiltersFromSearchParams(searchParams),
     [searchParams]
-  )
-  const filtersRef = useRef(filters)
+  );
+  const filtersRef = useRef(filters);
   useEffect(() => {
-    filtersRef.current = filters
-  }, [filters])
+    filtersRef.current = filters;
+  }, [filters]);
 
   const syncUrl = useCallback(
     (nextFilters: CandidateFilters) => {
-      const params = buildSearchParams(nextFilters)
-      const qs = params.toString()
-      const path = `/candidates${qs ? `?${qs}` : ""}`
-      router.replace(path, { scroll: false })
+      const params = buildSearchParams(nextFilters);
+      const qs = params.toString();
+      const path = `/candidates${qs ? `?${qs}` : ""}`;
+      router.replace(path, { scroll: false });
     },
     [router]
-  )
+  );
 
   const handleFiltersChange = useCallback(
     (nextFilters: CandidateFilters) => {
-      setCursor(undefined)
-      syncUrl(nextFilters)
+      setCursor(undefined);
+      syncUrl(nextFilters);
     },
     [syncUrl]
-  )
+  );
 
   const handleClearFilters = useCallback(() => {
-    setCursor(undefined)
-    syncUrl({ tagIds: [], city: undefined, languageNames: [] })
-  }, [syncUrl])
+    setCursor(undefined);
+    syncUrl({ tagIds: [], city: undefined, languageNames: [] });
+  }, [syncUrl]);
 
   const handleRemoveTag = useCallback(
     (tagId: string) => {
-      const current = filtersRef.current
+      const current = filtersRef.current;
       handleFiltersChange({
         ...current,
         tagIds: current.tagIds.filter((id) => id !== tagId),
-      })
+      });
     },
     [handleFiltersChange]
-  )
+  );
 
   const handleRemoveCity = useCallback(() => {
-    const current = filtersRef.current
-    handleFiltersChange({ ...current, city: undefined })
-  }, [handleFiltersChange])
+    const current = filtersRef.current;
+    handleFiltersChange({ ...current, city: undefined });
+  }, [handleFiltersChange]);
 
   const handleRemoveLanguage = useCallback(
     (name: string) => {
-      const current = filtersRef.current
+      const current = filtersRef.current;
       handleFiltersChange({
         ...current,
         languageNames: current.languageNames.filter((n) => n !== name),
-      })
+      });
     },
     [handleFiltersChange]
-  )
+  );
 
   const listQuery = api.candidate.list.useQuery(
     {
@@ -153,14 +153,14 @@ export default function CandidatesPage() {
         : {}),
     },
     { placeholderData: keepPreviousData }
-  )
+  );
 
-  const items = listQuery.data?.items ?? []
-  const nextCursor = listQuery.data?.nextCursor ?? null
-  const isLoading = listQuery.isLoading
-  const isFetching = listQuery.isFetching
-  const isError = listQuery.isError
-  const displayCount = items.length
+  const items = listQuery.data?.items ?? [];
+  const nextCursor = listQuery.data?.nextCursor ?? null;
+  const isLoading = listQuery.isLoading;
+  const isFetching = listQuery.isFetching;
+  const isError = listQuery.isError;
+  const displayCount = items.length;
 
   return (
     <main className="min-h-[calc(100vh-3.5rem)] bg-background p-6">
@@ -258,7 +258,7 @@ export default function CandidatesPage() {
               ))}
             </ul>
 
-            {(nextCursor || cursor) ? (
+            {nextCursor || cursor ? (
               <nav
                 className="mt-6 flex justify-center gap-2"
                 aria-label="Pagination de la liste des candidats"
@@ -291,5 +291,5 @@ export default function CandidatesPage() {
         )}
       </div>
     </main>
-  )
+  );
 }

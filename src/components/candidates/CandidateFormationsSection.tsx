@@ -26,7 +26,8 @@ export const CandidateFormationsSection = ({
   const utils = api.useUtils();
   const deleteMutation = api.candidate.deleteFormation.useMutation({
     onSuccess: () => {
-      if (candidateId) void utils.candidate.getById.invalidate({ id: candidateId });
+      if (candidateId)
+        void utils.candidate.getById.invalidate({ id: candidateId });
       setDeleteId(null);
     },
   });
@@ -60,7 +61,9 @@ export const CandidateFormationsSection = ({
         )}
       </div>
       {formations.length === 0 ? (
-        <p className="mt-2 text-sm text-muted-foreground">Aucune formation ajoutée</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Aucune formation ajoutée
+        </p>
       ) : (
         <ul className="mt-6 space-y-4">
           {formations.map((f) => (

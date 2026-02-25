@@ -12,22 +12,22 @@ Pour le MVP, nous conservons **ilike/contains**. Une évolution vers **tsvector*
 
 ### Gains potentiels de tsvector
 
-| Aspect | Détail |
-|--------|--------|
-| **Performance** | Un index GIN sur une colonne tsvector permet des recherches O(log n) au lieu de scans séquentiels ou index B-tree par champ. Sur des milliers de candidats par cabinet, la différence devient notable. |
-| **Pertinence** | `to_tsquery` gère la stemming (racines de mots : "développeur" → "développ"), les stop-words, et permet le ranking (`ts_rank`) pour trier par pertinence. |
-| **Requêtes avancées** | Opérateurs `&` (ET), `|` (OU), `!` (NON) dans la requête utilisateur. Recherche de phrases exactes (`phraseto_tsquery`). |
-| **Scalabilité** | Meilleure utilisation des index pour des tables volumineuses. |
+| Aspect                | Détail                                                                                                                                                                                                 |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
+| **Performance**       | Un index GIN sur une colonne tsvector permet des recherches O(log n) au lieu de scans séquentiels ou index B-tree par champ. Sur des milliers de candidats par cabinet, la différence devient notable. |
+| **Pertinence**        | `to_tsquery` gère la stemming (racines de mots : "développeur" → "développ"), les stop-words, et permet le ranking (`ts_rank`) pour trier par pertinence.                                              |
+| **Requêtes avancées** | Opérateurs `&` (ET), `                                                                                                                                                                                 | `(OU),`!` (NON) dans la requête utilisateur. Recherche de phrases exactes (`phraseto_tsquery`). |
+| **Scalabilité**       | Meilleure utilisation des index pour des tables volumineuses.                                                                                                                                          |
 
 ### Inconvénients et coûts de tsvector
 
-| Aspect | Détail |
-|--------|--------|
-| **Complexité** | Nécessite des colonnes dédiées (ex. `search_vector` sur Candidate, JobOffer), des triggers ou des jobs pour maintenir le tsvector à jour à chaque insertion/mise à jour des champs sources. |
-| **Maintenance** | Les migrations Prisma ne gèrent pas nativement tsvector ; il faut des migrations SQL brutes. La configuration du dictionnaire et de la langue (français) demande un soin particulier. |
-| **Relations** | Intégrer tags, languages, experiences, formations dans le vecteur de recherche implique soit des colonnes concaténées, soit des vues matérialisées, ce qui complique le modèle. |
-| **Prisma** | Les requêtes tsvector se font via `$queryRaw` ou `$queryRawUnsafe` ; perte du typage Prisma et du filtrage par `companyId` si mal encapsulé. |
-| **Volume MVP** | Pour quelques centaines de candidats et offres par cabinet, ilike reste très acceptable (< 500 ms). Le gain tsvector se justifie surtout au-delà de 2 000–5 000 lignes par entité. |
+| Aspect          | Détail                                                                                                                                                                                      |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Complexité**  | Nécessite des colonnes dédiées (ex. `search_vector` sur Candidate, JobOffer), des triggers ou des jobs pour maintenir le tsvector à jour à chaque insertion/mise à jour des champs sources. |
+| **Maintenance** | Les migrations Prisma ne gèrent pas nativement tsvector ; il faut des migrations SQL brutes. La configuration du dictionnaire et de la langue (français) demande un soin particulier.       |
+| **Relations**   | Intégrer tags, languages, experiences, formations dans le vecteur de recherche implique soit des colonnes concaténées, soit des vues matérialisées, ce qui complique le modèle.             |
+| **Prisma**      | Les requêtes tsvector se font via `$queryRaw` ou `$queryRawUnsafe` ; perte du typage Prisma et du filtrage par `companyId` si mal encapsulé.                                                |
+| **Volume MVP**  | Pour quelques centaines de candidats et offres par cabinet, ilike reste très acceptable (< 500 ms). Le gain tsvector se justifie surtout au-delà de 2 000–5 000 lignes par entité.          |
 
 ### Conditions de révision
 
@@ -54,4 +54,4 @@ Envisager une migration vers tsvector si :
 
 ---
 
-*Référence : `docs/architecture.md` §10.2, §11.8 ; `src/server/trpc/routers/search.ts` ; PostgreSQL [Full Text Search](https://www.postgresql.org/docs/current/textsearch.html).*
+_Référence : `docs/architecture.md` §10.2, §11.8 ; `src/server/trpc/routers/search.ts` ; PostgreSQL [Full Text Search](https://www.postgresql.org/docs/current/textsearch.html)._

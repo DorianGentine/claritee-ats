@@ -1,24 +1,24 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import Link from "next/link";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export type CandidateCardItem = {
-  id: string
-  firstName: string
-  lastName: string
-  title: string | null
-  city: string | null
-  photoUrl: string | null
-  tags: { id: string; name: string; color: string }[]
-}
+  id: string;
+  firstName: string;
+  lastName: string;
+  title: string | null;
+  city: string | null;
+  photoUrl: string | null;
+  tags: { id: string; name: string; color: string }[];
+};
 
 const getInitials = (firstName: string, lastName: string): string =>
-  `${firstName[0] ?? ""}${lastName[0] ?? ""}`.toUpperCase() || "?"
+  `${firstName[0] ?? ""}${lastName[0] ?? ""}`.toUpperCase() || "?";
 
 export const CandidateCard = ({ c }: { c: CandidateCardItem }) => {
-  const fullName = `${c.firstName} ${c.lastName}`.trim() || "Sans nom"
-  const displayTags = c.tags.slice(0, 3)
+  const fullName = `${c.firstName} ${c.lastName}`.trim() || "Sans nom";
+  const displayTags = c.tags.slice(0, 3);
 
   return (
     <Link
@@ -61,5 +61,5 @@ export const CandidateCard = ({ c }: { c: CandidateCardItem }) => {
         </div>
       </div>
     </Link>
-  )
-}
+  );
+};

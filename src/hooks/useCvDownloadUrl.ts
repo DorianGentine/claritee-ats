@@ -22,12 +22,12 @@ export const useCvDownloadUrl = () => {
 
   const getUrl = useCallback(
     async (
-      opts: { candidateId: string } | { shareToken: string },
+      opts: { candidateId: string } | { shareToken: string }
     ): Promise<string> => {
       const currentUtils = utilsRef.current;
       const key = getCacheKey(
         "candidateId" in opts ? opts.candidateId : undefined,
-        "shareToken" in opts ? opts.shareToken : undefined,
+        "shareToken" in opts ? opts.shareToken : undefined
       );
       const now = Date.now();
       const cached = cache.get(key);
@@ -40,14 +40,15 @@ export const useCvDownloadUrl = () => {
           candidateId: opts.candidateId,
         });
       } else {
-        result = await currentUtils.candidate.getCvDownloadUrlByShareToken.fetch({
-          token: opts.shareToken,
-        });
+        result =
+          await currentUtils.candidate.getCvDownloadUrlByShareToken.fetch({
+            token: opts.shareToken,
+          });
       }
       cache.set(key, { url: result.url, expiresAt: now + CACHE_TTL_MS });
       return result.url;
     },
-    [],
+    []
   );
 
   return { getUrl };

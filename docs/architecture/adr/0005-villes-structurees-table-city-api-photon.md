@@ -16,26 +16,26 @@ L’application gère des candidats avec un champ `city` (string libre). Pour am
 
 ### Critères d’évaluation
 
-| Critère | Photon |
-|---------|--------|
-| Prix | ✅ 100 % gratuit |
-| Clé API | ✅ Aucune inscription |
-| Couverture | ✅ Europe entière (basé sur OpenStreetMap) |
-| Français | ✅ Paramètre `lang=fr` |
-| Autocomplétion | ✅ Conçu pour ça |
-| Latence | ✅ Rapide (~50–150 ms) |
-| Usage commercial | ✅ Autorisé (licence ODbL) |
-| Fiabilité | ⚠️ Pas de SLA garanti |
+| Critère          | Photon                                     |
+| ---------------- | ------------------------------------------ |
+| Prix             | ✅ 100 % gratuit                           |
+| Clé API          | ✅ Aucune inscription                      |
+| Couverture       | ✅ Europe entière (basé sur OpenStreetMap) |
+| Français         | ✅ Paramètre `lang=fr`                     |
+| Autocomplétion   | ✅ Conçu pour ça                           |
+| Latence          | ✅ Rapide (~50–150 ms)                     |
+| Usage commercial | ✅ Autorisé (licence ODbL)                 |
+| Fiabilité        | ⚠️ Pas de SLA garanti                      |
 
 ### Pourquoi Photon plutôt que les autres ?
 
-| Alternative | Raison d’exclusion |
-|-------------|--------------------|
-| **GeoNames** | Nécessite inscription, API vieillissante, résultats moins propres |
-| **Nominatim** | Politique stricte (max 1 req/s), interdit l’autocomplétion intensive |
-| **OpenCage** | Payant au-delà de 2 500 req/jour |
-| **API Geo.gouv** | France uniquement, pas de couverture Europe |
-| **Photon** | Aucune contrainte de volume pour notre cas, gratuit, adapté à l’autocomplétion |
+| Alternative      | Raison d’exclusion                                                             |
+| ---------------- | ------------------------------------------------------------------------------ |
+| **GeoNames**     | Nécessite inscription, API vieillissante, résultats moins propres              |
+| **Nominatim**    | Politique stricte (max 1 req/s), interdit l’autocomplétion intensive           |
+| **OpenCage**     | Payant au-delà de 2 500 req/jour                                               |
+| **API Geo.gouv** | France uniquement, pas de couverture Europe                                    |
+| **Photon**       | Aucune contrainte de volume pour notre cas, gratuit, adapté à l’autocomplétion |
 
 ### Exemple d’appel Photon
 
@@ -55,7 +55,7 @@ GET https://photon.komoot.io/api/?q=Ly&lang=fr&limit=3&layer=city&bbox=-10,35,40
         "country": "France"
       },
       "geometry": {
-        "coordinates": [4.8357, 45.7640]
+        "coordinates": [4.8357, 45.764]
       }
     }
   ]
@@ -84,7 +84,7 @@ CREATE EXTENSION IF NOT EXISTS unaccent;
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 -- Index pour l'autocomplétion performante
-CREATE INDEX idx_cities_name_trgm 
+CREATE INDEX idx_cities_name_trgm
 ON cities USING gin (unaccent(name) gin_trgm_ops);
 ```
 
@@ -145,7 +145,7 @@ RETURNS TABLE (
 ) AS $$
 BEGIN
     RETURN QUERY
-    SELECT 
+    SELECT
         c.name,
         c.region,
         c.country,
@@ -186,11 +186,11 @@ const { data } = trpc.cities.autocomplete.useQuery({ q: "Lyo" });
 
 ## 7. Récapitulatif du flux
 
-| Saisie utilisateur | Recherche locale | Fallback Photon | Résultat |
-|--------------------|------------------|-----------------|----------|
-| `"Lyo"` | Supabase : trouvé ✅ | — | Lyon, Auvergne-Rhône-Alpes, France |
-| `"Brat"` | Supabase : vide ❌ | Photon API | Bratislava, Slovaquie |
-| `"Ly"` (< 3 car.) | — | — | [] |
+| Saisie utilisateur | Recherche locale     | Fallback Photon | Résultat                           |
+| ------------------ | -------------------- | --------------- | ---------------------------------- |
+| `"Lyo"`            | Supabase : trouvé ✅ | —               | Lyon, Auvergne-Rhône-Alpes, France |
+| `"Brat"`           | Supabase : vide ❌   | Photon API      | Bratislava, Slovaquie              |
+| `"Ly"` (< 3 car.)  | —                    | —               | []                                 |
 
 ---
 
@@ -202,4 +202,4 @@ const { data } = trpc.cities.autocomplete.useQuery({ q: "Lyo" });
 
 ---
 
-*Référence : `docs/architecture.md` ; ADR 0003 (tRPC) ; [Photon API](https://photon.komoot.io/) ; [OpenStreetMap ODbL](https://www.openstreetmap.org/copyright).*
+_Référence : `docs/architecture.md` ; ADR 0003 (tRPC) ; [Photon API](https://photon.komoot.io/) ; [OpenStreetMap ODbL](https://www.openstreetmap.org/copyright)._

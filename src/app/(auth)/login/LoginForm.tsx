@@ -5,18 +5,14 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import {
-  loginFormSchema,
-  type LoginFormValues,
-} from "@/lib/validations/auth";
+import { loginFormSchema, type LoginFormValues } from "@/lib/validations/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
 
 const LOGIN_ERROR_MESSAGE = "Email ou mot de passe incorrect.";
-const RATE_LIMIT_MESSAGE =
-  "Trop de requêtes. Réessayez dans quelques minutes.";
+const RATE_LIMIT_MESSAGE = "Trop de requêtes. Réessayez dans quelques minutes.";
 
 export const LoginForm = () => {
   const router = useRouter();
@@ -71,8 +67,8 @@ export const LoginForm = () => {
             role="status"
             className="rounded-md border border-green-600/50 bg-green-500/10 px-3 py-2.5 text-sm text-green-800 dark:text-green-200"
           >
-            Un email de confirmation vous a été envoyé. Cliquez sur le lien
-            pour activer votre compte, puis connectez-vous.
+            Un email de confirmation vous a été envoyé. Cliquez sur le lien pour
+            activer votre compte, puis connectez-vous.
           </div>
         )}
         {serverError && (

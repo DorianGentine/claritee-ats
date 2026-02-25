@@ -93,21 +93,21 @@ Partage de types : les types métier viennent de Prisma (`Prisma.Candidate`, etc
 
 ## 2. Où placer quoi
 
-| À ajouter | Emplacement |
-|-----------|-------------|
-| **Nouvelle page (route)** | `src/app/(dashboard)/<section>/page.tsx` ou sous-dossier avec `layout.tsx` si besoin |
-| **Composant UI réutilisable (shadcn)** | `src/components/ui/` (via CLI shadcn) |
-| **Composant métier / layout** | `src/components/` (ex. `CandidateCard.tsx`, ou `candidates/CandidateCard.tsx` si beaucoup de composants) |
-| **Composant partagé transversal** (EmptyState, StatusBadge, PageHeader, skeleton…) | `src/components/shared/` — privilégier l’extraction dès la 2ᵉ occurrence (DRY) |
-| **Nouvelle procedure tRPC** | Router correspondant dans `src/server/trpc/routers/` (ex. `candidate.ts`) ; si nouveau domaine, créer un nouveau router et l’enregistrer dans `_app.ts` |
-| **Schéma de validation (input)** | `src/lib/validations/<domaine>.ts` (ex. `candidate.ts`, `offer.ts`) |
-| **Hook React réutilisable** | `src/hooks/` (ex. `useCompanyId.ts`) |
-| **Helper Supabase** | `src/lib/supabase/` (client ou server selon usage) |
-| **Test unitaire / intégration** | `tests/unit/` ou `tests/integration/` ; miroir du chemin source si utile |
-| **Test E2E** | `tests/e2e/` (par parcours ou par écran) |
-| **Migration DB** | `prisma/migrations/` (générée par `prisma migrate dev`) |
-| **Documentation technique** | `docs/` ou `docs/architecture/` |
+| À ajouter                                                                          | Emplacement                                                                                                                                             |
+| ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Nouvelle page (route)**                                                          | `src/app/(dashboard)/<section>/page.tsx` ou sous-dossier avec `layout.tsx` si besoin                                                                    |
+| **Composant UI réutilisable (shadcn)**                                             | `src/components/ui/` (via CLI shadcn)                                                                                                                   |
+| **Composant métier / layout**                                                      | `src/components/` (ex. `CandidateCard.tsx`, ou `candidates/CandidateCard.tsx` si beaucoup de composants)                                                |
+| **Composant partagé transversal** (EmptyState, StatusBadge, PageHeader, skeleton…) | `src/components/shared/` — privilégier l’extraction dès la 2ᵉ occurrence (DRY)                                                                          |
+| **Nouvelle procedure tRPC**                                                        | Router correspondant dans `src/server/trpc/routers/` (ex. `candidate.ts`) ; si nouveau domaine, créer un nouveau router et l’enregistrer dans `_app.ts` |
+| **Schéma de validation (input)**                                                   | `src/lib/validations/<domaine>.ts` (ex. `candidate.ts`, `offer.ts`)                                                                                     |
+| **Hook React réutilisable**                                                        | `src/hooks/` (ex. `useCompanyId.ts`)                                                                                                                    |
+| **Helper Supabase**                                                                | `src/lib/supabase/` (client ou server selon usage)                                                                                                      |
+| **Test unitaire / intégration**                                                    | `tests/unit/` ou `tests/integration/` ; miroir du chemin source si utile                                                                                |
+| **Test E2E**                                                                       | `tests/e2e/` (par parcours ou par écran)                                                                                                                |
+| **Migration DB**                                                                   | `prisma/migrations/` (générée par `prisma migrate dev`)                                                                                                 |
+| **Documentation technique**                                                        | `docs/` ou `docs/architecture/`                                                                                                                         |
 
 ---
 
-*Dernière mise à jour : 2026-02-14. Aligné avec `docs/architecture.md` et `docs/architecture/coding-standards.md`.*
+_Dernière mise à jour : 2026-02-14. Aligné avec `docs/architecture.md` et `docs/architecture/coding-standards.md`._

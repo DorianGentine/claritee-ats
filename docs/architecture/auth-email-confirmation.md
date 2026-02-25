@@ -76,14 +76,19 @@ const { data: authUser, error: createAuthError } =
     user_metadata: { firstName, lastName, companyName, siren },
   });
 
-if (createAuthError || !authUser?.user) { /* throw CONFLICT */ }
+if (createAuthError || !authUser?.user) {
+  /* throw CONFLICT */
+}
 
 const { error: resendError } = await supabaseAdmin.auth.resend({
   type: "signup",
   email: input.email,
 });
 if (resendError) {
-  console.warn("[auth.register] Resend confirmation email failed:", resendError.message);
+  console.warn(
+    "[auth.register] Resend confirmation email failed:",
+    resendError.message
+  );
 }
 
 // Puis transaction Prisma (Company + User)…
@@ -101,4 +106,4 @@ Si l’email ne part pas (config Supabase, rate limit, etc.) :
 
 ---
 
-*Dernière mise à jour : 2026-02-16.*
+_Dernière mise à jour : 2026-02-16._

@@ -1,20 +1,20 @@
-"use client"
+"use client";
 
-import { X } from "lucide-react"
-import { api } from "@/lib/trpc/client"
-import { Badge } from "@/components/ui/badge"
-import { cn } from "@/lib/utils"
-import type { CandidateFilters } from "./CandidateListFilters"
+import { X } from "lucide-react";
+import { api } from "@/lib/trpc/client";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+import type { CandidateFilters } from "./CandidateListFilters";
 
 type ActiveFilterChipsProps = {
-  filters: CandidateFilters
-  totalCount: number
-  isLoading?: boolean
-  onRemoveTag: (tagId: string) => void
-  onRemoveCity: () => void
-  onRemoveLanguage: (name: string) => void
-  className?: string
-}
+  filters: CandidateFilters;
+  totalCount: number;
+  isLoading?: boolean;
+  onRemoveTag: (tagId: string) => void;
+  onRemoveCity: () => void;
+  onRemoveLanguage: (name: string) => void;
+  className?: string;
+};
 
 export const ActiveFilterChips = ({
   filters,
@@ -25,14 +25,14 @@ export const ActiveFilterChips = ({
   onRemoveLanguage,
   className,
 }: ActiveFilterChipsProps) => {
-  const { data: tags = [] } = api.tag.list.useQuery()
-  const tagById = Object.fromEntries(tags.map((t) => [t.id, t]))
+  const { data: tags = [] } = api.tag.list.useQuery();
+  const tagById = Object.fromEntries(tags.map((t) => [t.id, t]));
   const hasFilters =
     filters.tagIds.length > 0 ||
     (filters.city?.trim() ?? "").length > 0 ||
-    filters.languageNames.length > 0
+    filters.languageNames.length > 0;
 
-  if (!hasFilters) return null
+  if (!hasFilters) return null;
 
   return (
     <div
@@ -41,8 +41,8 @@ export const ActiveFilterChips = ({
       aria-label="Filtres actifs"
     >
       {filters.tagIds.map((tagId) => {
-        const tag = tagById[tagId]
-        const label = tag?.name ?? tagId
+        const tag = tagById[tagId];
+        const label = tag?.name ?? tagId;
         return (
           <Badge
             key={tagId}
@@ -60,7 +60,7 @@ export const ActiveFilterChips = ({
               <X className="size-3" />
             </button>
           </Badge>
-        )
+        );
       })}
       {filters.languageNames.map((name) => (
         <Badge
@@ -102,8 +102,10 @@ export const ActiveFilterChips = ({
         aria-live="polite"
         aria-busy={isLoading}
       >
-        {isLoading ? "Chargement…" : `${totalCount} candidat${totalCount !== 1 ? "s" : ""} trouvé${totalCount !== 1 ? "s" : ""}`}
+        {isLoading
+          ? "Chargement…"
+          : `${totalCount} candidat${totalCount !== 1 ? "s" : ""} trouvé${totalCount !== 1 ? "s" : ""}`}
       </span>
     </div>
-  )
-}
+  );
+};

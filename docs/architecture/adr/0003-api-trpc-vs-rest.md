@@ -16,4 +16,4 @@ Nous retenons **tRPC v11** : les procedures sont définies en TypeScript côté 
 
 ---
 
-*Référence : `docs/architecture.md` §9, §10.1 ; `docs/architecture/coding-standards.md` §3.*
+_Référence : `docs/architecture.md` §9, §10.1 ; `docs/architecture/coding-standards.md` §3._

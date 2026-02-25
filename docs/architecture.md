@@ -5,17 +5,18 @@
 Ce document décrit l'architecture technique complète du projet **Claritee ATS**, application de gestion de candidats et d'offres d'emploi pour cabinets de recrutement. Il sert de référence unique pour le développement fullstack (Next.js, tRPC, Prisma, Supabase) et couvre le multi-tenancy, la sécurité, le schéma de données et le déploiement.
 
 **Références :**
+
 - PRD : `docs/prd.md`
 - Brief : `docs/brief.md`
 
 ### Change Log
 
-| Date       | Version | Description                    | Author   |
-|------------|---------|--------------------------------|----------|
-| 2026-02-14 | 1.0     | Création architecture initiale | Architect |
-| 2026-02-17 | 1.1     | Ajout principes DRY et composants partagés | - |
-| 2026-02-19 | 1.2     | Ajout convention point-virgule (pas de ; si inutile) | - |
-| 2026-02-21 | 1.3     | TanStack Query : staleTime 5 minutes, convention isLoading (pas isFetching) pour skeletons | - |
+| Date       | Version | Description                                                                                | Author    |
+| ---------- | ------- | ------------------------------------------------------------------------------------------ | --------- |
+| 2026-02-14 | 1.0     | Création architecture initiale                                                             | Architect |
+| 2026-02-17 | 1.1     | Ajout principes DRY et composants partagés                                                 | -         |
+| 2026-02-19 | 1.2     | Ajout convention point-virgule (pas de ; si inutile)                                       | -         |
+| 2026-02-21 | 1.3     | TanStack Query : staleTime 5 minutes, convention isLoading (pas isFetching) pour skeletons | -         |
 
 ---
 
@@ -31,41 +32,41 @@ Ce document décrit l'architecture technique complète du projet **Claritee ATS*
 
 ### 1.2 Contraintes cibles
 
-| Composant    | Technologie              | Contrainte / objectif        |
-|-------------|--------------------------|------------------------------|
-| Runtime     | Node.js (Vercel serverless) | Free tier                 |
-| Framework   | Next.js 16 App Router    | TypeScript strict            |
-| API         | tRPC v11                 | Type-safe E2E                |
-| ORM         | Prisma                   | Migrations versionnées       |
-| DB          | Supabase PostgreSQL     | 500 Mo max                   |
-| Auth        | Supabase Auth            | Sessions JWT                  |
-| Storage     | Supabase Storage         | 1 Go max                     |
-| Multi-tenancy | RLS Policies           | `companyId` sur tables métier |
+| Composant     | Technologie                 | Contrainte / objectif         |
+| ------------- | --------------------------- | ----------------------------- |
+| Runtime       | Node.js (Vercel serverless) | Free tier                     |
+| Framework     | Next.js 16 App Router       | TypeScript strict             |
+| API           | tRPC v11                    | Type-safe E2E                 |
+| ORM           | Prisma                      | Migrations versionnées        |
+| DB            | Supabase PostgreSQL         | 500 Mo max                    |
+| Auth          | Supabase Auth               | Sessions JWT                  |
+| Storage       | Supabase Storage            | 1 Go max                      |
+| Multi-tenancy | RLS Policies                | `companyId` sur tables métier |
 
 ---
 
 ## 2. Stack technique (référentiel)
 
-| Catégorie        | Technologie    | Version cible | Rôle / justification |
-|------------------|----------------|---------------|-----------------------|
-| Langage          | TypeScript     | 5.9           | Typage strict front + back |
-| Frontend         | React          | 19.2          | UI composants         |
-| Framework        | Next.js        | 16.1.6        | App Router, SSR, déploiement Vercel |
-| API              | tRPC           | 11.0          | API type-safe, partage de types |
-| ORM              | Prisma         | 7.4.0         | Typage, migrations    |
-| Base de données  | PostgreSQL     | 15 (Supabase) | Données relationnelles |
-| Auth             | Supabase Auth  | -             | Inscription, login, JWT |
-| Stockage fichiers | Supabase Storage | -          | Photos, CVs           |
-| Hébergement      | Vercel         | -             | Front + API serverless |
-| UI               | shadcn/ui      | -             | Composants Radix + Tailwind |
-| CSS              | Tailwind CSS   | 4.1           | Styles                 |
-| Validation       | Zod            | 4.3.6         | Partagé front/back     |
-| State / Data     | TanStack Query | 5.59          | Cache, mutations       |
-| Formulaires      | React Hook Form| 7.53          | Forms + Zod            |
-| Notes (éditeur riche) | BlockNote   | -             | Blocs texte, listes, titres (Story 3.9) |
-| Dates            | date-fns       | 2.30          | Formatage / calculs    |
-| Tests unitaires / intégration | Vitest | 2.1    | Logique + API          |
-| E2E (optionnel)  | Playwright     | 1.49          | Parcours critiques     |
+| Catégorie                     | Technologie      | Version cible | Rôle / justification                    |
+| ----------------------------- | ---------------- | ------------- | --------------------------------------- |
+| Langage                       | TypeScript       | 5.9           | Typage strict front + back              |
+| Frontend                      | React            | 19.2          | UI composants                           |
+| Framework                     | Next.js          | 16.1.6        | App Router, SSR, déploiement Vercel     |
+| API                           | tRPC             | 11.0          | API type-safe, partage de types         |
+| ORM                           | Prisma           | 7.4.0         | Typage, migrations                      |
+| Base de données               | PostgreSQL       | 15 (Supabase) | Données relationnelles                  |
+| Auth                          | Supabase Auth    | -             | Inscription, login, JWT                 |
+| Stockage fichiers             | Supabase Storage | -             | Photos, CVs                             |
+| Hébergement                   | Vercel           | -             | Front + API serverless                  |
+| UI                            | shadcn/ui        | -             | Composants Radix + Tailwind             |
+| CSS                           | Tailwind CSS     | 4.1           | Styles                                  |
+| Validation                    | Zod              | 4.3.6         | Partagé front/back                      |
+| State / Data                  | TanStack Query   | 5.59          | Cache, mutations                        |
+| Formulaires                   | React Hook Form  | 7.53          | Forms + Zod                             |
+| Notes (éditeur riche)         | BlockNote        | -             | Blocs texte, listes, titres (Story 3.9) |
+| Dates                         | date-fns         | 2.30          | Formatage / calculs                     |
+| Tests unitaires / intégration | Vitest           | 2.1           | Logique + API                           |
+| E2E (optionnel)               | Playwright       | 1.49          | Parcours critiques                      |
 
 Détail et mise à jour des versions : voir `docs/architecture/tech-stack.md`.
 
@@ -192,8 +193,9 @@ CREATE POLICY "company_select" ON "Company"
   );
 ```
 
-**Tables sans `companyId` direct (ex. `Experience`, `Formation`, `Language`)**  
-- Option 1 : pas de RLS sur ces tables ; l’accès est uniquement via Prisma/tRPC qui filtre toujours par `Candidate` (lui-même filtré par `companyId`).  
+**Tables sans `companyId` direct (ex. `Experience`, `Formation`, `Language`)**
+
+- Option 1 : pas de RLS sur ces tables ; l’accès est uniquement via Prisma/tRPC qui filtre toujours par `Candidate` (lui-même filtré par `companyId`).
 - Option 2 : politiques RLS basées sur une sous-requête vers `Candidate` / `JobOffer` pour vérifier le `companyId`. Pour le MVP, l’option 1 (contrôle côté app) est acceptable si toutes les requêtes passent par des procédures qui vérifient le cabinet.
 
 **Résumé des tables avec `companyId` et RLS recommandé :**
@@ -210,24 +212,24 @@ Le fichier `docs/architecture/rls-policies.sql` reste la référence documentée
 
 Les 16 entités du PRD sont modélisées comme suit. Le schéma Prisma complet est dans `prisma/schema.prisma`.
 
-| Entité         | Rôle principal                          | Clé multi-tenant |
-|----------------|------------------------------------------|-------------------|
-| Company        | Cabinet (tenant)                         | -                 |
-| User           | Utilisateur (lié à Supabase Auth par id) | companyId         |
-| Invitation     | Invitation collaborateur                 | companyId         |
-| Candidate      | Fiche candidat                           | companyId         |
-| Experience     | Expérience pro d’un candidat            | via Candidate     |
-| Formation      | Formation d’un candidat                  | via Candidate     |
-| Language       | Langue d’un candidat                    | via Candidate     |
-| Tag            | Tag (candidats / offres)                 | companyId         |
-| CandidateTag   | Liaison candidat – tag                  | via Candidate/Tag |
-| ClientCompany  | Entreprise cliente                       | companyId         |
-| ClientContact  | Contact d’une entreprise cliente        | via ClientCompany |
-| JobOffer       | Offre d’emploi                          | companyId         |
-| OfferTag       | Liaison offre – tag                     | via JobOffer/Tag  |
-| Candidature    | Association candidat – offre + statut   | via Candidate/JobOffer |
-| Note           | Note (candidat ou offre)                 | companyId         |
-| ShareLink      | Lien de partage fiche candidat          | via Candidate     |
+| Entité        | Rôle principal                           | Clé multi-tenant       |
+| ------------- | ---------------------------------------- | ---------------------- |
+| Company       | Cabinet (tenant)                         | -                      |
+| User          | Utilisateur (lié à Supabase Auth par id) | companyId              |
+| Invitation    | Invitation collaborateur                 | companyId              |
+| Candidate     | Fiche candidat                           | companyId              |
+| Experience    | Expérience pro d’un candidat             | via Candidate          |
+| Formation     | Formation d’un candidat                  | via Candidate          |
+| Language      | Langue d’un candidat                     | via Candidate          |
+| Tag           | Tag (candidats / offres)                 | companyId              |
+| CandidateTag  | Liaison candidat – tag                   | via Candidate/Tag      |
+| ClientCompany | Entreprise cliente                       | companyId              |
+| ClientContact | Contact d’une entreprise cliente         | via ClientCompany      |
+| JobOffer      | Offre d’emploi                           | companyId              |
+| OfferTag      | Liaison offre – tag                      | via JobOffer/Tag       |
+| Candidature   | Association candidat – offre + statut    | via Candidate/JobOffer |
+| Note          | Note (candidat ou offre)                 | companyId              |
+| ShareLink     | Lien de partage fiche candidat           | via Candidate          |
 
 Détails des champs, contraintes et relations : voir `prisma/schema.prisma` et la section 6 ci-dessous.
 
@@ -336,14 +338,16 @@ Partage de types : les types métier viennent de Prisma (`Prisma.Candidate`, etc
 // src/server/trpc/context.ts (conceptuel)
 export const createContext = async (opts: { headers: Headers }) => {
   const supabase = createServerClient(opts.headers);
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   const companyId = user ? await getCompanyIdFromUserId(user.id) : null;
   return { user, companyId, db: prisma };
 };
 
 // Procédure protégée : throw si !ctx.companyId
 const protectedProcedure = t.procedure.use(({ ctx, next }) => {
-  if (!ctx.companyId) throw new TRPCError({ code: 'UNAUTHORIZED' });
+  if (!ctx.companyId) throw new TRPCError({ code: "UNAUTHORIZED" });
   return next({ ctx: { ...ctx, companyId: ctx.companyId } });
 });
 ```
@@ -532,8 +536,8 @@ Pour respecter le NFR9 (conformité RGPD) et les droits des personnes concernée
 2. Récupérer dans **API Keys** : l'**URL** du projet, la **Publishable key** (client) et la **Secret key** (serveur uniquement) (à n’utiliser que côté serveur, ne jamais exposer la clé secrète au client).
 3. Dans Settings → Database : copier la **connection string** PostgreSQL (mode "Transaction" pour Prisma) → `DATABASE_URL`.
 4. Exécuter les migrations Prisma : `npx prisma migrate deploy` (inclut automatiquement l’application des politiques RLS).
-6. Créer les buckets Storage `photos` et `cvs` et configurer les policies.
-7. Auth : laisser les paramètres par défaut (email/password) ; configurer l’URL de redirection (site URL + redirect URLs) vers le domaine Vercel.
+5. Créer les buckets Storage `photos` et `cvs` et configurer les policies.
+6. Auth : laisser les paramètres par défaut (email/password) ; configurer l’URL de redirection (site URL + redirect URLs) vers le domaine Vercel.
 
 ### 11.3 Vercel
 
@@ -596,23 +600,23 @@ Si le projet devient soumis à des audits (ISO 27001, SOC2, audits clients, etc.
 
 ## 13. Résumé des livrables
 
-| Livrable              | Emplacement / contenu |
-|-----------------------|-----------------------|
-| Architecture document | `docs/architecture.md` (ce document) |
-| Schéma Prisma complet | `prisma/schema.prisma` |
-| Structure monorepo    | Section 6 ci-dessus   |
-| Patterns RLS          | Section 4 + migration Prisma `20300101000000_add_rls_policies` |
-| Auth flow             | Section 7             |
-| Storage par company   | Section 8             |
-| Observabilité (MVP)   | Section 10.3          |
-| Données personnelles / RGPD | Section 10.4    |
-| Résilience            | Section 10.5          |
-| Rate limiting         | Section 10.6          |
-| Guide déploiement     | Section 11            |
-| Backup / restauration | Section 11.6          |
-| Backup — chiffrement / audit (si audits) | Section 11.7 |
-| ADR                   | `docs/architecture/adr/` |
-| Stratégie de tests    | Section 14            |
+| Livrable                                 | Emplacement / contenu                                          |
+| ---------------------------------------- | -------------------------------------------------------------- |
+| Architecture document                    | `docs/architecture.md` (ce document)                           |
+| Schéma Prisma complet                    | `prisma/schema.prisma`                                         |
+| Structure monorepo                       | Section 6 ci-dessus                                            |
+| Patterns RLS                             | Section 4 + migration Prisma `20300101000000_add_rls_policies` |
+| Auth flow                                | Section 7                                                      |
+| Storage par company                      | Section 8                                                      |
+| Observabilité (MVP)                      | Section 10.3                                                   |
+| Données personnelles / RGPD              | Section 10.4                                                   |
+| Résilience                               | Section 10.5                                                   |
+| Rate limiting                            | Section 10.6                                                   |
+| Guide déploiement                        | Section 11                                                     |
+| Backup / restauration                    | Section 11.6                                                   |
+| Backup — chiffrement / audit (si audits) | Section 11.7                                                   |
+| ADR                                      | `docs/architecture/adr/`                                       |
+| Stratégie de tests                       | Section 14                                                     |
 
 ---
 

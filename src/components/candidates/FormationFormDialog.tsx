@@ -43,11 +43,7 @@ const formationFormSchema = z
         (data.startMonth ?? 1) - 1,
         1
       ).getTime();
-      const end = new Date(
-        data.endYear,
-        (data.endMonth ?? 1) - 1,
-        1
-      ).getTime();
+      const end = new Date(data.endYear, (data.endMonth ?? 1) - 1, 1).getTime();
       return end >= start;
     },
     {
@@ -149,11 +145,7 @@ export const FormationFormDialog = ({
   const onSubmit = (values: FormationFormValues) => {
     const startDate =
       values.startYear != null
-        ? new Date(
-            values.startYear,
-            (values.startMonth ?? 1) - 1,
-            1
-          )
+        ? new Date(values.startYear, (values.startMonth ?? 1) - 1, 1)
         : null;
     const endDate =
       values.endYear != null

@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { api } from "@/lib/trpc/client"
-import { formatSiren } from "@/lib/format"
-import { Button } from "@/components/ui/button"
+import Link from "next/link";
+import { api } from "@/lib/trpc/client";
+import { formatSiren } from "@/lib/format";
+import { Button } from "@/components/ui/button";
 
 const ClientListSkeleton = () => (
   <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-hidden>
@@ -20,14 +20,14 @@ const ClientListSkeleton = () => (
       </li>
     ))}
   </ul>
-)
+);
 
 export default function ClientsPage() {
-  const listQuery = api.clientCompany.list.useQuery()
-  const clients = listQuery.data ?? []
+  const listQuery = api.clientCompany.list.useQuery();
+  const clients = listQuery.data ?? [];
 
-  const isLoading = listQuery.isLoading
-  const isError = listQuery.isError
+  const isLoading = listQuery.isLoading;
+  const isError = listQuery.isError;
 
   return (
     <main className="min-h-[calc(100vh-3.5rem)] bg-background p-6">
@@ -94,7 +94,8 @@ export default function ClientsPage() {
                     )}
                   </div>
                   <p className="mt-3 text-sm text-muted-foreground">
-                    {client.contactsCount} contacts · {client.offersCount} offres
+                    {client.contactsCount} contacts · {client.offersCount}{" "}
+                    offres
                   </p>
                 </Link>
               </li>
@@ -103,6 +104,5 @@ export default function ClientsPage() {
         )}
       </div>
     </main>
-  )
+  );
 }
-

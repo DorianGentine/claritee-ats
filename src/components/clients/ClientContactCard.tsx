@@ -74,7 +74,9 @@ export const ClientContactCard = ({
           <div>
             <p className="font-medium text-foreground">{fullName}</p>
             {contact.position && (
-              <p className="text-sm text-muted-foreground">{contact.position}</p>
+              <p className="text-sm text-muted-foreground">
+                {contact.position}
+              </p>
             )}
           </div>
 

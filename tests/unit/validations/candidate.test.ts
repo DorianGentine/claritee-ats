@@ -54,7 +54,7 @@ describe("candidate validations", () => {
         candidateListInputSchema.parse({
           limit: 10,
           tagIds: ["not-a-uuid"],
-        }),
+        })
       ).toThrow();
     });
 
@@ -63,7 +63,7 @@ describe("candidate validations", () => {
         candidateListInputSchema.parse({
           limit: 10,
           cursor: "invalid",
-        }),
+        })
       ).toThrow();
     });
 
@@ -71,27 +71,29 @@ describe("candidate validations", () => {
       const result = candidateListInputSchema.parse({
         limit: 10,
         languageNames: ["Français", "Anglais"],
-      })
-      expect(result.languageNames).toEqual(["Français", "Anglais"])
-    })
+      });
+      expect(result.languageNames).toEqual(["Français", "Anglais"]);
+    });
 
     it("trims and filters empty languageNames", () => {
       const result = candidateListInputSchema.parse({
         limit: 10,
         languageNames: ["  Français  ", "", "  ", "Anglais"],
-      })
-      expect(result.languageNames).toEqual(["Français", "Anglais"])
-    })
+      });
+      expect(result.languageNames).toEqual(["Français", "Anglais"]);
+    });
 
     it("rejects tagIds array exceeding 20 elements", () => {
-      const manyUuids = Array.from({ length: 21 }, (_, i) =>
-        `550e8400-e29b-41d4-a716-4466554400${String(i).padStart(2, "0")}`,
+      const manyUuids = Array.from(
+        { length: 21 },
+        (_, i) =>
+          `550e8400-e29b-41d4-a716-4466554400${String(i).padStart(2, "0")}`
       );
       expect(() =>
         candidateListInputSchema.parse({
           limit: 10,
           tagIds: manyUuids,
-        }),
+        })
       ).toThrow(/Maximum 20 tags/);
     });
   });
@@ -120,10 +122,10 @@ describe("candidate validations", () => {
 
     it("rejects invalid email when provided", () => {
       expect(() =>
-        createCandidateSchema.parse({ ...base, email: "not-an-email" }),
+        createCandidateSchema.parse({ ...base, email: "not-an-email" })
       ).toThrow();
       expect(() =>
-        createCandidateSchema.parse({ ...base, email: "missing@" }),
+        createCandidateSchema.parse({ ...base, email: "missing@" })
       ).toThrow();
     });
 
@@ -132,13 +134,13 @@ describe("candidate validations", () => {
         createCandidateSchema.parse({
           ...base,
           linkedinUrl: "https://example.com/profile",
-        }),
+        })
       ).toThrow();
       expect(() =>
         createCandidateSchema.parse({
           ...base,
           linkedinUrl: "https://linkedin.com/company/foo",
-        }),
+        })
       ).toThrow();
     });
 
@@ -160,27 +162,27 @@ describe("candidate validations", () => {
         "01 23 45 67 89",
       ];
       for (const phone of validPhones) {
-        expect(
-          createCandidateSchema.parse({ ...base, phone }),
-        ).toMatchObject({ phone });
+        expect(createCandidateSchema.parse({ ...base, phone })).toMatchObject({
+          phone,
+        });
       }
     });
 
     it("rejects too short phone when provided", () => {
       expect(() =>
-        createCandidateSchema.parse({ ...base, phone: "123" }),
+        createCandidateSchema.parse({ ...base, phone: "123" })
       ).toThrow();
     });
 
     it("rejects empty firstName", () => {
       expect(() =>
-        createCandidateSchema.parse({ ...base, firstName: "" }),
+        createCandidateSchema.parse({ ...base, firstName: "" })
       ).toThrow();
     });
 
     it("rejects empty lastName", () => {
       expect(() =>
-        createCandidateSchema.parse({ ...base, lastName: "" }),
+        createCandidateSchema.parse({ ...base, lastName: "" })
       ).toThrow();
     });
 
@@ -249,7 +251,7 @@ describe("candidate validations", () => {
         updateCandidateSchema.parse({
           id: validUuid,
           email: "invalid-email",
-        }),
+        })
       ).toThrow();
     });
 
@@ -258,7 +260,7 @@ describe("candidate validations", () => {
         updateCandidateSchema.parse({
           id: validUuid,
           linkedinUrl: "https://example.com/profile",
-        }),
+        })
       ).toThrow();
     });
 
@@ -267,7 +269,7 @@ describe("candidate validations", () => {
         updateCandidateSchema.parse({
           id: validUuid,
           phone: "123",
-        }),
+        })
       ).toThrow();
     });
 
@@ -289,8 +291,12 @@ describe("candidate validations", () => {
     });
 
     it("converts empty/whitespace summary to null", () => {
-      expect(updateCandidateSchema.parse({ id: validUuid, summary: "" }).summary).toBeNull();
-      expect(updateCandidateSchema.parse({ id: validUuid, summary: "   " }).summary).toBeNull();
+      expect(
+        updateCandidateSchema.parse({ id: validUuid, summary: "" }).summary
+      ).toBeNull();
+      expect(
+        updateCandidateSchema.parse({ id: validUuid, summary: "   " }).summary
+      ).toBeNull();
     });
 
     it("converts undefined summary to null", () => {
@@ -299,13 +305,13 @@ describe("candidate validations", () => {
 
     it("rejects summary exceeding 500 characters", () => {
       expect(() =>
-        updateCandidateSchema.parse({ id: validUuid, summary: "a".repeat(501) }),
+        updateCandidateSchema.parse({ id: validUuid, summary: "a".repeat(501) })
       ).toThrow(/500/);
     });
 
     it("rejects invalid id", () => {
       expect(() =>
-        updateCandidateSchema.parse({ id: "not-uuid", summary: "ok" }),
+        updateCandidateSchema.parse({ id: "not-uuid", summary: "ok" })
       ).toThrow();
     });
   });
@@ -326,25 +332,37 @@ describe("candidate validations", () => {
 
     it("rejects empty name", () => {
       expect(() =>
-        addLanguageSchema.parse({ candidateId: validUuid, name: "", level: "FLUENT" }),
+        addLanguageSchema.parse({
+          candidateId: validUuid,
+          name: "",
+          level: "FLUENT",
+        })
       ).toThrow();
     });
 
     it("rejects name exceeding 50 characters", () => {
       expect(() =>
-        addLanguageSchema.parse({ candidateId: validUuid, name: "a".repeat(51), level: "FLUENT" }),
+        addLanguageSchema.parse({
+          candidateId: validUuid,
+          name: "a".repeat(51),
+          level: "FLUENT",
+        })
       ).toThrow();
     });
 
     it("rejects invalid level", () => {
       expect(() =>
-        addLanguageSchema.parse({ candidateId: validUuid, name: "Français", level: "EXPERT" }),
+        addLanguageSchema.parse({
+          candidateId: validUuid,
+          name: "Français",
+          level: "EXPERT",
+        })
       ).toThrow();
     });
 
     it("rejects missing level", () => {
       expect(() =>
-        addLanguageSchema.parse({ candidateId: validUuid, name: "Français" }),
+        addLanguageSchema.parse({ candidateId: validUuid, name: "Français" })
       ).toThrow();
     });
   });
@@ -363,13 +381,19 @@ describe("candidate validations", () => {
 
     it("rejects invalid candidateId", () => {
       expect(() =>
-        removeLanguageSchema.parse({ candidateId: "bad", languageId: validUuid }),
+        removeLanguageSchema.parse({
+          candidateId: "bad",
+          languageId: validUuid,
+        })
       ).toThrow();
     });
 
     it("rejects invalid languageId", () => {
       expect(() =>
-        removeLanguageSchema.parse({ candidateId: validUuid, languageId: "bad" }),
+        removeLanguageSchema.parse({
+          candidateId: validUuid,
+          languageId: "bad",
+        })
       ).toThrow();
     });
   });
@@ -396,8 +420,10 @@ describe("candidate validations", () => {
           candidateId: validUuid,
           fileBase64: validBase64,
           mimeType: "image/gif",
-        }),
-      ).toThrow(/Format de fichier non supporté. Formats acceptés : JPG, PNG, WebP/);
+        })
+      ).toThrow(
+        /Format de fichier non supporté. Formats acceptés : JPG, PNG, WebP/
+      );
     });
 
     it("rejects empty fileBase64", () => {
@@ -406,7 +432,7 @@ describe("candidate validations", () => {
           candidateId: validUuid,
           fileBase64: "",
           mimeType: "image/jpeg",
-        }),
+        })
       ).toThrow();
     });
 
@@ -416,7 +442,7 @@ describe("candidate validations", () => {
           candidateId: "not-a-uuid",
           fileBase64: validBase64,
           mimeType: "image/jpeg",
-        }),
+        })
       ).toThrow();
     });
   });
@@ -446,8 +472,10 @@ describe("candidate validations", () => {
           fileBase64: validBase64,
           mimeType: "text/plain",
           fileName: "doc.txt",
-        }),
-      ).toThrow(/Format de fichier non supporté. Formats acceptés : PDF, DOC, DOCX/);
+        })
+      ).toThrow(
+        /Format de fichier non supporté. Formats acceptés : PDF, DOC, DOCX/
+      );
     });
 
     it("rejects empty fileBase64", () => {
@@ -457,7 +485,7 @@ describe("candidate validations", () => {
           fileBase64: "",
           mimeType: "application/pdf",
           fileName: "cv.pdf",
-        }),
+        })
       ).toThrow();
     });
 
@@ -468,7 +496,7 @@ describe("candidate validations", () => {
           fileBase64: validBase64,
           mimeType: "application/pdf",
           fileName: "",
-        }),
+        })
       ).toThrow();
     });
 
@@ -479,7 +507,7 @@ describe("candidate validations", () => {
           fileBase64: validBase64,
           mimeType: "application/pdf",
           fileName: "a".repeat(256),
-        }),
+        })
       ).toThrow();
     });
 
@@ -490,7 +518,7 @@ describe("candidate validations", () => {
           fileBase64: validBase64,
           mimeType: "application/pdf",
           fileName: "cv.pdf",
-        }),
+        })
       ).toThrow();
     });
   });

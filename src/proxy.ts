@@ -1,9 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
-import {
-  checkRateLimit,
-  RATE_LIMITS,
-} from "@/lib/rate-limit";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 
 const LOGIN_URL = "/login";
 
@@ -21,7 +18,7 @@ export const proxy = async (request: NextRequest) => {
     const result = await checkRateLimit(
       `auth:${ip}`,
       RATE_LIMITS.AUTH_PER_IP.limit,
-      RATE_LIMITS.AUTH_PER_IP.windowMs,
+      RATE_LIMITS.AUTH_PER_IP.windowMs
     );
     if (!result.success) {
       const redirectUrl = new URL(LOGIN_URL, request.url);
@@ -40,14 +37,16 @@ export const proxy = async (request: NextRequest) => {
     {
       cookies: {
         getAll: () =>
-          request.cookies.getAll().map((c) => ({ name: c.name, value: c.value })),
+          request.cookies
+            .getAll()
+            .map((c) => ({ name: c.name, value: c.value })),
         setAll: (cookiesToSet) => {
           cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options),
+            response.cookies.set(name, value, options)
           );
         },
       },
-    },
+    }
   );
 
   const {
@@ -61,13 +60,15 @@ export const proxy = async (request: NextRequest) => {
     pathname.startsWith("/offers") ||
     pathname.startsWith("/clients") ||
     pathname.startsWith("/settings") ||
-    pathname.startsWith("/notes")
+    pathname.startsWith("/notes");
 
   if (isDashboard && !user) {
     const redirectUrl = new URL(LOGIN_URL, request.url);
     const redirect = NextResponse.redirect(redirectUrl);
     // Preserve Set-Cookie from session refresh on the redirect response
-    response.cookies.getAll().forEach((c) => redirect.cookies.set(c.name, c.value));
+    response.cookies
+      .getAll()
+      .forEach((c) => redirect.cookies.set(c.name, c.value));
     return redirect;
   }
 

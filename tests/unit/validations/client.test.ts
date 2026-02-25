@@ -56,7 +56,7 @@ describe("client contact validations", () => {
         createClientContactSchema.parse({
           firstName: "",
           lastName: "Dupont",
-        }),
+        })
       ).toThrow();
     });
 
@@ -65,7 +65,7 @@ describe("client contact validations", () => {
         createClientContactSchema.parse({
           firstName: "Jean",
           lastName: "",
-        }),
+        })
       ).toThrow();
     });
 
@@ -75,7 +75,7 @@ describe("client contact validations", () => {
           firstName: "Jean",
           lastName: "Dupont",
           email: "invalid-email",
-        }),
+        })
       ).toThrow();
     });
 
@@ -94,7 +94,7 @@ describe("client contact validations", () => {
           firstName: "Jean",
           lastName: "Dupont",
           linkedinUrl: "https://example.com/profile",
-        }),
+        })
       ).toThrow();
     });
 
@@ -144,7 +144,7 @@ describe("client contact validations", () => {
         updateClientContactSchema.parse({
           id: "not-a-uuid",
           firstName: "Jean",
-        }),
+        })
       ).toThrow();
     });
   });

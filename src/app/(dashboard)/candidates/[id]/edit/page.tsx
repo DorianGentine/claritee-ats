@@ -116,7 +116,10 @@ export default function EditCandidatePage() {
 
   const firstName = useWatch({ control, name: "firstName" });
   const lastName = useWatch({ control, name: "lastName" });
-  const displayInitials = getCandidateInitials(firstName ?? "?", lastName ?? "?");
+  const displayInitials = getCandidateInitials(
+    firstName ?? "?",
+    lastName ?? "?"
+  );
 
   const onSubmit = async (data: EditFormValues): Promise<void> => {
     setServerError(null);
@@ -135,7 +138,10 @@ export default function EditCandidatePage() {
       });
 
       if (photoFile) {
-        const { base64, mimeType } = await fileToBase64(photoFile, "image/jpeg");
+        const { base64, mimeType } = await fileToBase64(
+          photoFile,
+          "image/jpeg"
+        );
         await uploadPhotoMutation.mutateAsync({
           candidateId,
           fileBase64: base64,
@@ -156,15 +162,15 @@ export default function EditCandidatePage() {
   };
 
   const isPending =
-    isSubmitting ||
-    updateMutation.isPending ||
-    uploadPhotoMutation.isPending;
+    isSubmitting || updateMutation.isPending || uploadPhotoMutation.isPending;
 
   if (!candidateId || !isValidUuid(candidateId)) {
     return (
       <main className="min-h-[calc(100vh-3.5rem)] bg-background p-6">
         <p className="text-muted-foreground">
-          {!candidateId ? "Identifiant candidat manquant." : "Identifiant candidat invalide (format attendu : UUID)."}
+          {!candidateId
+            ? "Identifiant candidat manquant."
+            : "Identifiant candidat invalide (format attendu : UUID)."}
         </p>
         <Button variant="outline" asChild className="mt-4">
           <Link href="/candidates">Retour à la liste</Link>
@@ -208,10 +214,7 @@ export default function EditCandidatePage() {
         </div>
 
         {/* Formulaire champs de base : ne pas englober la sidebar (CandidateSummarySection, CandidateLanguagesSection, CandidateTagsSection ont leurs propres <form>) */}
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="space-y-6"
-        >
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {/* Header : photo + champs de base */}
           <div className="flex flex-col gap-4 rounded-lg border border-border bg-card p-6 shadow-sm sm:flex-row sm:items-start">
             <CandidatePhotoUpload
@@ -266,13 +269,13 @@ export default function EditCandidatePage() {
         {/* Grille : sidebar + contenu (formulaires autonomes pour langues, tags, summary, CV, experiences, formations) */}
         <div className="grid gap-6 lg:grid-cols-[1fr_2fr]">
           <CandidateDetailSidebar
-              candidateId={candidateId}
-              languages={candidate.languages}
-              tags={candidate.tags}
-              summary={candidate.summary}
-              cvUrl={candidate.cvUrl}
-              cvFileName={candidate.cvFileName}
-            />
+            candidateId={candidateId}
+            languages={candidate.languages}
+            tags={candidate.tags}
+            summary={candidate.summary}
+            cvUrl={candidate.cvUrl}
+            cvFileName={candidate.cvFileName}
+          />
           <CandidateDetailContent
             candidateId={candidateId}
             experiences={candidate.experiences}

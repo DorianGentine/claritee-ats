@@ -14,19 +14,19 @@ export const candidateListInputSchema = z.object({
     .string()
     .optional()
     .transform((s) =>
-      typeof s === "string" ? (s.trim() || undefined) : undefined
+      typeof s === "string" ? s.trim() || undefined : undefined
     ),
   languageNames: z
     .array(z.string().max(50))
     .max(20, "Maximum 20 langues pour le filtre")
     .optional()
     .transform((arr) => {
-      if (!arr?.length) return undefined
+      if (!arr?.length) return undefined;
       const filtered = arr
         .map((s) => s.trim())
         .filter((s) => s.length > 0)
-        .slice(0, 20)
-      return filtered.length ? filtered : undefined
+        .slice(0, 20);
+      return filtered.length ? filtered : undefined;
     }),
 });
 
@@ -106,7 +106,7 @@ export const updateCandidateSchema = z.object({
     .string()
     .max(500, "Le résumé ne peut pas dépasser 500 caractères")
     .optional()
-    .transform((v) => (v?.trim() === "" ? null : v?.trim() ?? null)),
+    .transform((v) => (v?.trim() === "" ? null : (v?.trim() ?? null))),
 });
 
 export type UpdateCandidateInput = z.infer<typeof updateCandidateSchema>;
@@ -154,11 +154,10 @@ export const PHOTO_MAX_BYTES = 2 * 1024 * 1024; // 2 Mo
 export const uploadPhotoSchema = z.object({
   candidateId: z.uuid(),
   fileBase64: z.string().min(1, "Fichier requis"),
-  mimeType: z
-    .enum(PHOTO_ACCEPTED_MIMES, {
-      message:
-        "Format de fichier non supporté. Formats acceptés : JPG, PNG, WebP.",
-    }),
+  mimeType: z.enum(PHOTO_ACCEPTED_MIMES, {
+    message:
+      "Format de fichier non supporté. Formats acceptés : JPG, PNG, WebP.",
+  }),
 });
 
 export type UploadPhotoInput = z.infer<typeof uploadPhotoSchema>;

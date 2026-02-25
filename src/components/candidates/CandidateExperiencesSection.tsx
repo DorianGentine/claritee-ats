@@ -26,7 +26,8 @@ export const CandidateExperiencesSection = ({
   const utils = api.useUtils();
   const deleteMutation = api.candidate.deleteExperience.useMutation({
     onSuccess: () => {
-      if (candidateId) void utils.candidate.getById.invalidate({ id: candidateId });
+      if (candidateId)
+        void utils.candidate.getById.invalidate({ id: candidateId });
       setDeleteId(null);
     },
   });
@@ -60,7 +61,9 @@ export const CandidateExperiencesSection = ({
         )}
       </div>
       {experiences.length === 0 ? (
-        <p className="mt-2 text-sm text-muted-foreground">Aucune expérience ajoutée</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Aucune expérience ajoutée
+        </p>
       ) : (
         <ul className="mt-6 space-y-4">
           {experiences.map((exp) => (

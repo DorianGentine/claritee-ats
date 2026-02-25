@@ -92,14 +92,14 @@ Donner une vue d’ensemble du cabinet (métriques, actions rapides, activité r
 
 ### Éléments clés
 
-| Élément | Spécification |
-|---------|----------------|
-| Métriques | 4 cards, fond `#FDFCFA`, bordure légère |
-| CTA principal | "Nouveau candidat" en terracotta |
-| CTA secondaires | Outline |
-| Candidats récents | 5 derniers, nom + titre, lien vers fiche |
-| Notes récentes | 5 dernières, extrait + auteur, lien vers contexte |
-| Empty state | Message invitant à ajouter des données |
+| Élément           | Spécification                                     |
+| ----------------- | ------------------------------------------------- |
+| Métriques         | 4 cards, fond `#FDFCFA`, bordure légère           |
+| CTA principal     | "Nouveau candidat" en terracotta                  |
+| CTA secondaires   | Outline                                           |
+| Candidats récents | 5 derniers, nom + titre, lien vers fiche          |
+| Notes récentes    | 5 dernières, extrait + auteur, lien vers contexte |
+| Empty state       | Message invitant à ajouter des données            |
 
 ---
 
@@ -136,15 +136,15 @@ Parcourir, filtrer et accéder rapidement aux fiches candidats.
 
 ### Éléments clés
 
-| Élément | Spécification |
-|---------|----------------|
-| Barre de recherche | Pleine largeur, debounce 300ms |
-| Filtres | Tags (multi-select), Ville (autocomplete) |
-| Chips actifs | Affichés au-dessus de la liste, X pour retirer |
-| Carte candidat | Photo (ou initiales), nom, titre, ville, max 3 tags |
-| Clic sur la ligne | Navigation vers fiche candidat |
-| Pagination | 20 éléments par page |
-| Empty state | Illustration + "Ajouter un candidat" |
+| Élément            | Spécification                                       |
+| ------------------ | --------------------------------------------------- |
+| Barre de recherche | Pleine largeur, debounce 300ms                      |
+| Filtres            | Tags (multi-select), Ville (autocomplete)           |
+| Chips actifs       | Affichés au-dessus de la liste, X pour retirer      |
+| Carte candidat     | Photo (ou initiales), nom, titre, ville, max 3 tags |
+| Clic sur la ligne  | Navigation vers fiche candidat                      |
+| Pagination         | 20 éléments par page                                |
+| Empty state        | Illustration + "Ajouter un candidat"                |
 
 ---
 
@@ -199,14 +199,14 @@ Afficher le profil candidat dans un format CV professionnel (header + 2 colonnes
 
 ### Éléments clés
 
-| Élément | Spécification |
-|---------|---------------|
-| Header | Photo 80x80, nom, titre, ville, contacts |
-| Colonne gauche | Langues (badges), Tags (badges + ajout), Résumé, lien CV |
-| Colonne droite | Expériences, formations (ordre chrono inversé) |
-| Offres | Badges de statut, liens vers fiches offre |
-| Notes | Liste chrono inversée, auteur + date + contenu |
-| Actions | Modifier (outline), Partager (outline), Supprimer (destructive) |
+| Élément        | Spécification                                                   |
+| -------------- | --------------------------------------------------------------- |
+| Header         | Photo 80x80, nom, titre, ville, contacts                        |
+| Colonne gauche | Langues (badges), Tags (badges + ajout), Résumé, lien CV        |
+| Colonne droite | Expériences, formations (ordre chrono inversé)                  |
+| Offres         | Badges de statut, liens vers fiches offre                       |
+| Notes          | Liste chrono inversée, auteur + date + contenu                  |
+| Actions        | Modifier (outline), Partager (outline), Supprimer (destructive) |
 
 ---
 
@@ -243,12 +243,12 @@ Voir et filtrer les offres d’emploi, accéder à la fiche offre.
 
 ### Éléments clés
 
-| Élément | Spécification |
-|---------|---------------|
-| Statuts | Badges colorés (À faire, En cours, Terminé) |
-| Filtres | Statut, Tags, Salaire min/max, Client, Ville |
+| Élément     | Spécification                                         |
+| ----------- | ----------------------------------------------------- |
+| Statuts     | Badges colorés (À faire, En cours, Terminé)           |
+| Filtres     | Statut, Tags, Salaire min/max, Client, Ville          |
 | Carte offre | Titre, client, localisation, fourchette salaire, tags |
-| Clic | Navigation vers fiche offre |
+| Clic        | Navigation vers fiche offre                           |
 
 ---
 
@@ -292,13 +292,13 @@ Voir les détails d’une offre, le client associé et les candidats liés avec 
 
 ### Éléments clés
 
-| Élément | Spécification |
-|---------|---------------|
-| Header | Titre, client, localisation, fourchette salaire, statut, tags |
-| Description | Zone texte, scroll si long |
-| Candidats | Photo, nom, titre, dropdown de statut, bouton dissocier |
-| Statuts | 6 valeurs (Contacté LinkedIn, Contact téléphonique, etc.) |
-| Notes | Même pattern que fiche candidat |
+| Élément     | Spécification                                                 |
+| ----------- | ------------------------------------------------------------- |
+| Header      | Titre, client, localisation, fourchette salaire, statut, tags |
+| Description | Zone texte, scroll si long                                    |
+| Candidats   | Photo, nom, titre, dropdown de statut, bouton dissocier       |
+| Statuts     | 6 valeurs (Contacté LinkedIn, Contact téléphonique, etc.)     |
+| Notes       | Même pattern que fiche candidat                               |
 
 ---
 
@@ -330,10 +330,10 @@ Lister les entreprises clientes, nombre de contacts et d’offres.
 
 ### Éléments clés
 
-| Élément | Spécification |
-|---------|---------------|
+| Élément      | Spécification                                    |
+| ------------ | ------------------------------------------------ |
 | Carte client | Raison sociale, SIREN, compteurs contacts/offres |
-| Clic | Vers fiche client (contacts, offres associées) |
+| Clic         | Vers fiche client (contacts, offres associées)   |
 
 ---
 
@@ -402,27 +402,27 @@ Afficher les informations complètes d’une entreprise cliente, gérer ses cont
 
 ### Éléments clés
 
-| Élément | Spécification |
-|---------|---------------|
-| **Header client** | Raison sociale, SIREN |
-| **Actions** | Modifier (infos cabinet), Supprimer (avec confirmation) |
-| **Contacts** | Carte par contact : nom, poste, email, tél, LinkedIn |
-| **Ajouter un contact** | CTA outline/secondaire, ouvre modal avec formulaire |
-| **Modifier / Supprimer** | Sur chaque contact, suppression avec confirmation |
-| **Copier** | Icône 📋 à côté de l’email et du tél → copie dans le presse-papiers + toast |
-| **Offres associées** | Liste des offres liées au client, lien vers fiche offre |
-| **Empty states** | « Aucun contact ajouté » et « Aucune offre associée » |
+| Élément                  | Spécification                                                               |
+| ------------------------ | --------------------------------------------------------------------------- |
+| **Header client**        | Raison sociale, SIREN                                                       |
+| **Actions**              | Modifier (infos cabinet), Supprimer (avec confirmation)                     |
+| **Contacts**             | Carte par contact : nom, poste, email, tél, LinkedIn                        |
+| **Ajouter un contact**   | CTA outline/secondaire, ouvre modal avec formulaire                         |
+| **Modifier / Supprimer** | Sur chaque contact, suppression avec confirmation                           |
+| **Copier**               | Icône 📋 à côté de l’email et du tél → copie dans le presse-papiers + toast |
+| **Offres associées**     | Liste des offres liées au client, lien vers fiche offre                     |
+| **Empty states**         | « Aucun contact ajouté » et « Aucune offre associée »                       |
 
 ### Champs contact (PRD Story 3.2)
 
-| Champ | Obligatoire | Validation |
-|-------|-------------|------------|
-| Prénom | Oui | — |
-| Nom | Oui | — |
-| Email | Non | Format email si renseigné |
-| Téléphone | Non | — |
-| Poste | Non | — |
-| LinkedIn | Non | Format linkedin.com/in/... si renseigné |
+| Champ     | Obligatoire | Validation                              |
+| --------- | ----------- | --------------------------------------- |
+| Prénom    | Oui         | —                                       |
+| Nom       | Oui         | —                                       |
+| Email     | Non         | Format email si renseigné               |
+| Téléphone | Non         | —                                       |
+| Poste     | Non         | —                                       |
+| LinkedIn  | Non         | Format linkedin.com/in/... si renseigné |
 
 ---
 
@@ -474,12 +474,12 @@ Afficher une fiche candidat partagée sans authentification (normale ou anonymis
 
 ### Éléments clés
 
-| Élément | Spécification |
-|---------|---------------|
-| Branding | Logo cabinet / Claritee en header |
-| Version anonyme | Badge "Fiche anonymisée", CTA contact |
-| Pas de navigation | Page standalone, pas de sidebar |
-| Erreur | Message clair si lien expiré/invalide |
+| Élément           | Spécification                         |
+| ----------------- | ------------------------------------- |
+| Branding          | Logo cabinet / Claritee en header     |
+| Version anonyme   | Badge "Fiche anonymisée", CTA contact |
+| Pas de navigation | Page standalone, pas de sidebar       |
+| Erreur            | Message clair si lien expiré/invalide |
 
 ---
 
@@ -524,12 +524,12 @@ Gérer les infos du cabinet, l’équipe et les invitations.
 
 ### Éléments clés
 
-| Élément | Spécification |
-|---------|---------------|
-| Cabinet | Raison sociale éditable, SIREN en lecture seule |
-| Équipe | Liste membres (nom, email, date) |
-| Invitations | Liste en attente, copie lien, révocation |
-| Profil | Prénom, nom, email, changement mot de passe |
+| Élément     | Spécification                                   |
+| ----------- | ----------------------------------------------- |
+| Cabinet     | Raison sociale éditable, SIREN en lecture seule |
+| Équipe      | Liste membres (nom, email, date)                |
+| Invitations | Liste en attente, copie lien, révocation        |
+| Profil      | Prénom, nom, email, changement mot de passe     |
 
 ---
 
@@ -538,6 +538,7 @@ Gérer les infos du cabinet, l’équipe et les invitations.
 ### Widget Note rapide (FAB / Cmd+J)
 
 Panneau flottant type chat (non bloquant, navigation possible) :
+
 - Header : titre, menu "Mes notes" (liste déroulante), bouton fermer
 - Liste des notes (au-dessus de la saisie) : tri par dernière modification
 - Zone saisie : éditeur BlockNote
@@ -581,6 +582,6 @@ Panneau flottant type chat (non bloquant, navigation possible) :
 
 ## Changelog
 
-| Date | Version | Description | Auteur |
-|------|---------|-------------|--------|
-| 2026-02-14 | 1.0 | Création des wireframes des 8 écrans | Sally (UX Expert) |
+| Date       | Version | Description                          | Auteur            |
+| ---------- | ------- | ------------------------------------ | ----------------- |
+| 2026-02-14 | 1.0     | Création des wireframes des 8 écrans | Sally (UX Expert) |

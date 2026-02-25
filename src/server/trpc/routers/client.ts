@@ -161,7 +161,9 @@ export const clientRouter = router({
           ...(data.lastName !== undefined && { lastName: data.lastName }),
           ...(data.email !== undefined && { email: data.email ?? null }),
           ...(data.phone !== undefined && { phone: data.phone ?? null }),
-          ...(data.position !== undefined && { position: data.position ?? null }),
+          ...(data.position !== undefined && {
+            position: data.position ?? null,
+          }),
           ...(data.linkedinUrl !== undefined && {
             linkedinUrl: data.linkedinUrl ?? null,
           }),
@@ -189,4 +191,3 @@ export const clientRouter = router({
       return { success: true };
     }),
 });
-

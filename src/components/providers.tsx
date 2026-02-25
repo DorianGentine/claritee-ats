@@ -12,7 +12,7 @@ const queryClientConfig = {
       staleTime: 5 * 60 * 1000,
     },
   },
-}
+};
 
 export const Providers = ({ children }: { children: React.ReactNode }) => {
   const [queryClient] = useState(() => new QueryClient(queryClientConfig));

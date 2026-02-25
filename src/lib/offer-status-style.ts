@@ -30,7 +30,9 @@ export type OfferStatusStyle = {
   badgeClassName: string;
 };
 
-export const getOfferStatusStyle = (status: JobOfferStatus): OfferStatusStyle => ({
+export const getOfferStatusStyle = (
+  status: JobOfferStatus
+): OfferStatusStyle => ({
   label: getOfferStatusLabel(status),
   badgeClassName: getOfferStatusBadgeClass(status),
 });

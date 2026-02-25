@@ -26,16 +26,16 @@
 
 ## 2. Nommage
 
-| Élément | Convention | Exemple |
-|--------|------------|--------|
-| **Fichiers composants React** | PascalCase | `CandidateCard.tsx`, `ShareLinkDialog.tsx` |
-| **Fichiers non-composants** (utils, hooks, routes) | camelCase ou kebab-case selon usage projet | `useCompanyId.ts`, `context.ts` |
-| **Dossiers** | minuscules, regroupement logique | `components/ui`, `server/trpc/routers` |
-| **Composants** | PascalCase | `CandidateCard`, `Sidebar` |
-| **Procedures tRPC** | camelCase | `getById`, `create`, `listByCandidate` |
-| **Variables / fonctions** | camelCase | `companyId`, `getCandidateById` |
-| **Constantes** | UPPER_SNAKE ou camelCase selon portée | `MAX_FILE_SIZE`, `defaultStaleTime` |
-| **Types / interfaces** | PascalCase | `CandidateWithTags`, `CreateOfferInput` |
+| Élément                                            | Convention                                 | Exemple                                    |
+| -------------------------------------------------- | ------------------------------------------ | ------------------------------------------ |
+| **Fichiers composants React**                      | PascalCase                                 | `CandidateCard.tsx`, `ShareLinkDialog.tsx` |
+| **Fichiers non-composants** (utils, hooks, routes) | camelCase ou kebab-case selon usage projet | `useCompanyId.ts`, `context.ts`            |
+| **Dossiers**                                       | minuscules, regroupement logique           | `components/ui`, `server/trpc/routers`     |
+| **Composants**                                     | PascalCase                                 | `CandidateCard`, `Sidebar`                 |
+| **Procedures tRPC**                                | camelCase                                  | `getById`, `create`, `listByCandidate`     |
+| **Variables / fonctions**                          | camelCase                                  | `companyId`, `getCandidateById`            |
+| **Constantes**                                     | UPPER_SNAKE ou camelCase selon portée      | `MAX_FILE_SIZE`, `defaultStaleTime`        |
+| **Types / interfaces**                             | PascalCase                                 | `CandidateWithTags`, `CreateOfferInput`    |
 
 ---
 
@@ -142,14 +142,14 @@ export const createExampleSchema = z.object({
 
 ### 5.1 Pièges courants (pour agents / développeurs)
 
-| Piège | Solution |
-|-------|----------|
-| Oublier `companyId` dans une requête (findMany, create, update, delete) | Toujours filtrer par `ctx.companyId` ; utiliser `protectedProcedure` ; inclure `companyId` dans les `data` de create. |
-| Exposer une erreur technique au client (stack, message Zod, etc.) | Afficher des messages génériques (voir PRD « Standard Error Messages ») ; garder les détails en logs serveur uniquement. |
-| Utiliser `procedure` au lieu de `protectedProcedure` pour des données métier | Les candidats, offres, clients, notes, partages doivent passer par `protectedProcedure`. |
+| Piège                                                                                            | Solution                                                                                                                                              |
+| ------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Oublier `companyId` dans une requête (findMany, create, update, delete)                          | Toujours filtrer par `ctx.companyId` ; utiliser `protectedProcedure` ; inclure `companyId` dans les `data` de create.                                 |
+| Exposer une erreur technique au client (stack, message Zod, etc.)                                | Afficher des messages génériques (voir PRD « Standard Error Messages ») ; garder les détails en logs serveur uniquement.                              |
+| Utiliser `procedure` au lieu de `protectedProcedure` pour des données métier                     | Les candidats, offres, clients, notes, partages doivent passer par `protectedProcedure`.                                                              |
 | Requêtes sur des tables sans `companyId` (Experience, Formation, etc.) sans passer par le parent | Accéder via une entité filtrée (ex. `Candidate`) ; ne jamais requêter directement une table enfant sans vérifier que le parent appartient au cabinet. |
-| Stocker ou logger un mot de passe | Jamais ; auth via Supabase Auth uniquement. |
-| Valider uniquement côté client | Toujours valider côté tRPC avec Zod ; le client peut réutiliser les mêmes schémas. |
+| Stocker ou logger un mot de passe                                                                | Jamais ; auth via Supabase Auth uniquement.                                                                                                           |
+| Valider uniquement côté client                                                                   | Toujours valider côté tRPC avec Zod ; le client peut réutiliser les mêmes schémas.                                                                    |
 
 ---
 
@@ -182,4 +182,4 @@ export const createExampleSchema = z.object({
 
 ---
 
-*Dernière mise à jour : 2026-02-23. Aligné avec `docs/architecture.md`, `docs/design-system.md` et `docs/frontend-architecture.md`.*
+_Dernière mise à jour : 2026-02-23. Aligné avec `docs/architecture.md`, `docs/design-system.md` et `docs/frontend-architecture.md`._

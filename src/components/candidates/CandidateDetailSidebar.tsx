@@ -1,21 +1,21 @@
-"use client"
+"use client";
 
-import { CandidateSummarySection } from "./CandidateSummarySection"
-import { CandidateLanguagesSection } from "./CandidateLanguagesSection"
-import { CandidateTagsSection, type TagItem } from "./CandidateTagsSection"
-import { CandidateCvSection } from "./CandidateCvSection"
+import { CandidateSummarySection } from "./CandidateSummarySection";
+import { CandidateLanguagesSection } from "./CandidateLanguagesSection";
+import { CandidateTagsSection, type TagItem } from "./CandidateTagsSection";
+import { CandidateCvSection } from "./CandidateCvSection";
 
-export type LanguageItem = { id: string; name: string; level: string }
-export type { TagItem }
+export type LanguageItem = { id: string; name: string; level: string };
+export type { TagItem };
 
 export type CandidateDetailSidebarProps = {
-  candidateId: string
-  languages: LanguageItem[]
-  tags: TagItem[]
-  summary: string | null
-  cvUrl: string | null
-  cvFileName: string | null
-}
+  candidateId: string;
+  languages: LanguageItem[];
+  tags: TagItem[];
+  summary: string | null;
+  cvUrl: string | null;
+  cvFileName: string | null;
+};
 
 export const CandidateDetailSidebar = ({
   candidateId,
@@ -32,7 +32,10 @@ export const CandidateDetailSidebar = ({
       cvUrl={cvUrl}
       cvFileName={cvFileName}
     />
-    <CandidateLanguagesSection candidateId={candidateId} languages={languages} />
+    <CandidateLanguagesSection
+      candidateId={candidateId}
+      languages={languages}
+    />
     <CandidateTagsSection candidateId={candidateId} tags={tags} />
   </aside>
-)
+);

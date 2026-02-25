@@ -11,6 +11,7 @@
 ### Contexte
 
 La documentation architecture a été significativement complétée suite au travail avec l'architecte :
+
 - **frontend-architecture.md** : stack, état, routing (tableau §2), composants (convention props/events §4.2), intégration API, accessibilité
 - **rate-limiting.md** + **src/lib/rate-limit.ts** : guide d'intégration et code prêts ; **branchement manquant** dans auth, shareLink, upload
 - **coding-standards.md** : pièges courants (§5.1), template router complet (§3.1), outils a11y (jest-axe, Pa11y) §7
@@ -22,6 +23,7 @@ Le rapport architecte identifie un **risque majeur** : le rate limiting n'est pa
 ### Objectif
 
 S'assurer que les epics et stories du PRD reflètent les exigences et références de la documentation architecture, en particulier :
+
 1. **Rate limiting** : ajout de critères d'acceptation dans les stories concernées
 2. **Références livrables** : mise à jour de la table pour inclure les nouveaux documents
 3. **Accessibilité** : référence explicite aux outils de test (coding-standards §7)
@@ -30,11 +32,11 @@ S'assurer que les epics et stories du PRD reflètent les exigences et référenc
 
 ## 2. Epic Impact Summary
 
-| Epic | Impact | Nature des changements |
-|------|--------|------------------------|
-| Epic 1 | Modéré | Story 1.3 : +1 AC rate limiting (auth par IP) ; Réf. élargies |
-| Epic 2 | Modéré | Stories 2.3, 2.9 : +1 AC rate limiting (upload par user) |
-| Epic 3 | Aucun | - |
+| Epic   | Impact | Nature des changements                                             |
+| ------ | ------ | ------------------------------------------------------------------ |
+| Epic 1 | Modéré | Story 1.3 : +1 AC rate limiting (auth par IP) ; Réf. élargies      |
+| Epic 2 | Modéré | Stories 2.3, 2.9 : +1 AC rate limiting (upload par user)           |
+| Epic 3 | Aucun  | -                                                                  |
 | Epic 4 | Modéré | Story 4.4 : +1 AC rate limiting (partage par user) ; Réf. élargies |
 
 ---
@@ -51,16 +53,16 @@ S'assurer que les epics et stories du PRD reflètent les exigences et référenc
 Remplacer la table actuelle par :
 
 ```markdown
-| Livrable | Fichier | Contenu clé |
-|----------|---------|-------------|
-| **Architecture** | `docs/architecture.md` | Stack (Next.js, tRPC v11, Prisma, Supabase), multi-tenancy RLS, schéma de données, structure monorepo `src/`, routers tRPC, Auth, Storage (buckets `photos` / `cvs`), déploiement Vercel |
-| **Architecture Frontend** | `docs/frontend-architecture.md` | Stack frontend, état (TanStack Query), routing (tableau routes), composants (props/events §4.2), intégration API, accessibilité |
-| **Rate Limiting** | `docs/architecture/rate-limiting.md` | Seuils (auth IP, share userId, upload userId), où brancher, guide d'intégration `src/lib/rate-limit.ts` |
-| **Coding Standards** | `docs/architecture/coding-standards.md` | Pièges courants §5.1, template router §3.1, outils a11y (jest-axe, Pa11y) §7 |
-| **Source Tree** | `docs/architecture/source-tree.md` | Structure dossiers, « où placer quoi » pour nouveaux composants/routers |
-| **Tech Stack** | `docs/architecture/tech-stack.md` | Versions pinnées des dépendances |
-| **Wireframes** | `docs/wireframes.md` | Layout global (shell), 8 écrans (Dashboard, Liste/Fiche Candidats, …), modals (note rapide, partager, recherche Cmd+K) |
-| **Design System** | `docs/design-system.md` | Palette (background, primary terracotta, secondary sauge), typo (DM Sans), composants shadcn/ui, WCAG AA |
+| Livrable                  | Fichier                                 | Contenu clé                                                                                                                                                                              |
+| ------------------------- | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Architecture**          | `docs/architecture.md`                  | Stack (Next.js, tRPC v11, Prisma, Supabase), multi-tenancy RLS, schéma de données, structure monorepo `src/`, routers tRPC, Auth, Storage (buckets `photos` / `cvs`), déploiement Vercel |
+| **Architecture Frontend** | `docs/frontend-architecture.md`         | Stack frontend, état (TanStack Query), routing (tableau routes), composants (props/events §4.2), intégration API, accessibilité                                                          |
+| **Rate Limiting**         | `docs/architecture/rate-limiting.md`    | Seuils (auth IP, share userId, upload userId), où brancher, guide d'intégration `src/lib/rate-limit.ts`                                                                                  |
+| **Coding Standards**      | `docs/architecture/coding-standards.md` | Pièges courants §5.1, template router §3.1, outils a11y (jest-axe, Pa11y) §7                                                                                                             |
+| **Source Tree**           | `docs/architecture/source-tree.md`      | Structure dossiers, « où placer quoi » pour nouveaux composants/routers                                                                                                                  |
+| **Tech Stack**            | `docs/architecture/tech-stack.md`       | Versions pinnées des dépendances                                                                                                                                                         |
+| **Wireframes**            | `docs/wireframes.md`                    | Layout global (shell), 8 écrans (Dashboard, Liste/Fiche Candidats, …), modals (note rapide, partager, recherche Cmd+K)                                                                   |
+| **Design System**         | `docs/design-system.md`                 | Palette (background, primary terracotta, secondary sauge), typo (DM Sans), composants shadcn/ui, WCAG AA                                                                                 |
 ```
 
 ---
@@ -236,4 +238,4 @@ Dans la liste des Acceptance Criteria, après l'AC 9 (ou intégré comme AC 10, 
 
 ---
 
-*Document généré par l'agent PM (John) dans le cadre de l'alignement epics/stories avec la documentation architecture. Pour validation avant application dans `docs/prd.md`.*
+_Document généré par l'agent PM (John) dans le cadre de l'alignement epics/stories avec la documentation architecture. Pour validation avant application dans `docs/prd.md`._

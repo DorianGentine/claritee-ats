@@ -8,7 +8,12 @@ const connectionString = process.env.DATABASE_URL;
 
 /** Minimal BlockNote document (one paragraph) */
 const blockNoteContent = JSON.stringify([
-  { id: "block-1", type: "paragraph", content: [{ type: "text", text: "Note de test", styles: {} }], children: [] },
+  {
+    id: "block-1",
+    type: "paragraph",
+    content: [{ type: "text", text: "Note de test", styles: {} }],
+    children: [],
+  },
 ]);
 
 describe.runIf(!!connectionString)("note", () => {
@@ -25,7 +30,9 @@ describe.runIf(!!connectionString)("note", () => {
   const createContext = (companyId: string | null, userId?: string): Context =>
     ({
       db,
-      user: companyId ? { id: userId ?? "user-a-id", email: "a@test.com" } : null,
+      user: companyId
+        ? { id: userId ?? "user-a-id", email: "a@test.com" }
+        : null,
       companyId,
       headers: new Headers(),
     }) as unknown as Context;
@@ -211,7 +218,12 @@ describe.runIf(!!connectionString)("note", () => {
     });
 
     const updatedContent = JSON.stringify([
-      { id: "block-2", type: "paragraph", content: [{ type: "text", text: "Note modifiée", styles: {} }], children: [] },
+      {
+        id: "block-2",
+        type: "paragraph",
+        content: [{ type: "text", text: "Note modifiée", styles: {} }],
+        children: [],
+      },
     ]);
     const updated = await caller.note.update({
       id: created.id,
@@ -237,7 +249,9 @@ describe.runIf(!!connectionString)("note", () => {
     await expect(
       callerB.note.update({
         id: created.id,
-        content: JSON.stringify([{ id: "x", type: "paragraph", content: [], children: [] }]),
+        content: JSON.stringify([
+          { id: "x", type: "paragraph", content: [], children: [] },
+        ]),
       })
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
 
@@ -292,9 +306,11 @@ describe.runIf(!!connectionString)("note", () => {
     const ctxB = createContext(companyAId, userBId);
     const callerB = appRouter.createCaller(ctxB);
 
-    await expect(callerB.note.delete({ id: created.id })).rejects.toMatchObject({
-      code: "FORBIDDEN",
-    });
+    await expect(callerB.note.delete({ id: created.id })).rejects.toMatchObject(
+      {
+        code: "FORBIDDEN",
+      }
+    );
 
     await db.note.delete({ where: { id: created.id } });
   });
@@ -310,9 +326,11 @@ describe.runIf(!!connectionString)("note", () => {
     const ctxC = createContext(companyBId, userCId);
     const callerC = appRouter.createCaller(ctxC);
 
-    await expect(callerC.note.delete({ id: created.id })).rejects.toMatchObject({
-      code: "NOT_FOUND",
-    });
+    await expect(callerC.note.delete({ id: created.id })).rejects.toMatchObject(
+      {
+        code: "NOT_FOUND",
+      }
+    );
 
     await db.note.delete({ where: { id: created.id } });
   });
@@ -339,9 +357,19 @@ describe.runIf(!!connectionString)("note", () => {
     const ctx = createContext(companyAId, userAId);
     const caller = appRouter.createCaller(ctx);
 
-    const n1 = await caller.note.create({ content: blockNoteContent, title: "Note 1" });
+    const n1 = await caller.note.create({
+      content: blockNoteContent,
+      title: "Note 1",
+    });
     const n2 = await caller.note.create({
-      content: JSON.stringify([{ id: "b2", type: "paragraph", content: [{ type: "text", text: "Note 2", styles: {} }], children: [] }]),
+      content: JSON.stringify([
+        {
+          id: "b2",
+          type: "paragraph",
+          content: [{ type: "text", text: "Note 2", styles: {} }],
+          children: [],
+        },
+      ]),
       title: "Note 2",
     });
 
@@ -394,7 +422,9 @@ describe.runIf(!!connectionString)("note", () => {
     const listFree = await caller.note.listFree();
     expect(listFree.some((n) => n.id === created.id)).toBe(false);
 
-    const listCandidate = await caller.note.list({ candidateId: candidateA1Id });
+    const listCandidate = await caller.note.list({
+      candidateId: candidateA1Id,
+    });
     expect(listCandidate.some((n) => n.id === created.id)).toBe(true);
 
     await db.note.delete({ where: { id: created.id } });

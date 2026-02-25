@@ -16,7 +16,8 @@ const PHOTO_SIZE_ERROR =
   "Le fichier dépasse la taille maximale autorisée (2 Mo pour les photos, 5 Mo pour les CVs).";
 
 export const getCandidateInitials = (firstName: string, lastName: string) =>
-  `${firstName?.charAt(0) ?? ""}${lastName?.charAt(0) ?? ""}`.toUpperCase() || "?";
+  `${firstName?.charAt(0) ?? ""}${lastName?.charAt(0) ?? ""}`.toUpperCase() ||
+  "?";
 
 type Props = {
   inputId: string;
@@ -56,9 +57,7 @@ export const CandidatePhotoUpload = ({
     <div className="space-y-2">
       <Label htmlFor={inputId}>Photo</Label>
       <div className="flex items-center gap-4">
-        <Avatar
-          className={`${sizeClass} rounded-full border-2 border-border`}
-        >
+        <Avatar className={`${sizeClass} rounded-full border-2 border-border`}>
           <AvatarImage
             src={photoSrc}
             alt={
@@ -105,29 +104,31 @@ export const CandidatePhotoUpload = ({
   );
 };
 
-export const createPhotoChangeHandler = (
-  setPhotoFile: (f: File | null) => void,
-  setPhotoPreviewUrl: (url: string | null) => void,
-  setPhotoError: (err: string | null) => void,
-  photoPreviewUrl: string | null
-) => (e: React.ChangeEvent<HTMLInputElement>) => {
-  setPhotoError(null);
-  const file = e.target.files?.[0];
-  if (!file) {
-    setPhotoFile(null);
-    setPhotoPreviewUrl(null);
-    return;
-  }
-  const mime = file.type as (typeof PHOTO_ACCEPTED_MIMES)[number];
-  if (!PHOTO_ACCEPTED_MIMES.includes(mime)) {
-    setPhotoError(PHOTO_FORMAT_ERROR);
-    return;
-  }
-  if (file.size > PHOTO_MAX_BYTES) {
-    setPhotoError(PHOTO_SIZE_ERROR);
-    return;
-  }
-  if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl);
-  setPhotoFile(file);
-  setPhotoPreviewUrl(URL.createObjectURL(file));
-};
+export const createPhotoChangeHandler =
+  (
+    setPhotoFile: (f: File | null) => void,
+    setPhotoPreviewUrl: (url: string | null) => void,
+    setPhotoError: (err: string | null) => void,
+    photoPreviewUrl: string | null
+  ) =>
+  (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPhotoError(null);
+    const file = e.target.files?.[0];
+    if (!file) {
+      setPhotoFile(null);
+      setPhotoPreviewUrl(null);
+      return;
+    }
+    const mime = file.type as (typeof PHOTO_ACCEPTED_MIMES)[number];
+    if (!PHOTO_ACCEPTED_MIMES.includes(mime)) {
+      setPhotoError(PHOTO_FORMAT_ERROR);
+      return;
+    }
+    if (file.size > PHOTO_MAX_BYTES) {
+      setPhotoError(PHOTO_SIZE_ERROR);
+      return;
+    }
+    if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl);
+    setPhotoFile(file);
+    setPhotoPreviewUrl(URL.createObjectURL(file));
+  };

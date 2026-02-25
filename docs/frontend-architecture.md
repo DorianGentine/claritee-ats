@@ -6,18 +6,18 @@ Document de référence pour l’interface utilisateur : stack, état, routing, 
 
 ## 1. Stack et cadre technique
 
-| Couche | Technologie | Version | Rôle |
-|--------|-------------|---------|------|
-| Framework | Next.js (App Router) | 16.1.6 | Routing, SSR, layout |
-| UI | React | 19.2 | Composants |
-| Langage | TypeScript | 5.9 | Typage strict |
-| Composants | shadcn/ui (Radix + Tailwind) | - | Boutons, formulaires, modals, etc. |
-| Styles | Tailwind CSS | 4.1 | Tokens design-system |
-| Données serveur | TanStack Query | 5.59 | Cache, mutations, invalidation |
-| Formulaires | React Hook Form | 7.53 | Champs + validation |
-| Validation | Zod | 4.3.6 | Schémas partagés avec tRPC |
-| API | tRPC client | 11.0 | Appels type-safe (pas de fetch brut) |
-| Dates | date-fns | 2.30 | Formatage / calculs |
+| Couche          | Technologie                  | Version | Rôle                                 |
+| --------------- | ---------------------------- | ------- | ------------------------------------ |
+| Framework       | Next.js (App Router)         | 16.1.6  | Routing, SSR, layout                 |
+| UI              | React                        | 19.2    | Composants                           |
+| Langage         | TypeScript                   | 5.9     | Typage strict                        |
+| Composants      | shadcn/ui (Radix + Tailwind) | -       | Boutons, formulaires, modals, etc.   |
+| Styles          | Tailwind CSS                 | 4.1     | Tokens design-system                 |
+| Données serveur | TanStack Query               | 5.59    | Cache, mutations, invalidation       |
+| Formulaires     | React Hook Form              | 7.53    | Champs + validation                  |
+| Validation      | Zod                          | 4.3.6   | Schémas partagés avec tRPC           |
+| API             | tRPC client                  | 11.0    | Appels type-safe (pas de fetch brut) |
+| Dates           | date-fns                     | 2.30    | Formatage / calculs                  |
 
 Référentiel détaillé : `docs/architecture/tech-stack.md` et `docs/architecture.md` §2.
 
@@ -27,23 +27,23 @@ Référentiel détaillé : `docs/architecture/tech-stack.md` et `docs/architectu
 
 Next.js App Router avec groupes de routes : `(auth)` pour login/register/invite, `(dashboard)` pour l’app authentifiée, `share/[token]` publique.
 
-| Route | Groupe | Protection | Rôle |
-|-------|--------|------------|------|
-| `/` | - | Publique | Landing avec navbar dynamique (auth : Mon espace / Déconnexion ; non auth : S'inscrire / Se connecter) |
-| `/login` | (auth) | Publique | Connexion |
-| `/register` | (auth) | Publique | Inscription + création cabinet |
-| `/invite/[token]` | (auth) | Publique | Inscription via invitation |
-| `/dashboard` | (dashboard) | Protégée | Accueil, métriques |
-| `/candidates` | (dashboard) | Protégée | Liste candidats |
-| `/candidates/[id]` | (dashboard) | Protégée | Fiche candidat (layout CV) |
-| `/offers` | (dashboard) | Protégée | Liste offres |
-| `/offers/[id]` | (dashboard) | Protégée | Fiche offre |
-| `/clients` | (dashboard) | Protégée | Liste clients |
-| `/clients/[id]` | (dashboard) | Protégée | Fiche client |
-| `/settings` | (dashboard) | Protégée | Paramètres cabinet, équipe, profil |
-| `/share/[token]` | - | Publique | Fiche candidat partagée (normale ou anonyme) |
-| `/api/health` | api | Publique | Health check |
-| `/api/trpc/[...trpc]` | api | Selon procédure | API tRPC |
+| Route                 | Groupe      | Protection      | Rôle                                                                                                   |
+| --------------------- | ----------- | --------------- | ------------------------------------------------------------------------------------------------------ |
+| `/`                   | -           | Publique        | Landing avec navbar dynamique (auth : Mon espace / Déconnexion ; non auth : S'inscrire / Se connecter) |
+| `/login`              | (auth)      | Publique        | Connexion                                                                                              |
+| `/register`           | (auth)      | Publique        | Inscription + création cabinet                                                                         |
+| `/invite/[token]`     | (auth)      | Publique        | Inscription via invitation                                                                             |
+| `/dashboard`          | (dashboard) | Protégée        | Accueil, métriques                                                                                     |
+| `/candidates`         | (dashboard) | Protégée        | Liste candidats                                                                                        |
+| `/candidates/[id]`    | (dashboard) | Protégée        | Fiche candidat (layout CV)                                                                             |
+| `/offers`             | (dashboard) | Protégée        | Liste offres                                                                                           |
+| `/offers/[id]`        | (dashboard) | Protégée        | Fiche offre                                                                                            |
+| `/clients`            | (dashboard) | Protégée        | Liste clients                                                                                          |
+| `/clients/[id]`       | (dashboard) | Protégée        | Fiche client                                                                                           |
+| `/settings`           | (dashboard) | Protégée        | Paramètres cabinet, équipe, profil                                                                     |
+| `/share/[token]`      | -           | Publique        | Fiche candidat partagée (normale ou anonyme)                                                           |
+| `/api/health`         | api         | Publique        | Health check                                                                                           |
+| `/api/trpc/[...trpc]` | api         | Selon procédure | API tRPC                                                                                               |
 
 Protection : le proxy Next.js (`src/proxy.ts`, ex-middleware) vérifie la session Supabase sur `(dashboard)/**` ; absence de session → redirect `/login`. `/share/[token]` et `(auth)/**` restent accessibles sans auth.
 
@@ -111,7 +111,13 @@ Exemple de signature à viser :
 ```ts
 // Exemple (à adapter selon le composant)
 export type CandidateCardProps = {
-  candidate: { id: string; firstName: string; lastName: string; title?: string | null; photoUrl?: string | null };
+  candidate: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    title?: string | null;
+    photoUrl?: string | null;
+  };
   onSelect?: (id: string) => void;
   className?: string;
 };
@@ -130,6 +136,7 @@ Référence nommage et style : `docs/architecture/coding-standards.md`.
 Les composants ont tendance à devenir lourds et dupliqués. Appliquer les principes **DRY (Don't Repeat Yourself)** pour maintenir une base de code légère et maintenable.
 
 **Objectifs :**
+
 - Réduire la duplication de code entre composants.
 - Centraliser les comportements et patrons récurrents dans des composants partagés.
 - Alléger les composants métier en extrayant des sous-composants ou utilitaires réutilisables.
@@ -178,6 +185,7 @@ Référence : `docs/architecture/source-tree.md` et `docs/architecture/coding-st
 - **Loading / erreur** : gérer `isLoading` / `isError` et `error.message` dans chaque page ou composant de liste/détail ; toasts pour les erreurs de mutation.
 
 **Convention loading (skeleton)** : utiliser uniquement `isLoading` pour afficher un skeleton, **jamais** `isFetching`. `isFetching` est vrai pendant tout refetch (y compris en arrière-plan quand des données sont déjà en cache) ; l'utiliser provoquerait un flash de skeleton à chaque navigation ou retour sur l'onglet. `isLoading` indique uniquement l'absence de données en cache pendant une requête initiale.
+
 - **Contexte** : le client tRPC envoie les cookies ; le serveur résout la session et `companyId`. Aucune clé API à gérer côté front.
 
 Configuration du client tRPC : typiquement dans un Provider (React Query + tRPC) au root layout ; voir exemples officiels tRPC + Next.js App Router.
@@ -234,16 +242,16 @@ Référence visuelle et tokens : `docs/design-system.md`.
 
 ## 11. Fichiers de référence
 
-| Document | Contenu |
-|----------|---------|
-| `docs/architecture.md` | Stack globale, tRPC, RLS, auth, storage, déploiement |
-| `docs/architecture/tech-stack.md` | Versions pinnées |
-| `docs/architecture/source-tree.md` | Où placer composants, pages, hooks, validations |
-| `docs/architecture/coding-standards.md` | TypeScript, nommage, tRPC, multi-tenancy, tests |
-| `docs/prd.md` | UX, wireframes, design-system, epics/stories |
-| `docs/design-system.md` | Palette, typo, composants, statuts, WCAG |
-| `docs/wireframes.md` | 8 écrans + layout + modals |
+| Document                                | Contenu                                              |
+| --------------------------------------- | ---------------------------------------------------- |
+| `docs/architecture.md`                  | Stack globale, tRPC, RLS, auth, storage, déploiement |
+| `docs/architecture/tech-stack.md`       | Versions pinnées                                     |
+| `docs/architecture/source-tree.md`      | Où placer composants, pages, hooks, validations      |
+| `docs/architecture/coding-standards.md` | TypeScript, nommage, tRPC, multi-tenancy, tests      |
+| `docs/prd.md`                           | UX, wireframes, design-system, epics/stories         |
+| `docs/design-system.md`                 | Palette, typo, composants, statuts, WCAG             |
+| `docs/wireframes.md`                    | 8 écrans + layout + modals                           |
 
 ---
 
-*Dernière mise à jour : 2026-02-21. TanStack Query : staleTime 5 minutes, convention isLoading vs isFetching (§3.1.1, §5). Aligné avec `docs/architecture.md`.*
+_Dernière mise à jour : 2026-02-21. TanStack Query : staleTime 5 minutes, convention isLoading vs isFetching (§3.1.1, §5). Aligné avec `docs/architecture.md`._

@@ -1,4 +1,4 @@
-import { router, protectedProcedure } from "../trpc"
+import { router, protectedProcedure } from "../trpc";
 
 export const tagRouter = router({
   /**
@@ -10,6 +10,6 @@ export const tagRouter = router({
       where: { companyId: ctx.companyId },
       orderBy: { name: "asc" },
       select: { id: true, name: true, color: true },
-    }),
+    })
   ),
-})
+});

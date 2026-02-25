@@ -24,7 +24,6 @@ export default defineConfig({
   datasource: {
     // DIRECT_DATABASE_URL (port 5432) pour migrate dev/deploy
     // Fallback sur DATABASE_URL si non défini (ex: generate sans DB)
-    url:
-      process.env.DIRECT_DATABASE_URL ?? env("DATABASE_URL"),
+    url: process.env.DIRECT_DATABASE_URL ?? env("DATABASE_URL"),
   },
 });

@@ -8,10 +8,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { TRPCClientError } from "@trpc/client";
 import { z } from "zod";
-import {
-  emailSchema,
-  passwordSchema,
-} from "@/lib/validations/auth";
+import { emailSchema, passwordSchema } from "@/lib/validations/auth";
 import { api } from "@/lib/trpc/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -190,12 +187,16 @@ export default function InvitePage() {
 
   const invitationQuery = api.invitation.getByToken.useQuery(
     { token },
-    { enabled: !!token },
+    { enabled: !!token }
   );
 
   const { status, errorMessage, invitationData } = (() => {
     if (!token || invitationQuery.isLoading) {
-      return { status: "loading" as const, errorMessage: null, invitationData: null };
+      return {
+        status: "loading" as const,
+        errorMessage: null,
+        invitationData: null,
+      };
     }
     if (invitationQuery.error || !invitationQuery.data) {
       return {

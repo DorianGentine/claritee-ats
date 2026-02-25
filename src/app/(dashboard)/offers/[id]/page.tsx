@@ -6,5 +6,5 @@ export default function OfferPage() {
         La fiche offre sera implémentée dans une prochaine version.
       </p>
     </div>
-  )
+  );
 }

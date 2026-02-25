@@ -1,14 +1,10 @@
 import { TRPCError } from "@trpc/server";
 import { router, publicProcedure } from "../trpc";
 import { registerSchema } from "@/lib/validations/auth";
-import {
-  checkRateLimit,
-  RATE_LIMITS,
-} from "@/lib/rate-limit";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-const RATE_LIMIT_MESSAGE =
-  "Trop de requêtes. Réessayez dans quelques minutes.";
+const RATE_LIMIT_MESSAGE = "Trop de requêtes. Réessayez dans quelques minutes.";
 
 /** Message générique quand email ou SIREN déjà utilisé (option B : tout côté serveur) */
 const REGISTER_UNAVAILABLE_MESSAGE =
@@ -30,7 +26,7 @@ export const authRouter = router({
       const result = await checkRateLimit(
         "auth:" + ip,
         RATE_LIMITS.AUTH_PER_IP.limit,
-        RATE_LIMITS.AUTH_PER_IP.windowMs,
+        RATE_LIMITS.AUTH_PER_IP.windowMs
       );
       if (!result.success) {
         throw new TRPCError({
@@ -85,7 +81,10 @@ export const authRouter = router({
         email: input.email,
       });
       if (resendError) {
-        console.warn("[auth.register] Resend confirmation email failed:", resendError.message);
+        console.warn(
+          "[auth.register] Resend confirmation email failed:",
+          resendError.message
+        );
       }
 
       const company = await ctx.db.$transaction(async (tx) => {

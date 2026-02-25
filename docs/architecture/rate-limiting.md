@@ -6,11 +6,11 @@ Référence cible : `docs/architecture.md` §10.6. Ce document décrit où et co
 
 ## 1. Seuils cibles
 
-| Périmètre | Clé | Limite | Fenêtre |
-|----------|-----|--------|---------|
-| Auth (login / register) | IP | 10 req | 1 minute |
-| Création de liens de partage | userId | 20 req | 1 heure |
-| Upload (photo + CV) | userId | 30 req | 1 heure |
+| Périmètre                    | Clé    | Limite | Fenêtre  |
+| ---------------------------- | ------ | ------ | -------- |
+| Auth (login / register)      | IP     | 10 req | 1 minute |
+| Création de liens de partage | userId | 20 req | 1 heure  |
+| Upload (photo + CV)          | userId | 30 req | 1 heure  |
 
 En cas de dépassement : répondre **HTTP 429** ou erreur tRPC équivalente, message client générique : « Trop de requêtes. Réessayez dans quelques minutes. »
 
@@ -24,7 +24,11 @@ En cas de dépassement : répondre **HTTP 429** ou erreur tRPC équivalente, mes
 Exports utiles :
 
 ```ts
-import { checkRateLimit, RATE_LIMITS, type RateLimitResult } from "@/lib/rate-limit";
+import {
+  checkRateLimit,
+  RATE_LIMITS,
+  type RateLimitResult,
+} from "@/lib/rate-limit";
 ```
 
 ---
@@ -99,10 +103,10 @@ if (!result.success) {
 
 ## 4. Résumé
 
-| Zone | Clé | Fichier / endroit |
-|------|-----|-------------------|
-| Auth (IP) | `auth:${ip}` | Proxy Next.js (`src/proxy.ts`) ou procédure `auth.register` |
-| Partage | `share:${userId}` | Router `shareLink`, procédure `create` |
-| Upload | `upload:${userId}` | Procédures ou route qui traitent l'upload photo/CV |
+| Zone      | Clé                | Fichier / endroit                                           |
+| --------- | ------------------ | ----------------------------------------------------------- |
+| Auth (IP) | `auth:${ip}`       | Proxy Next.js (`src/proxy.ts`) ou procédure `auth.register` |
+| Partage   | `share:${userId}`  | Router `shareLink`, procédure `create`                      |
+| Upload    | `upload:${userId}` | Procédures ou route qui traitent l'upload photo/CV          |
 
 Code commun : `src/lib/rate-limit.ts` + ce guide. En prod, le store in-memory est utilisé (limite par instance).

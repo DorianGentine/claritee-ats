@@ -100,7 +100,9 @@ export default function ClientDetailPage() {
             {data.name}
           </h1>
           <p className="text-sm text-muted-foreground">
-            {data.siren ? `SIREN ${formatSiren(data.siren)}` : "SIREN non renseigné"}
+            {data.siren
+              ? `SIREN ${formatSiren(data.siren)}`
+              : "SIREN non renseigné"}
           </p>
           <p className="text-sm text-muted-foreground">
             {data.contactsCount} contacts · {data.offersCount} offres
@@ -155,4 +157,3 @@ export default function ClientDetailPage() {
     </main>
   );
 }
-

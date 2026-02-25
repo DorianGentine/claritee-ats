@@ -1,20 +1,20 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
-import { Plus, X } from "lucide-react"
-import { api } from "@/lib/trpc/client"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { tagNameSchema, MAX_TAGS_PER_CANDIDATE } from "@/lib/validations/tag"
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Plus, X } from "lucide-react";
+import { api } from "@/lib/trpc/client";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { tagNameSchema, MAX_TAGS_PER_CANDIDATE } from "@/lib/validations/tag";
 
 const addTagFormSchema = z.object({
   tagName: tagNameSchema,
-})
+});
 
 type AddTagFormValues = z.infer<typeof addTagFormSchema>;
 
@@ -60,8 +60,8 @@ export const CandidateTagsSection = ({ candidateId, tags }: Props) => {
     addMutation.mutate({
       candidateId,
       tagName: values.tagName,
-    })
-  }
+    });
+  };
 
   const handleRemove = (tagId: string) => {
     removeMutation.mutate({ candidateId, tagId });
@@ -72,7 +72,7 @@ export const CandidateTagsSection = ({ candidateId, tags }: Props) => {
     setShowForm(false);
   };
 
-  const atLimit = tags.length >= MAX_TAGS_PER_CANDIDATE
+  const atLimit = tags.length >= MAX_TAGS_PER_CANDIDATE;
 
   return (
     <section>
@@ -163,11 +163,7 @@ export const CandidateTagsSection = ({ candidateId, tags }: Props) => {
           </div>
 
           <div className="flex gap-2">
-            <Button
-              type="submit"
-              size="sm"
-              disabled={addMutation.isPending}
-            >
+            <Button type="submit" size="sm" disabled={addMutation.isPending}>
               {addMutation.isPending ? "Ajout…" : "Ajouter"}
             </Button>
             <Button

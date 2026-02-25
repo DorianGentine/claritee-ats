@@ -55,9 +55,7 @@ export const CandidateCvSection = ({
     },
   });
 
-  const handleFileChange = async (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setUploadError(null);
     const file = e.target.files?.[0];
     if (!file) return;
@@ -82,9 +80,7 @@ export const CandidateCvSection = ({
       };
       await uploadMutation.mutateAsync(input);
     } catch (err) {
-      setUploadError(
-        (err as { message?: string })?.message ?? GENERIC_ERROR,
-      );
+      setUploadError((err as { message?: string })?.message ?? GENERIC_ERROR);
     }
   };
 
@@ -153,10 +149,7 @@ export const CandidateCvSection = ({
       )}
 
       {uploadError && (
-        <p
-          role="alert"
-          className="mt-2 text-sm text-destructive"
-        >
+        <p role="alert" className="mt-2 text-sm text-destructive">
           {uploadError}
         </p>
       )}

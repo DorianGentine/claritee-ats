@@ -1,14 +1,10 @@
-import { NoteChatWidget } from "./NoteChatWidget"
+import { NoteChatWidget } from "./NoteChatWidget";
 
-export const DashboardShell = ({
-  children,
-}: {
-  children: React.ReactNode
-}) => {
+export const DashboardShell = ({ children }: { children: React.ReactNode }) => {
   return (
     <div className="flex flex-1 flex-col bg-background">
       <main className="flex-1">{children}</main>
       <NoteChatWidget />
     </div>
-  )
-}
+  );
+};

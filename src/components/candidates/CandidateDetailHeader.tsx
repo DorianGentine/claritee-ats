@@ -43,12 +43,8 @@ export const CandidateDetailHeader = ({
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">
           {fullName}
         </h1>
-        {title && (
-          <p className="mt-1 text-muted-foreground">{title}</p>
-        )}
-        {city && (
-          <p className="mt-0.5 text-sm text-muted-foreground">{city}</p>
-        )}
+        {title && <p className="mt-1 text-muted-foreground">{title}</p>}
+        {city && <p className="mt-0.5 text-sm text-muted-foreground">{city}</p>}
         <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
           {email && (
             <li>
@@ -62,10 +58,7 @@ export const CandidateDetailHeader = ({
           )}
           {phone && (
             <li>
-              <a
-                href={`tel:${phone}`}
-                className="text-primary hover:underline"
-              >
+              <a href={`tel:${phone}`} className="text-primary hover:underline">
                 {phone}
               </a>
             </li>

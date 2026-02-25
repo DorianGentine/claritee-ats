@@ -18,7 +18,10 @@ export default function DashboardPage() {
             className="rounded-lg border border-border bg-card p-6 shadow-sm"
             aria-labelledby="card-candidats"
           >
-            <h2 id="card-candidats" className="text-sm font-medium text-muted-foreground">
+            <h2
+              id="card-candidats"
+              className="text-sm font-medium text-muted-foreground"
+            >
               Candidats
             </h2>
             <p className="mt-2 text-3xl font-semibold text-foreground">0</p>
@@ -27,7 +30,10 @@ export default function DashboardPage() {
             className="rounded-lg border border-border bg-card p-6 shadow-sm"
             aria-labelledby="card-offres"
           >
-            <h2 id="card-offres" className="text-sm font-medium text-muted-foreground">
+            <h2
+              id="card-offres"
+              className="text-sm font-medium text-muted-foreground"
+            >
               Offres actives
             </h2>
             <p className="mt-2 text-3xl font-semibold text-foreground">0</p>
@@ -36,7 +42,10 @@ export default function DashboardPage() {
             className="rounded-lg border border-border bg-card p-6 shadow-sm"
             aria-labelledby="card-clients"
           >
-            <h2 id="card-clients" className="text-sm font-medium text-muted-foreground">
+            <h2
+              id="card-clients"
+              className="text-sm font-medium text-muted-foreground"
+            >
               Clients
             </h2>
             <p className="mt-2 text-3xl font-semibold text-foreground">0</p>
@@ -50,10 +59,20 @@ export default function DashboardPage() {
 
         {/* Quick action buttons (AC 5) — disabled / coming soon */}
         <div className="mt-6 flex flex-wrap gap-3">
-          <Button variant="default" disabled aria-disabled="true" title="Bientôt">
+          <Button
+            variant="default"
+            disabled
+            aria-disabled="true"
+            title="Bientôt"
+          >
             Nouveau candidat
           </Button>
-          <Button variant="secondary" disabled aria-disabled="true" title="Bientôt">
+          <Button
+            variant="secondary"
+            disabled
+            aria-disabled="true"
+            title="Bientôt"
+          >
             Nouvelle offre
           </Button>
           <Button variant="outline" asChild>

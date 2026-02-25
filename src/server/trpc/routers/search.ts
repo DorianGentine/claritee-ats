@@ -1,20 +1,20 @@
-import { router, protectedProcedure } from "../trpc"
-import { searchInputSchema } from "@/lib/validations/search"
+import { router, protectedProcedure } from "../trpc";
+import { searchInputSchema } from "@/lib/validations/search";
 
-const CANDIDATE_WHERE_CACHE_MAX = 100
-const candidateWhereCache = new Map<string, object>()
+const CANDIDATE_WHERE_CACHE_MAX = 100;
+const candidateWhereCache = new Map<string, object>();
 
 const buildCandidateSearchWhere = (companyId: string, q: string) => {
-  const key = `${companyId}:${q}`
-  const cached = candidateWhereCache.get(key)
-  if (cached) return cached as CandidateSearchWhere
+  const key = `${companyId}:${q}`;
+  const cached = candidateWhereCache.get(key);
+  if (cached) return cached as CandidateSearchWhere;
   if (candidateWhereCache.size >= CANDIDATE_WHERE_CACHE_MAX) {
-    candidateWhereCache.clear()
+    candidateWhereCache.clear();
   }
-  const where = buildCandidateSearchWhereInner(companyId, q)
-  candidateWhereCache.set(key, where)
-  return where
-}
+  const where = buildCandidateSearchWhereInner(companyId, q);
+  candidateWhereCache.set(key, where);
+  return where;
+};
 
 const buildCandidateSearchWhereInner = (companyId: string, q: string) => ({
   companyId,
@@ -62,17 +62,17 @@ const buildCandidateSearchWhereInner = (companyId: string, q: string) => ({
       },
     },
   ],
-})
+});
 
-type CandidateSearchWhere = ReturnType<typeof buildCandidateSearchWhereInner>
+type CandidateSearchWhere = ReturnType<typeof buildCandidateSearchWhereInner>;
 
 export const searchRouter = router({
   search: protectedProcedure
     .input(searchInputSchema)
     .query(async ({ ctx, input }) => {
-      const q = input.q.trim()
+      const q = input.q.trim();
       if (q.length < 2) {
-        return { candidates: [], offers: [] }
+        return { candidates: [], offers: [] };
       }
 
       const [candidates, offers] = await Promise.all([
@@ -121,7 +121,7 @@ export const searchRouter = router({
           orderBy: { title: "asc" },
           take: input.limit ?? 8,
         }),
-      ])
+      ]);
 
       return {
         candidates: candidates.map((c) => ({
@@ -140,6 +140,6 @@ export const searchRouter = router({
             ? { name: o.clientCompany.name }
             : undefined,
         })),
-      }
+      };
     }),
-})
+});

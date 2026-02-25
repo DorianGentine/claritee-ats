@@ -1,15 +1,15 @@
-"use client"
+"use client";
 
-import { Suspense } from "react"
-import { useSearchParams } from "next/navigation"
-import Link from "next/link"
-import { api } from "@/lib/trpc/client"
-import { CandidateCard } from "@/components/candidates/CandidateCard"
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { api } from "@/lib/trpc/client";
+import { CandidateCard } from "@/components/candidates/CandidateCard";
 
 const SearchPageContent = () => {
-  const searchParams = useSearchParams()
-  const q = searchParams.get("q")?.trim() ?? ""
-  const effectiveQuery = q.length >= 2 ? q : ""
+  const searchParams = useSearchParams();
+  const q = searchParams.get("q")?.trim() ?? "";
+  const effectiveQuery = q.length >= 2 ? q : "";
 
   const { data, isLoading } = api.search.search.useQuery(
     { q: effectiveQuery, limit: 30 },
@@ -18,7 +18,7 @@ const SearchPageContent = () => {
       placeholderData: (previousData) => previousData,
       staleTime: 60 * 1000,
     }
-  )
+  );
 
   if (effectiveQuery.length < 2) {
     return (
@@ -28,7 +28,7 @@ const SearchPageContent = () => {
           Utilisez la barre de recherche avec au moins 2 caractères.
         </p>
       </div>
-    )
+    );
   }
 
   if (isLoading) {
@@ -42,12 +42,12 @@ const SearchPageContent = () => {
           Chargement…
         </div>
       </div>
-    )
+    );
   }
 
-  const candidates = data?.candidates ?? []
-  const offers = data?.offers ?? []
-  const hasResults = candidates.length > 0 || offers.length > 0
+  const candidates = data?.candidates ?? [];
+  const offers = data?.offers ?? [];
+  const hasResults = candidates.length > 0 || offers.length > 0;
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">
@@ -105,20 +105,20 @@ const SearchPageContent = () => {
         </div>
       )}
     </div>
-  )
-}
+  );
+};
 
 const SearchPageFallback = () => (
   <div className="flex flex-1 flex-col gap-4 p-6">
     <div className="h-7 w-48 animate-pulse rounded bg-muted" />
     <div className="h-5 w-64 animate-pulse rounded bg-muted" />
   </div>
-)
+);
 
 export default function SearchPage() {
   return (
     <Suspense fallback={<SearchPageFallback />}>
       <SearchPageContent />
     </Suspense>
-  )
+  );
 }

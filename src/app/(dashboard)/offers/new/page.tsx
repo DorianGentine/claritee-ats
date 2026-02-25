@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { JobOfferForm } from "@/components/offers/JobOfferForm"
+import { JobOfferForm } from "@/components/offers/JobOfferForm";
 
 const NewOfferPage = () => (
   <main className="min-h-[calc(100vh-3.5rem)] bg-background p-6">
@@ -17,4 +17,3 @@ const NewOfferPage = () => (
 );
 
 export default NewOfferPage;
-

@@ -25,60 +25,60 @@ Claritee ATS vise une identité **chaleureuse et humaine**, distincte des ATS co
 
 ### Couleurs principales
 
-| Rôle | Variable | Hex | Usage |
-|------|----------|-----|-------|
-| **Background** | `--background` | `#F5F0E8` | Fond global de l'app |
-| **Surface** | `--card` | `#FDFCFA` | Cards, surfaces surélevées |
-| **Primaire** | `--primary` | `#B85A3B` | CTAs principaux, liens importants, FAB |
-| **Secondaire** | `--secondary` | `#5A7A6E` | CTAs secondaires, navigation, éléments structurants |
-| **Texte** | `--foreground` | `#1A1A1A` | Texte principal |
-| **Texte secondaire** | `--muted-foreground` | `#4A4A4A` | Sous-titres, labels, états désactivés |
-| **Bordures** | `--border` | `#E5DFD6` | Bordures, séparateurs |
+| Rôle                 | Variable             | Hex       | Usage                                               |
+| -------------------- | -------------------- | --------- | --------------------------------------------------- |
+| **Background**       | `--background`       | `#F5F0E8` | Fond global de l'app                                |
+| **Surface**          | `--card`             | `#FDFCFA` | Cards, surfaces surélevées                          |
+| **Primaire**         | `--primary`          | `#B85A3B` | CTAs principaux, liens importants, FAB              |
+| **Secondaire**       | `--secondary`        | `#5A7A6E` | CTAs secondaires, navigation, éléments structurants |
+| **Texte**            | `--foreground`       | `#1A1A1A` | Texte principal                                     |
+| **Texte secondaire** | `--muted-foreground` | `#4A4A4A` | Sous-titres, labels, états désactivés               |
+| **Bordures**         | `--border`           | `#E5DFD6` | Bordures, séparateurs                               |
 
 ### Sémantique & Feedback
 
-| Rôle | Variable | Hex | Usage |
-|------|----------|-----|-------|
-| **Succès** | `--success` | `#4A7C59` | Confirmations, statuts positifs |
-| **Attention** | `--warning` | `#C9A227` | Avertissements |
-| **Erreur** | `--destructive` | `#C44B37` | Erreurs, actions destructives |
-| **Info** | `--info` | `#5A7A6E` | Réutilise secondaire |
+| Rôle          | Variable        | Hex       | Usage                           |
+| ------------- | --------------- | --------- | ------------------------------- |
+| **Succès**    | `--success`     | `#4A7C59` | Confirmations, statuts positifs |
+| **Attention** | `--warning`     | `#C9A227` | Avertissements                  |
+| **Erreur**    | `--destructive` | `#C44B37` | Erreurs, actions destructives   |
+| **Info**      | `--info`        | `#5A7A6E` | Réutilise secondaire            |
 
 ### Palette de tags (auto-assignée)
 
 Pour les tags candidats/offres, assigner une couleur parmi :
 
-| Couleur | Hex | Variable |
-|---------|-----|----------|
-| Terracotta clair | `#D4A5A5` | Tag 1 |
-| Vert sauge clair | `#8FA89E` | Tag 2 |
-| Beige chaud | `#C9B896` | Tag 3 |
-| Lavande | `#9B8BA8` | Tag 4 |
-| Pêche | `#E8C4A8` | Tag 5 |
-| Teal doux | `#7A9B8E` | Tag 6 |
-| Terre | `#A67B5B` | Tag 7 |
-| Gris chaud | `#8B8478` | Tag 8 |
+| Couleur          | Hex       | Variable |
+| ---------------- | --------- | -------- |
+| Terracotta clair | `#D4A5A5` | Tag 1    |
+| Vert sauge clair | `#8FA89E` | Tag 2    |
+| Beige chaud      | `#C9B896` | Tag 3    |
+| Lavande          | `#9B8BA8` | Tag 4    |
+| Pêche            | `#E8C4A8` | Tag 5    |
+| Teal doux        | `#7A9B8E` | Tag 6    |
+| Terre            | `#A67B5B` | Tag 7    |
+| Gris chaud       | `#8B8478` | Tag 8    |
 
 Cycle d’assignation : `colorIndex = hash(tagName) % 8`.
 
 ### Statuts candidature
 
-| Statut | Couleur fond | Couleur texte |
-|--------|--------------|---------------|
-| Contacté sur LinkedIn | `#E8E4DC` | `#4A4A4A` |
-| Contact téléphonique | `#E3EDE8` | `#3D5A50` |
-| Postulé | `#E8EEF5` | `#3D5A6E` |
-| Accepté | `#E8F5EC` | `#2E6B3E` |
-| Refusé par l'employeur | `#F5E8E8` | `#8B3A3A` |
-| Rejeté par le candidat | `#F5F0E8` | `#6B6359` |
+| Statut                 | Couleur fond | Couleur texte |
+| ---------------------- | ------------ | ------------- |
+| Contacté sur LinkedIn  | `#E8E4DC`    | `#4A4A4A`     |
+| Contact téléphonique   | `#E3EDE8`    | `#3D5A50`     |
+| Postulé                | `#E8EEF5`    | `#3D5A6E`     |
+| Accepté                | `#E8F5EC`    | `#2E6B3E`     |
+| Refusé par l'employeur | `#F5E8E8`    | `#8B3A3A`     |
+| Rejeté par le candidat | `#F5F0E8`    | `#6B6359`     |
 
 ### Statuts offre
 
-| Statut | Couleur fond | Couleur texte |
-|--------|--------------|---------------|
-| À faire | `#E8E4DC` | `#4A4A4A` |
-| En cours | `#E3EDE8` | `#3D5A50` |
-| Terminé | `#E8F5EC` | `#2E6B3E` |
+| Statut   | Couleur fond | Couleur texte |
+| -------- | ------------ | ------------- |
+| À faire  | `#E8E4DC`    | `#4A4A4A`     |
+| En cours | `#E3EDE8`    | `#3D5A50`     |
+| Terminé  | `#E8F5EC`    | `#2E6B3E`     |
 
 ---
 
@@ -86,22 +86,22 @@ Cycle d’assignation : `colorIndex = hash(tagName) % 8`.
 
 ### Familles de polices
 
-| Usage | Famille | Fallback | Notes |
-|-------|---------|----------|-------|
-| **UI & Body** | `DM Sans` | `system-ui, sans-serif` | Moderne, lisible, légèrement chaleureuse |
-| **Alternatives** | `Inter` ou `Source Sans 3` | idem | Si DM Sans non chargée |
+| Usage            | Famille                    | Fallback                | Notes                                    |
+| ---------------- | -------------------------- | ----------------------- | ---------------------------------------- |
+| **UI & Body**    | `DM Sans`                  | `system-ui, sans-serif` | Moderne, lisible, légèrement chaleureuse |
+| **Alternatives** | `Inter` ou `Source Sans 3` | idem                    | Si DM Sans non chargée                   |
 
 ### Échelle typographique
 
-| Élément | Taille | Poids | Line height | Usage |
-|---------|--------|-------|-------------|-------|
-| H1 | 28px / 1.75rem | 600 | 1.2 | Titres de page |
-| H2 | 22px / 1.375rem | 600 | 1.3 | Sections |
-| H3 | 18px / 1.125rem | 600 | 1.4 | Sous-sections |
-| Body | 15px / 0.9375rem | 400 | 1.5 | Texte courant |
-| Body small | 14px / 0.875rem | 400 | 1.5 | Métadonnées, labels |
-| Caption | 12px / 0.75rem | 400 | 1.4 | Timestamps, hints |
-| Button | 14px / 0.875rem | 500 | 1.25 | Boutons |
+| Élément    | Taille           | Poids | Line height | Usage               |
+| ---------- | ---------------- | ----- | ----------- | ------------------- |
+| H1         | 28px / 1.75rem   | 600   | 1.2         | Titres de page      |
+| H2         | 22px / 1.375rem  | 600   | 1.3         | Sections            |
+| H3         | 18px / 1.125rem  | 600   | 1.4         | Sous-sections       |
+| Body       | 15px / 0.9375rem | 400   | 1.5         | Texte courant       |
+| Body small | 14px / 0.875rem  | 400   | 1.5         | Métadonnées, labels |
+| Caption    | 12px / 0.75rem   | 400   | 1.4         | Timestamps, hints   |
+| Button     | 14px / 0.875rem  | 500   | 1.25        | Boutons             |
 
 ### Contraste WCAG AA
 
@@ -116,17 +116,17 @@ Cycle d’assignation : `colorIndex = hash(tagName) % 8`.
 
 ### Échelle d’espacement (Tailwind)
 
-| Token | Valeur | Usage |
-|-------|--------|-------|
-| 1 | 4px | Espacement serré (gap icons) |
-| 2 | 8px | Padding boutons, gaps courts |
-| 3 | 12px | Espacement standard |
-| 4 | 16px | Padding sections |
-| 5 | 20px | Marges entre blocs |
-| 6 | 24px | Séparations sections |
-| 8 | 32px | Espacement large |
-| 10 | 40px | Marges page |
-| 12 | 48px | Espacement majeur |
+| Token | Valeur | Usage                        |
+| ----- | ------ | ---------------------------- |
+| 1     | 4px    | Espacement serré (gap icons) |
+| 2     | 8px    | Padding boutons, gaps courts |
+| 3     | 12px   | Espacement standard          |
+| 4     | 16px   | Padding sections             |
+| 5     | 20px   | Marges entre blocs           |
+| 6     | 24px   | Séparations sections         |
+| 8     | 32px   | Espacement large             |
+| 10    | 40px   | Marges page                  |
+| 12    | 48px   | Espacement majeur            |
 
 ### Grille & layout
 
@@ -144,12 +144,12 @@ Cycle d’assignation : `colorIndex = hash(tagName) % 8`.
 
 ### Ombres
 
-| Token | Valeur | Usage |
-|-------|--------|-------|
-| sm | `0 1px 2px rgba(26,26,26,0.06)` | Légère élévation |
-| DEFAULT | `0 2px 8px rgba(26,26,26,0.08)` | Cards |
-| md | `0 4px 12px rgba(26,26,26,0.1)` | Dropdowns, modals |
-| lg | `0 8px 24px rgba(26,26,26,0.12)` | Modals, popovers |
+| Token   | Valeur                           | Usage             |
+| ------- | -------------------------------- | ----------------- |
+| sm      | `0 1px 2px rgba(26,26,26,0.06)`  | Légère élévation  |
+| DEFAULT | `0 2px 8px rgba(26,26,26,0.08)`  | Cards             |
+| md      | `0 4px 12px rgba(26,26,26,0.1)`  | Dropdowns, modals |
+| lg      | `0 8px 24px rgba(26,26,26,0.12)` | Modals, popovers  |
 
 ### Bordures
 
@@ -165,41 +165,41 @@ Cycle d’assignation : `colorIndex = hash(tagName) % 8`.
 
 ```css
 :root {
-  --background: #F5F0E8;
-  --foreground: #1A1A1A;
-  --card: #FDFCFA;
-  --card-foreground: #1A1A1A;
-  --popover: #FDFCFA;
-  --primary: #B85A3B;
-  --primary-foreground: #FFFFFF;
-  --secondary: #5A7A6E;
-  --secondary-foreground: #FFFFFF;
-  --muted: #E8E4DC;
-  --muted-foreground: #4A4A4A;
-  --accent: #E3EDE8;
-  --accent-foreground: #2E4A42;
-  --destructive: #C44B37;
-  --border: #E5DFD6;
-  --input: #E5DFD6;
-  --ring: #B85A3B;
+  --background: #f5f0e8;
+  --foreground: #1a1a1a;
+  --card: #fdfcfa;
+  --card-foreground: #1a1a1a;
+  --popover: #fdfcfa;
+  --primary: #b85a3b;
+  --primary-foreground: #ffffff;
+  --secondary: #5a7a6e;
+  --secondary-foreground: #ffffff;
+  --muted: #e8e4dc;
+  --muted-foreground: #4a4a4a;
+  --accent: #e3ede8;
+  --accent-foreground: #2e4a42;
+  --destructive: #c44b37;
+  --border: #e5dfd6;
+  --input: #e5dfd6;
+  --ring: #b85a3b;
 }
 ```
 
 ### Composants principaux
 
-| Composant | Usage | Variants |
-|-----------|--------|----------|
-| **Button** | CTAs, actions | default (primaire), secondary, outline, ghost, destructive |
-| **Card** | Blocs de contenu | default, elevated (ombre md) |
-| **Input** | Champs texte | default, avec erreur |
-| **Badge** | Statuts, tags | default, outline, variantes couleur |
-| **Dialog** | Modals | default |
-| **DropdownMenu** | Menus contextuels | default |
-| **Select** | Sélecteurs | default |
-| **Tabs** | Onglets | default |
-| **Avatar** | Photo utilisateur/candidat | default, fallback initiales |
-| **Skeleton** | États de chargement | default |
-| **Toast** | Notifications | success, error, default |
+| Composant        | Usage                      | Variants                                                   |
+| ---------------- | -------------------------- | ---------------------------------------------------------- |
+| **Button**       | CTAs, actions              | default (primaire), secondary, outline, ghost, destructive |
+| **Card**         | Blocs de contenu           | default, elevated (ombre md)                               |
+| **Input**        | Champs texte               | default, avec erreur                                       |
+| **Badge**        | Statuts, tags              | default, outline, variantes couleur                        |
+| **Dialog**       | Modals                     | default                                                    |
+| **DropdownMenu** | Menus contextuels          | default                                                    |
+| **Select**       | Sélecteurs                 | default                                                    |
+| **Tabs**         | Onglets                    | default                                                    |
+| **Avatar**       | Photo utilisateur/candidat | default, fallback initiales                                |
+| **Skeleton**     | États de chargement        | default                                                    |
+| **Toast**        | Notifications              | success, error, default                                    |
 
 ### Boutons
 
@@ -308,12 +308,12 @@ Cycle d’assignation : `colorIndex = hash(tagName) % 8`.
 
 ### Breakpoints (Tailwind)
 
-| Breakpoint | Min | Usage |
-|------------|-----|-------|
-| sm | 640px | Mobile landscape |
-| md | 768px | Tablette |
-| lg | 1024px | Desktop (prioritaire) |
-| xl | 1280px | Large desktop |
+| Breakpoint | Min    | Usage                 |
+| ---------- | ------ | --------------------- |
+| sm         | 640px  | Mobile landscape      |
+| md         | 768px  | Tablette              |
+| lg         | 1024px | Desktop (prioritaire) |
+| xl         | 1280px | Large desktop         |
 
 ### Adaptation
 
@@ -334,14 +334,14 @@ Cycle d’assignation : `colorIndex = hash(tagName) % 8`.
 
 ## 11. États & feedback
 
-| État | Comportement |
-|------|--------------|
-| **Hover** | Léger assombrissement ou background accent |
-| **Active** | Feedback visuel immédiat |
-| **Disabled** | Opacité 0.5, cursor not-allowed |
-| **Loading** | Skeleton ou spinner, désactiver les actions |
-| **Erreur** | Bordure rouge, message sous le champ |
-| **Succès** | Toast court, vert |
+| État         | Comportement                                |
+| ------------ | ------------------------------------------- |
+| **Hover**    | Léger assombrissement ou background accent  |
+| **Active**   | Feedback visuel immédiat                    |
+| **Disabled** | Opacité 0.5, cursor not-allowed             |
+| **Loading**  | Skeleton ou spinner, désactiver les actions |
+| **Erreur**   | Bordure rouge, message sous le champ        |
+| **Succès**   | Toast court, vert                           |
 
 ---
 
@@ -375,6 +375,6 @@ colors: {
 
 ## Changelog
 
-| Date | Version | Description | Auteur |
-|------|---------|-------------|--------|
-| 2026-02-14 | 1.0 | Création initiale du Design System | Sally (UX Expert) |
+| Date       | Version | Description                        | Auteur            |
+| ---------- | ------- | ---------------------------------- | ----------------- |
+| 2026-02-14 | 1.0     | Création initiale du Design System | Sally (UX Expert) |

@@ -36,6 +36,7 @@ Les cabinets de recrutement de petite et moyenne taille font face à plusieurs d
 ### Pourquoi les solutions existantes ne suffisent pas
 
 Les ATS existants sur le marché sont souvent :
+
 - **Trop chers** pour les petits cabinets (abonnements mensuels élevés)
 - **Trop complexes** avec des fonctionnalités superflues qui alourdissent l'interface
 - **Non adaptés** aux pratiques spécifiques des cabinets français (SIREN, fiches anonymisées pour prospection)
@@ -64,13 +65,13 @@ L'application repose sur 4 piliers :
 
 ### Différenciateurs clés
 
-| Claritee ATS | ATS traditionnels |
-|--------------|-------------------|
-| Gratuit (budget zéro) | Abonnements mensuels élevés |
-| Simple et épuré | Surchargé de fonctionnalités |
-| Fiches anonymisées pour prospection | Rarement disponible |
+| Claritee ATS                         | ATS traditionnels            |
+| ------------------------------------ | ---------------------------- |
+| Gratuit (budget zéro)                | Abonnements mensuels élevés  |
+| Simple et épuré                      | Surchargé de fonctionnalités |
+| Fiches anonymisées pour prospection  | Rarement disponible          |
 | Adapté aux cabinets français (SIREN) | Souvent orienté marché US/UK |
-| Layout CV pour fiches candidats | Fiches basiques |
+| Layout CV pour fiches candidats      | Fiches basiques              |
 
 ### Pourquoi cette solution réussira
 
@@ -88,12 +89,14 @@ Une plateforme qui devient le "centre de contrôle" du cabinet de recrutement, o
 ### Segment principal : Le Recruteur en cabinet
 
 **Profil :**
+
 - Recruteur travaillant dans un cabinet de recrutement de petite ou moyenne taille (1-20 personnes)
 - Basé en France
 - Niveau technique : utilisateur standard (pas de compétences techniques avancées)
 - Âge : 25-50 ans
 
 **Comportements et workflows actuels :**
+
 - Utilise LinkedIn pour sourcer des candidats
 - Gère ses candidats dans Excel ou des outils fragmentés
 - Envoie des CV par email aux clients
@@ -101,6 +104,7 @@ Une plateforme qui devient le "centre de contrôle" du cabinet de recrutement, o
 - Jongle entre plusieurs outils au quotidien
 
 **Besoins spécifiques et points de douleur :**
+
 - Retrouver facilement un candidat quand une nouvelle offre arrive
 - Éviter de contacter deux fois le même candidat pour la même offre
 - Avoir un suivi clair du statut de chaque candidat par offre
@@ -109,6 +113,7 @@ Une plateforme qui devient le "centre de contrôle" du cabinet de recrutement, o
 - Prendre des notes rapidement pendant les entretiens clients
 
 **Objectifs :**
+
 - Être plus organisé et efficace dans son travail quotidien
 - Donner une image professionnelle au cabinet
 - Ne pas perdre de bons candidats dans la masse
@@ -117,21 +122,25 @@ Une plateforme qui devient le "centre de contrôle" du cabinet de recrutement, o
 ### Segment secondaire : L'Administrateur du cabinet
 
 **Profil :**
+
 - Fondateur ou dirigeant du cabinet de recrutement
 - Responsable de la création du compte et de l'invitation des collaborateurs
 - Souvent aussi recruteur lui-même
 
 **Comportements et workflows actuels :**
+
 - Cherche des outils gratuits ou peu chers pour son équipe
 - Veut une solution simple à mettre en place
 - A besoin de contrôler qui a accès aux données du cabinet
 
 **Besoins spécifiques et points de douleur :**
+
 - Créer rapidement le compte du cabinet
 - Inviter facilement ses collaborateurs
 - S'assurer que les données du cabinet sont sécurisées et isolées
 
 **Objectifs :**
+
 - Mettre en place un outil efficace pour son équipe sans investissement
 - Améliorer la productivité globale du cabinet
 - Professionnaliser l'image du cabinet
@@ -155,14 +164,14 @@ Une plateforme qui devient le "centre de contrôle" du cabinet de recrutement, o
 
 ### Key Performance Indicators (KPIs)
 
-| KPI | Définition | Cible MVP |
-|-----|------------|-----------|
-| **Cabinets actifs** | Cabinets avec au moins 1 connexion dans les 7 derniers jours | 10 |
-| **Candidats créés** | Nombre total de fiches candidats créées | 200 |
-| **Offres créées** | Nombre total d'offres d'emploi créées | 100 |
-| **Fiches partagées** | Nombre de fiches candidats partagées (URL générées) | 50 |
-| **Taux de rétention J7** | % utilisateurs revenant 7 jours après inscription | 80% |
-| **Temps moyen par session** | Durée moyenne d'utilisation par session | > 5 min |
+| KPI                         | Définition                                                   | Cible MVP |
+| --------------------------- | ------------------------------------------------------------ | --------- |
+| **Cabinets actifs**         | Cabinets avec au moins 1 connexion dans les 7 derniers jours | 10        |
+| **Candidats créés**         | Nombre total de fiches candidats créées                      | 200       |
+| **Offres créées**           | Nombre total d'offres d'emploi créées                        | 100       |
+| **Fiches partagées**        | Nombre de fiches candidats partagées (URL générées)          | 50        |
+| **Taux de rétention J7**    | % utilisateurs revenant 7 jours après inscription            | 80%       |
+| **Temps moyen par session** | Durée moyenne d'utilisation par session                      | > 5 min   |
 
 ## MVP Scope
 
@@ -233,6 +242,7 @@ Une plateforme qui devient le "centre de contrôle" du cabinet de recrutement, o
 ### MVP Success Criteria
 
 Le MVP sera considéré comme réussi si :
+
 - Un cabinet peut créer son compte et inviter des collaborateurs en moins de 5 minutes
 - Un recruteur peut créer une fiche candidat complète en moins de 3 minutes
 - Un recruteur peut retrouver un candidat via tags/recherche en moins de 30 secondes
@@ -332,7 +342,7 @@ Le MVP sera considéré comme réussi si :
   - Migrations et schéma déclaratif
   - Intégration parfaite avec tRPC
 
-- **Hosting/Infrastructure:** 
+- **Hosting/Infrastructure:**
   - **Frontend + Backend:** Vercel (gratuit)
   - **Database:** Supabase PostgreSQL (gratuit jusqu'à 500 Mo)
   - **Storage:** Supabase Storage (gratuit jusqu'à 1 Go)
@@ -374,7 +384,7 @@ Le MVP sera considéré comme réussi si :
   - Projet personnel sans deadline externe
   - Développement itératif selon disponibilité
 
-- **Resources:** 
+- **Resources:**
   - Développeur unique (vous)
   - Pas d'équipe dédiée
   - Temps limité (projet personnel)
@@ -401,24 +411,24 @@ Le MVP sera considéré comme réussi si :
 ### Key Risks
 
 - **Adoption utilisateur faible** : Les cabinets pourraient ne pas voir la valeur ajoutée par rapport à leurs outils actuels (Excel, etc.)
-  - *Impact* : Projet sans utilisateurs, validation impossible
-  - *Mitigation* : Focus sur la simplicité et la rapidité de saisie, tester avec des cabinets réels dès que possible
+  - _Impact_ : Projet sans utilisateurs, validation impossible
+  - _Mitigation_ : Focus sur la simplicité et la rapidité de saisie, tester avec des cabinets réels dès que possible
 
 - **Temps de saisie trop long** : Si la saisie manuelle est trop fastidieuse, les utilisateurs abandonneront
-  - *Impact* : Friction majeure, adoption faible
-  - *Mitigation* : Optimiser les formulaires (autocomplétion, validation en temps réel), prioriser l'UX de saisie
+  - _Impact_ : Friction majeure, adoption faible
+  - _Mitigation_ : Optimiser les formulaires (autocomplétion, validation en temps réel), prioriser l'UX de saisie
 
 - **Limites des services gratuits atteintes** : Si le projet décolle, les limites gratuites (500 Mo DB, 1 Go Storage) pourraient être atteintes
-  - *Impact* : Besoin de passer à un plan payant ou de migrer
-  - *Mitigation* : Surveiller l'utilisation, prévoir une stratégie de monétisation si succès
+  - _Impact_ : Besoin de passer à un plan payant ou de migrer
+  - _Mitigation_ : Surveiller l'utilisation, prévoir une stratégie de monétisation si succès
 
 - **Complexité technique sous-estimée** : Certaines fonctionnalités (multi-tenancy, partage de fiches) pourraient être plus complexes que prévu
-  - *Impact* : Retards de développement
-  - *Mitigation* : Commencer par les fonctionnalités les plus simples, itérer
+  - _Impact_ : Retards de développement
+  - _Mitigation_ : Commencer par les fonctionnalités les plus simples, itérer
 
 - **Conformité RGPD insuffisante** : Les données de candidats sont sensibles, une mauvaise gestion pourrait entraîner des problèmes légaux
-  - *Impact* : Risque juridique
-  - *Mitigation* : Étudier les obligations RGPD, implémenter les bonnes pratiques (consentement, suppression, export)
+  - _Impact_ : Risque juridique
+  - _Mitigation_ : Étudier les obligations RGPD, implémenter les bonnes pratiques (consentement, suppression, export)
 
 ### Open Questions
 
@@ -442,6 +452,7 @@ Le MVP sera considéré comme réussi si :
 ### A. Research Summary
 
 Ce Project Brief est basé sur une session de brainstorming structurée utilisant 4 techniques :
+
 - **First Principles Thinking** : Identification des besoins fondamentaux
 - **Role Playing** : Exploration des workflows utilisateurs
 - **Resource Constraints** : Solutions créatives avec budget zéro

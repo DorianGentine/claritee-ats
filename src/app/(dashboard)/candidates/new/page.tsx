@@ -44,7 +44,7 @@ export default function NewCandidatePage() {
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [createdCandidateId, setCreatedCandidateId] = useState<string | null>(
-    null,
+    null
   );
 
   const handlePhotoChange = createPhotoChangeHandler(
@@ -84,7 +84,10 @@ export default function NewCandidatePage() {
 
   const firstName = useWatch({ control, name: "firstName" });
   const lastName = useWatch({ control, name: "lastName" });
-  const displayInitials = getCandidateInitials(firstName || "?", lastName || "?");
+  const displayInitials = getCandidateInitials(
+    firstName || "?",
+    lastName || "?"
+  );
 
   const onSubmit = async (data: NewCandidateFormValues) => {
     setServerError(null);
@@ -106,7 +109,10 @@ export default function NewCandidatePage() {
       }
 
       if (photoFile && candidateId) {
-        const { base64, mimeType } = await fileToBase64(photoFile, "image/jpeg");
+        const { base64, mimeType } = await fileToBase64(
+          photoFile,
+          "image/jpeg"
+        );
         await uploadPhotoMutation.mutateAsync({
           candidateId,
           fileBase64: base64,
@@ -117,12 +123,13 @@ export default function NewCandidatePage() {
       router.push(`/candidates/${candidateId}`);
     } catch (err) {
       setServerError(
-        (err as { message?: string })?.message ?? GENERIC_ERROR_MESSAGE,
+        (err as { message?: string })?.message ?? GENERIC_ERROR_MESSAGE
       );
     }
   };
 
-  const isPending = isSubmitting || createMutation.isPending || uploadPhotoMutation.isPending;
+  const isPending =
+    isSubmitting || createMutation.isPending || uploadPhotoMutation.isPending;
 
   return (
     <main className="min-h-[calc(100vh-3.5rem)] bg-background p-6">
@@ -164,11 +171,7 @@ export default function NewCandidatePage() {
           />
 
           <div className="mt-4 flex flex-wrap gap-3">
-            <Button
-              type="submit"
-              disabled={isPending}
-              aria-busy={isPending}
-            >
+            <Button type="submit" disabled={isPending} aria-busy={isPending}>
               {isPending ? "Enregistrement…" : "Enregistrer"}
             </Button>
             <Button type="button" variant="outline" asChild>

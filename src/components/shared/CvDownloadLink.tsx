@@ -1,34 +1,34 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Download, FileUp } from "lucide-react"
-import { useCvDownloadUrl } from "@/hooks/useCvDownloadUrl"
+import { useState } from "react";
+import { Download, FileUp } from "lucide-react";
+import { useCvDownloadUrl } from "@/hooks/useCvDownloadUrl";
 
 type Props = {
-  displayName: string
-} & ({ candidateId: string } | { shareToken: string })
+  displayName: string;
+} & ({ candidateId: string } | { shareToken: string });
 
 export const CvDownloadLink = (props: Props) => {
-  const { displayName } = props
-  const { getUrl } = useCvDownloadUrl()
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const { displayName } = props;
+  const { getUrl } = useCvDownloadUrl();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleClick = async () => {
-    setError(null)
-    setLoading(true)
+    setError(null);
+    setLoading(true);
     try {
       const url =
         "candidateId" in props
           ? await getUrl({ candidateId: props.candidateId })
-          : await getUrl({ shareToken: props.shareToken })
-      window.open(url, "_blank", "noopener,noreferrer")
+          : await getUrl({ shareToken: props.shareToken });
+      window.open(url, "_blank", "noopener,noreferrer");
     } catch {
-      setError("Une erreur est survenue. Réessayez.")
+      setError("Une erreur est survenue. Réessayez.");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="flex min-w-0 w-full flex-col gap-1">
@@ -50,5 +50,5 @@ export const CvDownloadLink = (props: Props) => {
         </p>
       )}
     </div>
-  )
-}
+  );
+};

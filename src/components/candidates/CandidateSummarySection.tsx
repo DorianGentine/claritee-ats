@@ -107,7 +107,9 @@ export const CandidateSummarySection = ({ candidateId, summary }: Props) => {
           />
           <div className="mt-1 flex items-center justify-between">
             {errors.summary ? (
-              <p className="text-xs text-destructive">{errors.summary.message}</p>
+              <p className="text-xs text-destructive">
+                {errors.summary.message}
+              </p>
             ) : (
               <span />
             )}
@@ -120,11 +122,7 @@ export const CandidateSummarySection = ({ candidateId, summary }: Props) => {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button
-            type="submit"
-            size="sm"
-            disabled={updateMutation.isPending}
-          >
+          <Button type="submit" size="sm" disabled={updateMutation.isPending}>
             {updateMutation.isPending ? "Enregistrement…" : "Enregistrer"}
           </Button>
           <Button

@@ -16,4 +16,4 @@ Nous retenons le **multi-tenancy par ligne** : une seule base PostgreSQL (Supaba
 
 ---
 
-*Référence : `docs/architecture.md` §4 ; `docs/architecture/rls-policies.sql`.*
+_Référence : `docs/architecture.md` §4 ; `docs/architecture/rls-policies.sql`._

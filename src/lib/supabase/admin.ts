@@ -10,7 +10,7 @@ export const createAdminClient = () => {
   const serviceRoleKey = process.env.SUPABASE_SECRET_KEY;
   if (!url || !serviceRoleKey) {
     throw new Error(
-      "NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SECRET_KEY are required for admin client",
+      "NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SECRET_KEY are required for admin client"
     );
   }
   return createClient(url, serviceRoleKey, {

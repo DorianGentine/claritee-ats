@@ -24,13 +24,13 @@ L’objectif est d’**éviter que ce travail soit perdu ou dupliqué** lors du 
 
 ## 3. Artefacts impactés
 
-| Artefact        | Action réalisée / proposée |
-|-----------------|----------------------------|
-| **Story 1.6**   | Modifications appliquées (Task 1 + Dev Notes) : préserver `SiteNavbar`, l’**étendre** (nom cabinet, liens nav, menu user) au lieu de la remplacer ou d’en créer une seconde. |
-| **Story 1.7**   | Lors du draft ou de l’implémentation : ajouter en Dev Notes / Task 1 la même règle — **étendre le layout/navbar existant** (sidebar, a11y, 404, etc.) sans remplacer `SiteNavbar` ni dupliquer la barre. |
-| PRD             | Aucune modification. |
-| Architecture    | Aucune modification. |
-| Frontend-arch.  | Optionnel : une phrase du type « Le layout authentifié étend la navbar existante (ex. SiteNavbar) plutôt que d’en créer une nouvelle. » |
+| Artefact       | Action réalisée / proposée                                                                                                                                                                               |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Story 1.6**  | Modifications appliquées (Task 1 + Dev Notes) : préserver `SiteNavbar`, l’**étendre** (nom cabinet, liens nav, menu user) au lieu de la remplacer ou d’en créer une seconde.                             |
+| **Story 1.7**  | Lors du draft ou de l’implémentation : ajouter en Dev Notes / Task 1 la même règle — **étendre le layout/navbar existant** (sidebar, a11y, 404, etc.) sans remplacer `SiteNavbar` ni dupliquer la barre. |
+| PRD            | Aucune modification.                                                                                                                                                                                     |
+| Architecture   | Aucune modification.                                                                                                                                                                                     |
+| Frontend-arch. | Optionnel : une phrase du type « Le layout authentifié étend la navbar existante (ex. SiteNavbar) plutôt que d’en créer une nouvelle. »                                                                  |
 
 ---
 
@@ -60,7 +60,7 @@ Lors de la rédaction ou de l’implémentation de la story **1.7 (Base Layout &
 - **Task 1 (ou équivalent)** : Inclure la consigne : « Préserver et étendre le layout/navbar existant (ex. `SiteNavbar`, `DashboardShell`). Ne pas remplacer ni recréer une nouvelle barre ; ajouter sidebar / comportement responsive / a11y / 404 sur la base du composant actuel. »
 - **Dev Notes** : Rappeler que la navbar et le shell ont été mis en place en 1.4/1.5/1.6 ; la 1.7 affine (sidebar persistante, active state, a11y, 404) sans repartir de zéro.
 
-*(Si un fichier `docs/stories/1.7.*.md` existe déjà, appliquer ces ajouts dedans.)*
+_(Si un fichier `docs/stories/1.7._.md` existe déjà, appliquer ces ajouts dedans.)\*
 
 ---
 
@@ -72,12 +72,12 @@ Aucun. Les objectifs et le scope du MVP restent inchangés.
 
 ## 7. Plan d’action
 
-| Étape | Responsable | Action |
-|-------|-------------|--------|
-| 1 | Fait | Story 1.6 mise à jour (Task 1 + Dev Notes). |
-| 2 | SM / Dev | Lors du draft de la story 1.7 : intégrer la règle « préserver / étendre » dans Task 1 et Dev Notes. |
-| 3 | Dev | Implémentation 1.6 : étendre `SiteNavbar` (company name, nav links, user menu) sans la remplacer. |
-| 4 | Dev | Implémentation 1.7 : étendre le layout existant (sidebar, a11y, 404) sans recréer la navbar. |
+| Étape | Responsable | Action                                                                                              |
+| ----- | ----------- | --------------------------------------------------------------------------------------------------- |
+| 1     | Fait        | Story 1.6 mise à jour (Task 1 + Dev Notes).                                                         |
+| 2     | SM / Dev    | Lors du draft de la story 1.7 : intégrer la règle « préserver / étendre » dans Task 1 et Dev Notes. |
+| 3     | Dev         | Implémentation 1.6 : étendre `SiteNavbar` (company name, nav links, user menu) sans la remplacer.   |
+| 4     | Dev         | Implémentation 1.7 : étendre le layout existant (sidebar, a11y, 404) sans recréer la navbar.        |
 
 ---
 
@@ -96,4 +96,4 @@ Aucun. Les objectifs et le scope du MVP restent inchangés.
 
 ---
 
-*Document produit dans le cadre de la tâche Correct Course (change-checklist).*
+_Document produit dans le cadre de la tâche Correct Course (change-checklist)._

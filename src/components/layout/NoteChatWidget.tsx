@@ -1,143 +1,154 @@
-"use client"
+"use client";
 
-import { useCallback, useEffect, useRef, useState } from "react"
-import Link from "next/link"
-import { api } from "@/lib/trpc/client"
+import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { api } from "@/lib/trpc/client";
 import {
   NoteBlockNoteEditor,
   type NoteBlockNoteEditorRef,
   isBlockNoteContentEmpty,
-} from "@/components/shared/NoteBlockNoteEditor"
-import { getNoteDisplayTitle } from "@/lib/note-utils"
-import { Button } from "@/components/ui/button"
+} from "@/components/shared/NoteBlockNoteEditor";
+import { getNoteDisplayTitle } from "@/lib/note-utils";
+import { Button } from "@/components/ui/button";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover"
-import { StickyNote, X, ChevronDown, FileText, Maximize2, Minimize2 } from "lucide-react"
+} from "@/components/ui/popover";
+import {
+  StickyNote,
+  X,
+  ChevronDown,
+  FileText,
+  Maximize2,
+  Minimize2,
+} from "lucide-react";
 
-const DEBOUNCE_MS = 2000
+const DEBOUNCE_MS = 2000;
 
 export const NoteChatWidget = () => {
-  const [isOpen, setIsOpen] = useState(false)
-  const [isFullscreen, setIsFullscreen] = useState(false)
-  const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null)
-  const [listOpen, setListOpen] = useState(false)
-  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const pendingContentRef = useRef<string | null>(null)
-  const editorRef = useRef<NoteBlockNoteEditorRef>(null)
-  const [saveError, setSaveError] = useState<string | null>(null)
-  const utils = api.useUtils()
+  const [isOpen, setIsOpen] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
+  const [listOpen, setListOpen] = useState(false);
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingContentRef = useRef<string | null>(null);
+  const editorRef = useRef<NoteBlockNoteEditorRef>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const utils = api.useUtils();
 
-  const freeNotesQuery = api.note.listFree.useQuery(undefined, { enabled: isOpen })
-  const notes = freeNotesQuery.data ?? []
-  const selectedNote = selectedNoteId ? notes.find((n) => n.id === selectedNoteId) : null
+  const freeNotesQuery = api.note.listFree.useQuery(undefined, {
+    enabled: isOpen,
+  });
+  const notes = freeNotesQuery.data ?? [];
+  const selectedNote = selectedNoteId
+    ? notes.find((n) => n.id === selectedNoteId)
+    : null;
 
   const createMutation = api.note.create.useMutation({
     onSuccess: (data) => {
-      setSelectedNoteId((prev) => (prev === null ? data.id : prev))
-      setSaveError(null)
-      void utils.note.listFree.invalidate()
+      setSelectedNoteId((prev) => (prev === null ? data.id : prev));
+      setSaveError(null);
+      void utils.note.listFree.invalidate();
     },
     onError: () => {
-      setSaveError("Impossible d'enregistrer la note")
+      setSaveError("Impossible d'enregistrer la note");
     },
-  })
+  });
 
   const updateMutation = api.note.update.useMutation({
     onSuccess: () => {
-      setSaveError(null)
-      void utils.note.listFree.invalidate()
+      setSaveError(null);
+      void utils.note.listFree.invalidate();
     },
     onError: () => {
-      setSaveError("Impossible d'enregistrer la note")
+      setSaveError("Impossible d'enregistrer la note");
     },
-  })
+  });
 
   const savePending = useCallback(() => {
-    const content = pendingContentRef.current
-    if (!content || isBlockNoteContentEmpty(content)) return
+    const content = pendingContentRef.current;
+    if (!content || isBlockNoteContentEmpty(content)) return;
 
     if (selectedNoteId) {
-      updateMutation.mutate({ id: selectedNoteId, content })
+      updateMutation.mutate({ id: selectedNoteId, content });
     } else {
-      createMutation.mutate({ content })
+      createMutation.mutate({ content });
     }
-    pendingContentRef.current = null
-  }, [selectedNoteId, updateMutation, createMutation])
+    pendingContentRef.current = null;
+  }, [selectedNoteId, updateMutation, createMutation]);
 
-  const savePendingRef = useRef(savePending)
+  const savePendingRef = useRef(savePending);
   useEffect(() => {
-    savePendingRef.current = savePending
-  }, [savePending])
+    savePendingRef.current = savePending;
+  }, [savePending]);
 
   const handleRawContentChange = useCallback((content: string) => {
-    pendingContentRef.current = content
-    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
+    pendingContentRef.current = content;
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     saveTimeoutRef.current = setTimeout(() => {
-      saveTimeoutRef.current = null
-      savePendingRef.current()
-    }, DEBOUNCE_MS)
-  }, [])
+      saveTimeoutRef.current = null;
+      savePendingRef.current();
+    }, DEBOUNCE_MS);
+  }, []);
 
   useEffect(() => {
     return () => {
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
-    }
-  }, [])
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    };
+  }, []);
 
   useEffect(() => {
-    if (!isOpen) return
+    if (!isOpen) return;
     const id = requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        editorRef.current?.focus()
-      })
-    })
-    return () => cancelAnimationFrame(id)
-  }, [isOpen])
+        editorRef.current?.focus();
+      });
+    });
+    return () => cancelAnimationFrame(id);
+  }, [isOpen]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "j") {
-        e.preventDefault()
-        setIsOpen(!isOpen)
+        e.preventDefault();
+        setIsOpen(!isOpen);
       }
       if (e.key === "Escape" && isOpen) {
         if (saveTimeoutRef.current) {
-          clearTimeout(saveTimeoutRef.current)
-          saveTimeoutRef.current = null
+          clearTimeout(saveTimeoutRef.current);
+          saveTimeoutRef.current = null;
         }
-        savePendingRef.current()
-        setIsOpen(false)
+        savePendingRef.current();
+        setIsOpen(false);
       }
-    }
-    window.addEventListener("keydown", handleKeyDown)
-    return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [isOpen, setIsOpen])
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, setIsOpen]);
 
   const handleSelectNote = (noteId: string | null) => {
-    setSaveError(null)
+    setSaveError(null);
     if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current)
-      saveTimeoutRef.current = null
+      clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = null;
     }
-    savePending()
-    setSelectedNoteId(noteId)
-    setListOpen(false)
-  }
+    savePending();
+    setSelectedNoteId(noteId);
+    setListOpen(false);
+  };
 
   const handleClose = () => {
     if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current)
-      saveTimeoutRef.current = null
+      clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = null;
     }
-    savePending()
-    setIsOpen(false)
-  }
+    savePending();
+    setIsOpen(false);
+  };
 
-  const currentContent = selectedNote?.content ?? "[]"
-  const editorKey = selectedNoteId ?? "new"
+  const currentContent = selectedNote?.content ?? "[]";
+  const editorKey = selectedNoteId ?? "new";
 
   return (
     <>
@@ -177,7 +188,9 @@ export const NoteChatWidget = () => {
               className="hidden min-[500px]:inline-flex"
               onClick={() => setIsFullscreen((v) => !v)}
               aria-label={
-                isFullscreen ? "Réduire le panneau de notes" : "Agrandir le panneau de notes"
+                isFullscreen
+                  ? "Réduire le panneau de notes"
+                  : "Agrandir le panneau de notes"
               }
             >
               {isFullscreen ? (
@@ -208,7 +221,10 @@ export const NoteChatWidget = () => {
                   >
                     <span className="truncate">
                       {selectedNote
-                        ? getNoteDisplayTitle(selectedNote.title, selectedNote.content)
+                        ? getNoteDisplayTitle(
+                            selectedNote.title,
+                            selectedNote.content
+                          )
                         : "Nouvelle note"}
                     </span>
                     <ChevronDown className="size-4 shrink-0" aria-hidden />
@@ -267,5 +283,5 @@ export const NoteChatWidget = () => {
         </div>
       )}
     </>
-  )
-}
+  );
+};

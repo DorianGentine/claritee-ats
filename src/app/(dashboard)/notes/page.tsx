@@ -1,11 +1,11 @@
-"use client"
+"use client";
 
-import { useEffect, useRef, useState } from "react"
-import { api } from "@/lib/trpc/client"
-import { getNoteDisplayTitle, getNoteExcerpt } from "@/lib/note-utils"
-import { formatDateLong } from "@/lib/format"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { useEffect, useRef, useState } from "react";
+import { api } from "@/lib/trpc/client";
+import { getNoteDisplayTitle, getNoteExcerpt } from "@/lib/note-utils";
+import { formatDateLong } from "@/lib/format";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -13,150 +13,151 @@ import {
   DialogTitle,
   DialogFooter,
   DialogClose,
-} from "@/components/ui/dialog"
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
+} from "@/components/ui/select";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import {
   NoteBlockNoteEditor,
   type NoteBlockNoteEditorRef,
   isBlockNoteContentEmpty,
-} from "@/components/shared/NoteBlockNoteEditor"
-import { Pencil, Trash2, Maximize2, Minimize2 } from "lucide-react"
-import type { RouterOutputs } from "@/lib/trpc/client"
+} from "@/components/shared/NoteBlockNoteEditor";
+import { Pencil, Trash2, Maximize2, Minimize2 } from "lucide-react";
+import type { RouterOutputs } from "@/lib/trpc/client";
 
-type NoteItem = RouterOutputs["note"]["listFree"][number]
+type NoteItem = RouterOutputs["note"]["listFree"][number];
 
 export default function NotesPage() {
-  const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [deleteId, setDeleteId] = useState<string | null>(null)
-  const [editTitle, setEditTitle] = useState("")
-  const [hasChanges, setHasChanges] = useState(false)
-  const [unsavedDialogOpen, setUnsavedDialogOpen] = useState(false)
-  const [isModalFullscreen, setIsModalFullscreen] = useState(false)
-  const editorRef = useRef<NoteBlockNoteEditorRef>(null)
-  const initialTitleRef = useRef<string>("")
-  const initialContentRef = useRef<string>("")
-  const currentContentRef = useRef<string>("")
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [hasChanges, setHasChanges] = useState(false);
+  const [unsavedDialogOpen, setUnsavedDialogOpen] = useState(false);
+  const [isModalFullscreen, setIsModalFullscreen] = useState(false);
+  const editorRef = useRef<NoteBlockNoteEditorRef>(null);
+  const initialTitleRef = useRef<string>("");
+  const initialContentRef = useRef<string>("");
+  const currentContentRef = useRef<string>("");
 
-  const utils = api.useUtils()
-  const freeNotesQuery = api.note.listFree.useQuery()
+  const utils = api.useUtils();
+  const freeNotesQuery = api.note.listFree.useQuery();
   const candidatesQuery = api.candidate.list.useQuery(
     { limit: 100 },
     { enabled: !!selectedId }
-  )
-  const notes = freeNotesQuery.data ?? []
-  const selectedNote = selectedId ? notes.find((n) => n.id === selectedId) : null
+  );
+  const notes = freeNotesQuery.data ?? [];
+  const selectedNote = selectedId
+    ? notes.find((n) => n.id === selectedId)
+    : null;
 
   const updateMutation = api.note.update.useMutation({
     onSuccess: () => {
-      void utils.note.listFree.invalidate()
+      void utils.note.listFree.invalidate();
     },
-  })
+  });
   const deleteMutation = api.note.delete.useMutation({
     onSuccess: () => {
-      setDeleteId(null)
-      setSelectedId(null)
-      void utils.note.listFree.invalidate()
+      setDeleteId(null);
+      setSelectedId(null);
+      void utils.note.listFree.invalidate();
     },
-  })
+  });
   const moveToCandidateMutation = api.note.moveToCandidate.useMutation({
     onSuccess: () => {
-      setSelectedId(null)
-      void utils.note.listFree.invalidate()
+      setSelectedId(null);
+      void utils.note.listFree.invalidate();
     },
-  })
+  });
 
   const handleOpenNote = (note: NoteItem) => {
-    setSelectedId(note.id)
-    setIsModalFullscreen(false)
-    const initialTitle = note.title?.trim() ?? ""
-    const initialContent = note.content
-    setEditTitle(initialTitle)
-    initialTitleRef.current = initialTitle
-    initialContentRef.current = initialContent
-    currentContentRef.current = initialContent
-    setHasChanges(false)
-  }
+    setSelectedId(note.id);
+    setIsModalFullscreen(false);
+    const initialTitle = note.title?.trim() ?? "";
+    const initialContent = note.content;
+    setEditTitle(initialTitle);
+    initialTitleRef.current = initialTitle;
+    initialContentRef.current = initialContent;
+    currentContentRef.current = initialContent;
+    setHasChanges(false);
+  };
 
   const handleCloseDetail = () => {
     if (hasChanges) {
-      setUnsavedDialogOpen(true)
-      return
+      setUnsavedDialogOpen(true);
+      return;
     }
-    setSelectedId(null)
-    setHasChanges(false)
-  }
+    setSelectedId(null);
+    setHasChanges(false);
+  };
 
   const handleSaveClick = () => {
-    if (!selectedId) return
-    const content = editorRef.current?.getContent()
-    if (!content || isBlockNoteContentEmpty(content)) return
+    if (!selectedId) return;
+    const content = editorRef.current?.getContent();
+    if (!content || isBlockNoteContentEmpty(content)) return;
     updateMutation.mutate({
       id: selectedId,
       content,
       title: editTitle.trim() || undefined,
-    })
-    initialTitleRef.current = editTitle.trim() || ""
-    initialContentRef.current = content
-    currentContentRef.current = content
-    setHasChanges(false)
-  }
+    });
+    initialTitleRef.current = editTitle.trim() || "";
+    initialContentRef.current = content;
+    currentContentRef.current = content;
+    setHasChanges(false);
+  };
 
   const handleDeleteConfirm = () => {
-    if (!deleteId) return
-    deleteMutation.mutate({ id: deleteId })
-  }
+    if (!deleteId) return;
+    deleteMutation.mutate({ id: deleteId });
+  };
 
   const handleMoveToCandidate = (candidateId: string) => {
-    if (!selectedId) return
-    moveToCandidateMutation.mutate({ id: selectedId, candidateId })
-  }
+    if (!selectedId) return;
+    moveToCandidateMutation.mutate({ id: selectedId, candidateId });
+  };
 
   const handleContentChange = (content: string) => {
-    currentContentRef.current = content
-    const titleChanged =
-      editTitle.trim() !== (initialTitleRef.current || "")
-    const contentChanged = content !== (initialContentRef.current || "")
-    setHasChanges(titleChanged || contentChanged)
-  }
+    currentContentRef.current = content;
+    const titleChanged = editTitle.trim() !== (initialTitleRef.current || "");
+    const contentChanged = content !== (initialContentRef.current || "");
+    setHasChanges(titleChanged || contentChanged);
+  };
 
   const handleTitleChange = (value: string) => {
-    setEditTitle(value)
-    const titleChanged = value.trim() !== (initialTitleRef.current || "")
+    setEditTitle(value);
+    const titleChanged = value.trim() !== (initialTitleRef.current || "");
     const contentChanged =
-      currentContentRef.current !== (initialContentRef.current || "")
-    setHasChanges(titleChanged || contentChanged)
-  }
+      currentContentRef.current !== (initialContentRef.current || "");
+    setHasChanges(titleChanged || contentChanged);
+  };
 
   const handleConfirmDiscard = () => {
-    setUnsavedDialogOpen(false)
-    setHasChanges(false)
-    setSelectedId(null)
-  }
+    setUnsavedDialogOpen(false);
+    setHasChanges(false);
+    setSelectedId(null);
+  };
 
   const handleCancelDiscard = () => {
-    setUnsavedDialogOpen(false)
-  }
+    setUnsavedDialogOpen(false);
+  };
 
   useEffect(() => {
-    if (!hasChanges) return
+    if (!hasChanges) return;
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      event.preventDefault()
-      ;(event as unknown as { returnValue: string }).returnValue = ""
-    }
-    window.addEventListener("beforeunload", handleBeforeUnload)
+      event.preventDefault();
+      (event as unknown as { returnValue: string }).returnValue = "";
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
     return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload)
-    }
-  }, [hasChanges])
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [hasChanges]);
 
-  const candidateItems = candidatesQuery.data?.items ?? []
+  const candidateItems = candidatesQuery.data?.items ?? [];
 
   return (
     <main className="min-h-[calc(100vh-3.5rem)] bg-background p-6">
@@ -199,7 +200,10 @@ export default function NotesPage() {
         )}
       </div>
 
-      <Dialog open={!!selectedNote} onOpenChange={(open) => !open && handleCloseDetail()}>
+      <Dialog
+        open={!!selectedNote}
+        onOpenChange={(open) => !open && handleCloseDetail()}
+      >
         <DialogContent
           className={
             isModalFullscreen
@@ -218,7 +222,9 @@ export default function NotesPage() {
                   size="icon-sm"
                   onClick={() => setIsModalFullscreen((v) => !v)}
                   aria-label={
-                    isModalFullscreen ? "Réduire la fenêtre" : "Agrandir en plein écran"
+                    isModalFullscreen
+                      ? "Réduire la fenêtre"
+                      : "Agrandir en plein écran"
                   }
                 >
                   {isModalFullscreen ? (
@@ -268,13 +274,18 @@ export default function NotesPage() {
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-border">
-              <span className="text-sm text-muted-foreground">Déplacer vers :</span>
+              <span className="text-sm text-muted-foreground">
+                Déplacer vers :
+              </span>
               <Select
                 value=""
                 onValueChange={(v) => {
-                  if (v) handleMoveToCandidate(v)
+                  if (v) handleMoveToCandidate(v);
                 }}
-                disabled={moveToCandidateMutation.isPending || candidateItems.length === 0}
+                disabled={
+                  moveToCandidateMutation.isPending ||
+                  candidateItems.length === 0
+                }
               >
                 <SelectTrigger className="w-(--radix-select-trigger-width) max-w-[240px]">
                   <SelectValue placeholder="Choisir un candidat…" />
@@ -282,7 +293,8 @@ export default function NotesPage() {
                 <SelectContent>
                   {candidateItems.map((c) => (
                     <SelectItem key={c.id} value={c.id}>
-                      {[c.firstName, c.lastName].filter(Boolean).join(" ") || "Sans nom"}
+                      {[c.firstName, c.lastName].filter(Boolean).join(" ") ||
+                        "Sans nom"}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -339,5 +351,5 @@ export default function NotesPage() {
         onConfirm={handleConfirmDiscard}
       />
     </main>
-  )
+  );
 }

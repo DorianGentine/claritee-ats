@@ -52,7 +52,10 @@ const experienceFormSchema = z
       const end = new Date(data.endYear, data.endMonth - 1, 1).getTime();
       return end >= start;
     },
-    { message: "La date de fin doit être après la date de début", path: ["endYear"] }
+    {
+      message: "La date de fin doit être après la date de début",
+      path: ["endYear"],
+    }
   );
 
 type ExperienceFormValues = z.infer<typeof experienceFormSchema>;
@@ -107,7 +110,11 @@ export const ExperienceFormDialog = ({
     defaultValues,
   });
 
-  const isCurrentJob = useWatch({ control, name: "isCurrentJob", defaultValue: true });
+  const isCurrentJob = useWatch({
+    control,
+    name: "isCurrentJob",
+    defaultValue: true,
+  });
 
   useEffect(() => {
     if (isCurrentJob) {
@@ -210,7 +217,9 @@ export const ExperienceFormDialog = ({
               placeholder="Ex. Développeur full stack"
             />
             {errors.title && (
-              <p className="mt-1 text-xs text-destructive">{errors.title.message}</p>
+              <p className="mt-1 text-xs text-destructive">
+                {errors.title.message}
+              </p>
             )}
           </div>
 
@@ -222,7 +231,9 @@ export const ExperienceFormDialog = ({
               placeholder="Ex. Acme Inc."
             />
             {errors.company && (
-              <p className="mt-1 text-xs text-destructive">{errors.company.message}</p>
+              <p className="mt-1 text-xs text-destructive">
+                {errors.company.message}
+              </p>
             )}
           </div>
 
@@ -343,7 +354,9 @@ export const ExperienceFormDialog = ({
                 />
               </div>
               {errors.endYear && (
-                <p className="mt-1 text-xs text-destructive">{errors.endYear.message}</p>
+                <p className="mt-1 text-xs text-destructive">
+                  {errors.endYear.message}
+                </p>
               )}
             </div>
           )}
@@ -360,7 +373,9 @@ export const ExperienceFormDialog = ({
           </div>
 
           {error && (
-            <p className="text-xs text-destructive">Une erreur est survenue. Réessayez.</p>
+            <p className="text-xs text-destructive">
+              Une erreur est survenue. Réessayez.
+            </p>
           )}
 
           <DialogFooter>

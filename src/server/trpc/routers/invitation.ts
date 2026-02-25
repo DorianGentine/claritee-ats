@@ -135,7 +135,7 @@ export const invitationRouter = router({
         firstName: z.string().min(1, "Le prénom est requis."),
         lastName: z.string().min(1, "Le nom est requis."),
         password: passwordSchema,
-      }),
+      })
     )
     .mutation(async ({ ctx, input }) => {
       const invitation = await ctx.db.invitation.findUnique({

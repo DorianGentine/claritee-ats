@@ -19,13 +19,13 @@ import {
   CV_ACCEPTED_MIMES,
   CV_MAX_BYTES,
   uploadCvSchema,
-} from "@/lib/validations/candidate"
+} from "@/lib/validations/candidate";
 import {
   addTagSchema,
   removeTagSchema,
   MAX_TAGS_PER_CANDIDATE,
-} from "@/lib/validations/tag"
-import { getTagColor } from "@/lib/tag-colors"
+} from "@/lib/validations/tag";
+import { getTagColor } from "@/lib/tag-colors";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -76,7 +76,7 @@ const getCvStorageExt = (cvFileName: string | null): string => {
 const createCvSignedUrl = async (
   companyId: string,
   candidateId: string,
-  cvFileName: string | null,
+  cvFileName: string | null
 ): Promise<string> => {
   const ext = getCvStorageExt(cvFileName);
   const storagePath = `${companyId}/candidates/${candidateId}/cv.${ext}`;
@@ -226,7 +226,9 @@ export const candidateRouter = router({
       const candidate = await ctx.db.candidate.findFirst({
         where: { id: input.id, companyId: ctx.companyId },
         include: {
-          experiences: { orderBy: [{ endDate: "desc" }, { startDate: "desc" }] },
+          experiences: {
+            orderBy: [{ endDate: "desc" }, { startDate: "desc" }],
+          },
           formations: { orderBy: [{ endDate: "desc" }, { startDate: "desc" }] },
           languages: true,
           tags: { include: { tag: true } },
@@ -611,7 +613,7 @@ export const candidateRouter = router({
       const rateResult = await checkRateLimit(
         `upload:${userId}`,
         RATE_LIMITS.UPLOAD_PER_USER.limit,
-        RATE_LIMITS.UPLOAD_PER_USER.windowMs,
+        RATE_LIMITS.UPLOAD_PER_USER.windowMs
       );
       if (!rateResult.success) {
         throw new TRPCError({
@@ -695,7 +697,7 @@ export const candidateRouter = router({
       const rateResult = await checkRateLimit(
         `upload:${userId}`,
         RATE_LIMITS.UPLOAD_PER_USER.limit,
-        RATE_LIMITS.UPLOAD_PER_USER.windowMs,
+        RATE_LIMITS.UPLOAD_PER_USER.windowMs
       );
       if (!rateResult.success) {
         throw new TRPCError({
@@ -778,14 +780,15 @@ export const candidateRouter = router({
       }
 
       if (candidate.cvUrl || candidate.cvFileName) {
-        const ext =
-          candidate.cvFileName?.split(".").pop()?.toLowerCase();
+        const ext = candidate.cvFileName?.split(".").pop()?.toLowerCase();
         const validExt = ["pdf", "doc", "docx"].includes(ext ?? "")
           ? ext
           : "pdf";
         const storagePath = `${ctx.companyId}/candidates/${input.candidateId}/cv.${validExt}`;
         const supabase = createAdminClient();
-        const { error } = await supabase.storage.from("cvs").remove([storagePath]);
+        const { error } = await supabase.storage
+          .from("cvs")
+          .remove([storagePath]);
         if (error) {
           console.warn("[deleteCv] Storage remove failed (continuing):", error);
         }
@@ -815,7 +818,7 @@ export const candidateRouter = router({
       const url = await createCvSignedUrl(
         ctx.companyId,
         input.candidateId,
-        candidate.cvFileName,
+        candidate.cvFileName
       );
       return { url };
     }),
@@ -834,7 +837,7 @@ export const candidateRouter = router({
       const rateResult = await checkRateLimit(
         `cv-share:${ip}`,
         RATE_LIMITS.CV_DOWNLOAD_SHARE_PER_IP.limit,
-        RATE_LIMITS.CV_DOWNLOAD_SHARE_PER_IP.windowMs,
+        RATE_LIMITS.CV_DOWNLOAD_SHARE_PER_IP.windowMs
       );
       if (!rateResult.success) {
         throw new TRPCError({
@@ -849,10 +852,7 @@ export const candidateRouter = router({
       if (!shareLink) {
         throw new TRPCError({ code: "NOT_FOUND" });
       }
-      if (
-        shareLink.expiresAt &&
-        shareLink.expiresAt.getTime() < Date.now()
-      ) {
+      if (shareLink.expiresAt && shareLink.expiresAt.getTime() < Date.now()) {
         throw new TRPCError({ code: "NOT_FOUND" });
       }
       const candidate = shareLink.candidate;
@@ -862,7 +862,7 @@ export const candidateRouter = router({
       const url = await createCvSignedUrl(
         candidate.companyId,
         candidate.id,
-        candidate.cvFileName,
+        candidate.cvFileName
       );
       return { url };
     }),

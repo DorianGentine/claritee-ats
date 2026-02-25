@@ -68,46 +68,46 @@ Ouvrir [http://localhost:3000](http://localhost:3000). Vérifier le health check
 
 ### Commandes utiles
 
-| Commande | Description |
-|----------|-------------|
-| `npm run dev` | Serveur de développement |
-| `npm run build` | Build de production |
-| `npm run lint` | Lint (ESLint) |
-| `npx prisma studio` | Interface d’édition de la base (Prisma Studio) |
-| `npx prisma migrate dev` | Créer / appliquer une migration en dev |
+| Commande                 | Description                                    |
+| ------------------------ | ---------------------------------------------- |
+| `npm run dev`            | Serveur de développement                       |
+| `npm run build`          | Build de production                            |
+| `npm run lint`           | Lint (ESLint)                                  |
+| `npx prisma studio`      | Interface d’édition de la base (Prisma Studio) |
+| `npx prisma migrate dev` | Créer / appliquer une migration en dev         |
 
 ### Documentation
 
-| Document | Contenu |
-|----------|---------|
-| [docs/prd.md](docs/prd.md) | Product Requirements Document (fonctionnel, NFR) |
-| [docs/brief.md](docs/brief.md) | Brief projet, positionnement, proposition de valeur |
-| [docs/architecture.md](docs/architecture.md) | Architecture technique (stack, RLS, API, déploiement) |
-| [docs/architecture/tech-stack.md](docs/architecture/tech-stack.md) | Versions pinnées des dépendances |
-| [docs/architecture/source-tree.md](docs/architecture/source-tree.md) | Arborescence du repo et où placer le code |
-| [docs/architecture/coding-standards.md](docs/architecture/coding-standards.md) | Conventions de code (nommage, tRPC, tests) |
-| [docs/design-system.md](docs/design-system.md) | Design system (couleurs, typo, composants, accessibilité) |
-| [docs/architecture/adr/](docs/architecture/adr/) | Architecture Decision Records (décisions clés) |
+| Document                                                                       | Contenu                                                   |
+| ------------------------------------------------------------------------------ | --------------------------------------------------------- |
+| [docs/prd.md](docs/prd.md)                                                     | Product Requirements Document (fonctionnel, NFR)          |
+| [docs/brief.md](docs/brief.md)                                                 | Brief projet, positionnement, proposition de valeur       |
+| [docs/architecture.md](docs/architecture.md)                                   | Architecture technique (stack, RLS, API, déploiement)     |
+| [docs/architecture/tech-stack.md](docs/architecture/tech-stack.md)             | Versions pinnées des dépendances                          |
+| [docs/architecture/source-tree.md](docs/architecture/source-tree.md)           | Arborescence du repo et où placer le code                 |
+| [docs/architecture/coding-standards.md](docs/architecture/coding-standards.md) | Conventions de code (nommage, tRPC, tests)                |
+| [docs/design-system.md](docs/design-system.md)                                 | Design system (couleurs, typo, composants, accessibilité) |
+| [docs/architecture/adr/](docs/architecture/adr/)                               | Architecture Decision Records (décisions clés)            |
 
 ---
 
 ## Glossaire
 
-| Terme | Définition |
-|-------|-------------|
-| **ATS** | *Applicant Tracking System* — outil de suivi des candidatures et de gestion des candidats. |
-| **Cabinet** | Entreprise de recrutement (tenant). Dans l’app, une **Company** ; les données sont isolées par cabinet (multi-tenancy). |
-| **Candidat** | Personne dont le cabinet suit le profil (fiche avec coordonnées, expériences, formations, tags, CV, photo). |
-| **Candidature** | Association entre un **candidat** et une **offre d’emploi**, avec un statut (ex. Contacté sur LinkedIn, Postulé, Accepté, Refusé). |
-| **Client** | Entreprise cliente du cabinet ( **ClientCompany** ) pour laquelle le cabinet recrute ; on peut y associer des **contacts** ( **ClientContact** ). |
-| **Fiche partageable** | Fiche candidat affichée sous forme de page type CV, accessible via un **lien de partage**. |
-| **Lien de partage (normal)** | URL publique permettant d’afficher la fiche candidat complète (nom, photo, coordonnées, etc.) sans être connecté. |
-| **Lien de partage (anonymisé)** | URL publique affichant une version anonymisée de la fiche (sans nom, prénom, photo, contacts, noms d’entreprises/écoles), pour la prospection. |
-| **Offre d’emploi** | Offre de poste gérée par le cabinet ( **JobOffer** : titre, description, localisation, rémunération, statut, tags). |
-| **RLS** | *Row Level Security* — politiques PostgreSQL qui limitent l’accès aux lignes selon l’utilisateur (ici : par `companyId` = cabinet). |
-| **Tag** | Étiquette réutilisable pour classer des **candidats** et/ou des **offres** (ex. « Java », « Paris », « Senior »). |
-| **Tenant** | Locataire du système ; dans Claritee ATS = un **cabinet** (Company). Les données sont scopées par tenant. |
+| Terme                           | Définition                                                                                                                                        |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **ATS**                         | _Applicant Tracking System_ — outil de suivi des candidatures et de gestion des candidats.                                                        |
+| **Cabinet**                     | Entreprise de recrutement (tenant). Dans l’app, une **Company** ; les données sont isolées par cabinet (multi-tenancy).                           |
+| **Candidat**                    | Personne dont le cabinet suit le profil (fiche avec coordonnées, expériences, formations, tags, CV, photo).                                       |
+| **Candidature**                 | Association entre un **candidat** et une **offre d’emploi**, avec un statut (ex. Contacté sur LinkedIn, Postulé, Accepté, Refusé).                |
+| **Client**                      | Entreprise cliente du cabinet ( **ClientCompany** ) pour laquelle le cabinet recrute ; on peut y associer des **contacts** ( **ClientContact** ). |
+| **Fiche partageable**           | Fiche candidat affichée sous forme de page type CV, accessible via un **lien de partage**.                                                        |
+| **Lien de partage (normal)**    | URL publique permettant d’afficher la fiche candidat complète (nom, photo, coordonnées, etc.) sans être connecté.                                 |
+| **Lien de partage (anonymisé)** | URL publique affichant une version anonymisée de la fiche (sans nom, prénom, photo, contacts, noms d’entreprises/écoles), pour la prospection.    |
+| **Offre d’emploi**              | Offre de poste gérée par le cabinet ( **JobOffer** : titre, description, localisation, rémunération, statut, tags).                               |
+| **RLS**                         | _Row Level Security_ — politiques PostgreSQL qui limitent l’accès aux lignes selon l’utilisateur (ici : par `companyId` = cabinet).               |
+| **Tag**                         | Étiquette réutilisable pour classer des **candidats** et/ou des **offres** (ex. « Java », « Paris », « Senior »).                                 |
+| **Tenant**                      | Locataire du système ; dans Claritee ATS = un **cabinet** (Company). Les données sont scopées par tenant.                                         |
 
 ---
 
-*Claritee ATS — MVP, free tier. Voir [docs/architecture.md](docs/architecture.md) pour le déploiement et les limites.*
+_Claritee ATS — MVP, free tier. Voir [docs/architecture.md](docs/architecture.md) pour le déploiement et les limites._

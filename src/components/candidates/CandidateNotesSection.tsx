@@ -16,77 +16,79 @@ import { Pencil, Trash2, Check, X, Loader } from "lucide-react";
 type Props = { candidateId: string };
 
 const formatAuthor = (firstName: string, lastName: string): string => {
-  const initial = lastName?.charAt(0)?.toUpperCase() ?? ""
-  return `${firstName} ${initial}.`.trim()
-}
+  const initial = lastName?.charAt(0)?.toUpperCase() ?? "";
+  return `${firstName} ${initial}.`.trim();
+};
 
 export const CandidateNotesSection = ({ candidateId }: Props) => {
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
-  const [editNoteId, setEditNoteId] = useState<string | null>(null)
-  const [deleteNoteId, setDeleteNoteId] = useState<string | null>(null)
-  const formEditorRef = useRef<NoteBlockNoteEditorRef>(null)
-  const inlineEditorRef = useRef<NoteBlockNoteEditorRef>(null)
-  const utils = api.useUtils()
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [editNoteId, setEditNoteId] = useState<string | null>(null);
+  const [deleteNoteId, setDeleteNoteId] = useState<string | null>(null);
+  const formEditorRef = useRef<NoteBlockNoteEditorRef>(null);
+  const inlineEditorRef = useRef<NoteBlockNoteEditorRef>(null);
+  const utils = api.useUtils();
 
   useEffect(() => {
-    const supabase = createClient()
+    const supabase = createClient();
     supabase.auth.getUser().then(({ data: { user } }) => {
-      setCurrentUserId(user?.id ?? null)
-    })
-  }, [])
+      setCurrentUserId(user?.id ?? null);
+    });
+  }, []);
 
-  const notesQuery = api.note.list.useQuery({ candidateId })
-  const [formKey, setFormKey] = useState(0)
-  const [formHasContent, setFormHasContent] = useState(false)
+  const notesQuery = api.note.list.useQuery({ candidateId });
+  const [formKey, setFormKey] = useState(0);
+  const [formHasContent, setFormHasContent] = useState(false);
 
   const handleFormContentChange = useCallback((isEmpty: boolean) => {
-    setFormHasContent(!isEmpty)
-  }, [])
+    setFormHasContent(!isEmpty);
+  }, []);
 
   const createMutation = api.note.create.useMutation({
     onSuccess: () => {
-      setFormKey((k) => k + 1)
-      setFormHasContent(false)
-      void utils.note.list.invalidate()
+      setFormKey((k) => k + 1);
+      setFormHasContent(false);
+      void utils.note.list.invalidate();
     },
-  })
+  });
   const updateMutation = api.note.update.useMutation({
     onSuccess: () => {
-      setEditNoteId(null)
-      void utils.note.list.invalidate()
+      setEditNoteId(null);
+      void utils.note.list.invalidate();
     },
-  })
+  });
   const deleteMutation = api.note.delete.useMutation({
     onSuccess: () => {
-      setDeleteNoteId(null)
-      void utils.note.list.invalidate()
+      setDeleteNoteId(null);
+      void utils.note.list.invalidate();
     },
-  })
+  });
 
   const handleCreateSave = () => {
-    const content = formEditorRef.current?.getContent() ?? "[]"
-    if (isBlockNoteContentEmpty(content)) return
-    createMutation.mutate({ candidateId, content })
-  }
+    const content = formEditorRef.current?.getContent() ?? "[]";
+    if (isBlockNoteContentEmpty(content)) return;
+    createMutation.mutate({ candidateId, content });
+  };
 
   const handleEditSave = () => {
-    if (!editNoteId) return
-    const content = inlineEditorRef.current?.getContent() ?? "[]"
-    if (isBlockNoteContentEmpty(content)) return
-    updateMutation.mutate({ id: editNoteId, content })
-  }
+    if (!editNoteId) return;
+    const content = inlineEditorRef.current?.getContent() ?? "[]";
+    if (isBlockNoteContentEmpty(content)) return;
+    updateMutation.mutate({ id: editNoteId, content });
+  };
 
   const handleEditCancel = () => {
-    setEditNoteId(null)
-  }
+    setEditNoteId(null);
+  };
 
   const handleDeleteConfirm = () => {
-    if (!deleteNoteId) return
-    deleteMutation.mutate({ id: deleteNoteId })
-  }
+    if (!deleteNoteId) return;
+    deleteMutation.mutate({ id: deleteNoteId });
+  };
 
-  const notes = notesQuery.data ?? []
-  const editingNote = editNoteId ? notes.find((n) => n.id === editNoteId) : null
+  const notes = notesQuery.data ?? [];
+  const editingNote = editNoteId
+    ? notes.find((n) => n.id === editNoteId)
+    : null;
 
   return (
     <section className="mt-6 flex w-full flex-col gap-4">
@@ -100,8 +102,8 @@ export const CandidateNotesSection = ({ candidateId }: Props) => {
           <p className="text-muted-foreground">Aucune note</p>
         ) : (
           notes.map((note) => {
-            const isOwn = currentUserId === note.authorId
-            const isEditing = editNoteId === note.id
+            const isOwn = currentUserId === note.authorId;
+            const isEditing = editNoteId === note.id;
 
             return (
               <div
@@ -111,8 +113,11 @@ export const CandidateNotesSection = ({ candidateId }: Props) => {
                 <div className="flex w-[90%] flex-col gap-1">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-xs text-muted-foreground">
-                      {formatAuthor(note.author.firstName, note.author.lastName)} ·{" "}
-                      {formatDateLong(note.createdAt)}
+                      {formatAuthor(
+                        note.author.firstName,
+                        note.author.lastName
+                      )}{" "}
+                      · {formatDateLong(note.createdAt)}
                     </span>
                     {isEditing && editingNote && (
                       <div className="flex justify-end gap-1">
@@ -129,9 +134,14 @@ export const CandidateNotesSection = ({ candidateId }: Props) => {
                           onClick={handleEditSave}
                           disabled={updateMutation.isPending}
                         >
-                          {updateMutation.isPending ? (<Loader className="size-4" aria-hidden />) : (<Check className="size-4" aria-hidden />)}
+                          {updateMutation.isPending ? (
+                            <Loader className="size-4" aria-hidden />
+                          ) : (
+                            <Check className="size-4" aria-hidden />
+                          )}
                         </Button>
-                      </div>)}
+                      </div>
+                    )}
                     {!isEditing && isOwn && (
                       <div className="flex justify-end gap-1">
                         <Button
@@ -173,7 +183,7 @@ export const CandidateNotesSection = ({ candidateId }: Props) => {
                   </div>
                 </div>
               </div>
-            )
+            );
           })
         )}
       </div>
@@ -212,5 +222,5 @@ export const CandidateNotesSection = ({ candidateId }: Props) => {
         confirmVariant="destructive"
       />
     </section>
-  )
-}
+  );
+};

@@ -190,10 +190,10 @@ describe.runIf(!!connectionString)("client", () => {
       caller.clientCompany.create({
         name: "Invalid SIREN Client",
         siren: "123",
-      }),
+      })
     ).rejects.toMatchObject({
       message: expect.stringContaining(
-        "Le SIREN doit contenir exactement 9 chiffres.",
+        "Le SIREN doit contenir exactement 9 chiffres."
       ),
     });
   });
@@ -217,7 +217,7 @@ describe.runIf(!!connectionString)("client", () => {
     const caller = appRouter.createCaller(ctx);
 
     await expect(
-      caller.clientCompany.getById({ id: clientB1Id }),
+      caller.clientCompany.getById({ id: clientB1Id })
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 
@@ -228,7 +228,7 @@ describe.runIf(!!connectionString)("client", () => {
     await expect(
       caller.clientCompany.getById({
         id: "00000000-0000-0000-0000-000000000000",
-      }),
+      })
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 
@@ -271,7 +271,7 @@ describe.runIf(!!connectionString)("client", () => {
           clientCompanyId: clientA1Id,
           firstName: "",
           lastName: "Dupont",
-        }),
+        })
       ).rejects.toMatchObject({
         message: expect.stringContaining("prénom"),
       });
@@ -286,7 +286,7 @@ describe.runIf(!!connectionString)("client", () => {
           clientCompanyId: clientA1Id,
           firstName: "Jean",
           lastName: "",
-        }),
+        })
       ).rejects.toMatchObject({
         message: expect.stringContaining("nom"),
       });
@@ -302,7 +302,7 @@ describe.runIf(!!connectionString)("client", () => {
           firstName: "Jean",
           lastName: "Dupont",
           email: "invalid-email",
-        }),
+        })
       ).rejects.toMatchObject({
         message: expect.stringContaining("email"),
       });
@@ -318,7 +318,7 @@ describe.runIf(!!connectionString)("client", () => {
           firstName: "Jean",
           lastName: "Dupont",
           linkedinUrl: "https://example.com/not-linkedin",
-        }),
+        })
       ).rejects.toMatchObject({
         message: expect.stringContaining("LinkedIn"),
       });
@@ -333,7 +333,7 @@ describe.runIf(!!connectionString)("client", () => {
           clientCompanyId: clientB1Id,
           firstName: "Jean",
           lastName: "Dupont",
-        }),
+        })
       ).rejects.toMatchObject({ code: "NOT_FOUND" });
     });
 
@@ -346,7 +346,7 @@ describe.runIf(!!connectionString)("client", () => {
           clientCompanyId: "00000000-0000-0000-0000-000000000000",
           firstName: "Jean",
           lastName: "Dupont",
-        }),
+        })
       ).rejects.toMatchObject({ code: "NOT_FOUND" });
     });
   });
@@ -391,7 +391,7 @@ describe.runIf(!!connectionString)("client", () => {
         callerA.clientCompany.updateContact({
           id: created.id,
           firstName: "Hacked",
-        }),
+        })
       ).rejects.toMatchObject({ code: "NOT_FOUND" });
 
       await db.clientContact.delete({ where: { id: created.id } });
@@ -409,7 +409,9 @@ describe.runIf(!!connectionString)("client", () => {
         lastName: "Contact",
       });
 
-      const result = await caller.clientCompany.deleteContact({ id: created.id });
+      const result = await caller.clientCompany.deleteContact({
+        id: created.id,
+      });
       expect(result.success).toBe(true);
 
       const inDb = await db.clientContact.findUnique({
@@ -431,7 +433,7 @@ describe.runIf(!!connectionString)("client", () => {
       });
 
       await expect(
-        callerA.clientCompany.deleteContact({ id: created.id }),
+        callerA.clientCompany.deleteContact({ id: created.id })
       ).rejects.toMatchObject({ code: "NOT_FOUND" });
 
       await db.clientContact.delete({ where: { id: created.id } });
@@ -444,9 +446,8 @@ describe.runIf(!!connectionString)("client", () => {
       await expect(
         caller.clientCompany.deleteContact({
           id: "00000000-0000-0000-0000-000000000000",
-        }),
+        })
       ).rejects.toMatchObject({ code: "NOT_FOUND" });
     });
   });
 });
-

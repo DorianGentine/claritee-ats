@@ -12,20 +12,25 @@ export type RateLimitResult = {
 };
 
 type RateLimitStore = {
-  check: (key: string, limit: number, windowMs: number) => Promise<RateLimitResult>;
+  check: (
+    key: string,
+    limit: number,
+    windowMs: number
+  ) => Promise<RateLimitResult>;
 };
 
 /** Entrée par clé : nombre de requêtes dans la fenêtre + fin de fenêtre (timestamp) */
-const entries = new Map<
-  string,
-  { count: number; windowEndMs: number }
->();
+const entries = new Map<string, { count: number; windowEndMs: number }>();
 
 /**
  * Rate limiter in-memory (dev et prod). En prod Vercel, la limite est par instance.
  */
 const inMemoryStore: RateLimitStore = {
-  check: async (key: string, limit: number, windowMs: number): Promise<RateLimitResult> => {
+  check: async (
+    key: string,
+    limit: number,
+    windowMs: number
+  ): Promise<RateLimitResult> => {
     const now = Date.now();
     const entry = entries.get(key);
 

@@ -119,13 +119,13 @@ describe("auth validations", () => {
 
     it("rejects invalid email format", () => {
       expect(() =>
-        loginFormSchema.parse({ email: "invalid", password: "password123" }),
+        loginFormSchema.parse({ email: "invalid", password: "password123" })
       ).toThrow();
     });
 
     it("rejects empty password", () => {
       expect(() =>
-        loginFormSchema.parse({ email: "user@example.com", password: "" }),
+        loginFormSchema.parse({ email: "user@example.com", password: "" })
       ).toThrow();
     });
 

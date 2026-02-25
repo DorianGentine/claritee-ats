@@ -16,4 +16,4 @@ Nous retenons un **monolithe fullstack déployé en serverless** : une seule app
 
 ---
 
-*Référence : `docs/architecture.md` §1.1, §3.2.*
+_Référence : `docs/architecture.md` §1.1, §3.2._

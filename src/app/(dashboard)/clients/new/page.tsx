@@ -51,7 +51,7 @@ export default function NewClientPage() {
       router.push(`/clients/${client.id}`);
     } catch (err) {
       setServerError(
-        (err as { message?: string })?.message ?? GENERIC_ERROR_MESSAGE,
+        (err as { message?: string })?.message ?? GENERIC_ERROR_MESSAGE
       );
     }
   };
@@ -104,8 +104,8 @@ export default function NewClientPage() {
               {...register("siren")}
             />
             <p className="text-xs text-muted-foreground">
-              Optionnel pour les clients. Si renseigné, doit contenir exactement 9
-              chiffres.
+              Optionnel pour les clients. Si renseigné, doit contenir exactement
+              9 chiffres.
             </p>
             {errors.siren?.message && (
               <p className="text-sm text-destructive">{errors.siren.message}</p>
@@ -113,11 +113,7 @@ export default function NewClientPage() {
           </div>
 
           <div className="mt-4 flex flex-wrap gap-3">
-            <Button
-              type="submit"
-              disabled={isPending}
-              aria-busy={isPending}
-            >
+            <Button type="submit" disabled={isPending} aria-busy={isPending}>
               {isPending ? "Enregistrement…" : "Enregistrer"}
             </Button>
             <Button type="button" variant="outline" asChild>
@@ -129,4 +125,3 @@ export default function NewClientPage() {
     </main>
   );
 }
-

@@ -4,8 +4,7 @@ import { z } from "zod";
 const emailInvalidMessage = "Veuillez entrer une adresse email valide.";
 
 /** Message d'erreur SIREN invalide (PRD Standard Error Messages) */
-const sirenInvalidMessage =
-  "Le SIREN doit contenir exactement 9 chiffres.";
+const sirenInvalidMessage = "Le SIREN doit contenir exactement 9 chiffres.";
 
 /** Email : format valide */
 export const emailSchema = z
@@ -19,9 +18,7 @@ export const passwordSchema = z
   .min(8, "Le mot de passe doit contenir au moins 8 caractères.");
 
 /** SIREN : exactement 9 chiffres (AC 4) */
-export const sirenSchema = z
-  .string()
-  .regex(/^\d{9}$/, sirenInvalidMessage);
+export const sirenSchema = z.string().regex(/^\d{9}$/, sirenInvalidMessage);
 
 /** Schéma complet pour le formulaire d'inscription (client + réutilisation tRPC) */
 export const registerFormSchema = z.object({

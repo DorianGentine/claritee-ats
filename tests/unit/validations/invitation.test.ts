@@ -10,17 +10,15 @@ describe("invitation validations", () => {
 
     it("rejects invalid email format", () => {
       expect(() =>
-        createInvitationSchema.parse({ email: "not-an-email" }),
+        createInvitationSchema.parse({ email: "not-an-email" })
       ).toThrow();
       expect(() =>
-        createInvitationSchema.parse({ email: "missing@" }),
+        createInvitationSchema.parse({ email: "missing@" })
       ).toThrow();
     });
 
     it("rejects empty email", () => {
-      expect(() =>
-        createInvitationSchema.parse({ email: "" }),
-      ).toThrow();
+      expect(() => createInvitationSchema.parse({ email: "" })).toThrow();
     });
 
     it("returns message for invalid email", () => {

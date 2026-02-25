@@ -17,15 +17,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { LANGUAGE_LEVELS, languageLevelSchema } from "@/lib/validations/candidate";
+import {
+  LANGUAGE_LEVELS,
+  languageLevelSchema,
+} from "@/lib/validations/candidate";
 
-const LANGUAGE_LEVEL_LABELS: Record<(typeof LANGUAGE_LEVELS)[number], string> = {
-  NOTION: "Notions",
-  INTERMEDIATE: "Intermédiaire",
-  FLUENT: "Courant",
-  BILINGUAL: "Bilingue",
-  NATIVE: "Natif",
-};
+const LANGUAGE_LEVEL_LABELS: Record<(typeof LANGUAGE_LEVELS)[number], string> =
+  {
+    NOTION: "Notions",
+    INTERMEDIATE: "Intermédiaire",
+    FLUENT: "Courant",
+    BILINGUAL: "Bilingue",
+    NATIVE: "Natif",
+  };
 
 const SUGGESTED_LANGUAGES = [
   "Français",
@@ -49,7 +53,10 @@ type Props = {
   languages: LanguageItem[];
 };
 
-export const CandidateLanguagesSection = ({ candidateId, languages }: Props) => {
+export const CandidateLanguagesSection = ({
+  candidateId,
+  languages,
+}: Props) => {
   const [showForm, setShowForm] = useState(false);
   const utils = api.useUtils();
 
@@ -115,12 +122,11 @@ export const CandidateLanguagesSection = ({ candidateId, languages }: Props) => 
       {languages.length > 0 ? (
         <div className="mt-2 flex flex-wrap gap-2">
           {languages.map((lang) => (
-            <Badge
-              key={lang.id}
-              variant="secondary"
-              className="gap-1 pr-1"
-            >
-              {lang.name} — {LANGUAGE_LEVEL_LABELS[lang.level as keyof typeof LANGUAGE_LEVEL_LABELS] ?? lang.level}
+            <Badge key={lang.id} variant="secondary" className="gap-1 pr-1">
+              {lang.name} —{" "}
+              {LANGUAGE_LEVEL_LABELS[
+                lang.level as keyof typeof LANGUAGE_LEVEL_LABELS
+              ] ?? lang.level}
               <button
                 type="button"
                 onClick={() => handleRemove(lang.id)}
@@ -195,11 +201,7 @@ export const CandidateLanguagesSection = ({ candidateId, languages }: Props) => 
           </div>
 
           <div className="flex gap-2">
-            <Button
-              type="submit"
-              size="sm"
-              disabled={addMutation.isPending}
-            >
+            <Button type="submit" size="sm" disabled={addMutation.isPending}>
               {addMutation.isPending ? "Ajout…" : "Ajouter"}
             </Button>
             <Button

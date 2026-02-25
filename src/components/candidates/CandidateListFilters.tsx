@@ -1,97 +1,96 @@
-"use client"
+"use client";
 
-import { useEffect, useMemo, useState } from "react"
-import { Check, Filter } from "lucide-react"
-import { api } from "@/lib/trpc/client"
-import { useDebounce } from "@/hooks/useDebounce"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { useEffect, useMemo, useState } from "react";
+import { Check, Filter } from "lucide-react";
+import { api } from "@/lib/trpc/client";
+import { useDebounce } from "@/hooks/useDebounce";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover"
-import { cn } from "@/lib/utils"
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 export type CandidateFilters = {
-  tagIds: string[]
-  city?: string
-  languageNames: string[]
-}
+  tagIds: string[];
+  city?: string;
+  languageNames: string[];
+};
 
 type CandidateListFiltersProps = {
-  filters: CandidateFilters
-  onFiltersChange: (filters: CandidateFilters) => void
-  onClear: () => void
-}
+  filters: CandidateFilters;
+  onFiltersChange: (filters: CandidateFilters) => void;
+  onClear: () => void;
+};
 
 export const CandidateListFilters = ({
   filters,
   onFiltersChange,
   onClear,
 }: CandidateListFiltersProps) => {
-  const [tagPopoverOpen, setTagPopoverOpen] = useState(false)
-  const [cityInput, setCityInput] = useState(filters.city ?? "")
+  const [tagPopoverOpen, setTagPopoverOpen] = useState(false);
+  const [cityInput, setCityInput] = useState(filters.city ?? "");
 
-  const debouncedCity = useDebounce(cityInput.trim(), 300)
+  const debouncedCity = useDebounce(cityInput.trim(), 300);
 
   useEffect(() => {
     // Sync local input when filters change externally (URL, clear)
     // eslint-disable-next-line react-hooks/set-state-in-effect -- légitime : sync props → state pour input
-    setCityInput(filters.city ?? "")
-  }, [filters.city])
+    setCityInput(filters.city ?? "");
+  }, [filters.city]);
 
   useEffect(() => {
-    const nextCity = debouncedCity ? debouncedCity : undefined
-    const currentCity = filters.city ?? undefined
+    const nextCity = debouncedCity ? debouncedCity : undefined;
+    const currentCity = filters.city ?? undefined;
     if (nextCity !== currentCity) {
-      onFiltersChange({ ...filters, city: nextCity })
+      onFiltersChange({ ...filters, city: nextCity });
     }
-  }, [debouncedCity, filters, onFiltersChange])
+  }, [debouncedCity, filters, onFiltersChange]);
 
-  const [languagePopoverOpen, setLanguagePopoverOpen] = useState(false)
+  const [languagePopoverOpen, setLanguagePopoverOpen] = useState(false);
 
-  const { data: tags = [] } = api.tag.list.useQuery()
-  const { data: cities = [] } = api.candidate.listDistinctCities.useQuery()
+  const { data: tags = [] } = api.tag.list.useQuery();
+  const { data: cities = [] } = api.candidate.listDistinctCities.useQuery();
   const { data: languageNames = [] } =
-    api.candidate.listDistinctLanguageNames.useQuery()
+    api.candidate.listDistinctLanguageNames.useQuery();
 
   const hasActiveFilters =
     filters.tagIds.length > 0 ||
     (filters.city?.trim() ?? "").length > 0 ||
-    filters.languageNames.length > 0
+    filters.languageNames.length > 0;
 
   const cityOptions = useMemo(() => {
-    const value = cityInput.trim().toLowerCase()
-    if (!value) return cities
-    return cities.filter((c) => c.toLowerCase().includes(value))
-  }, [cities, cityInput])
+    const value = cityInput.trim().toLowerCase();
+    if (!value) return cities;
+    return cities.filter((c) => c.toLowerCase().includes(value));
+  }, [cities, cityInput]);
 
   const toggleTag = (tagId: string) => {
-    const next =
-      filters.tagIds.includes(tagId)
-        ? filters.tagIds.filter((id) => id !== tagId)
-        : [...filters.tagIds, tagId]
-    onFiltersChange({ ...filters, tagIds: next })
-  }
+    const next = filters.tagIds.includes(tagId)
+      ? filters.tagIds.filter((id) => id !== tagId)
+      : [...filters.tagIds, tagId];
+    onFiltersChange({ ...filters, tagIds: next });
+  };
 
   const toggleLanguage = (name: string) => {
     const next = filters.languageNames.includes(name)
       ? filters.languageNames.filter((n) => n !== name)
-      : [...filters.languageNames, name]
-    onFiltersChange({ ...filters, languageNames: next })
-  }
+      : [...filters.languageNames, name];
+    onFiltersChange({ ...filters, languageNames: next });
+  };
 
   const handleCityChange = (value: string) => {
-    setCityInput(value)
-  }
+    setCityInput(value);
+  };
 
   const handleCityKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
-      e.preventDefault()
-      ;(e.target as HTMLInputElement).blur()
+      e.preventDefault();
+      (e.target as HTMLInputElement).blur();
     }
-  }
+  };
 
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4">
@@ -102,7 +101,10 @@ export const CandidateListFilters = ({
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
         <div className="flex min-w-0 flex-1 flex-col gap-2">
-          <label htmlFor="filter-tags" className="text-xs text-muted-foreground">
+          <label
+            htmlFor="filter-tags"
+            className="text-xs text-muted-foreground"
+          >
             Tags
           </label>
           <Popover open={tagPopoverOpen} onOpenChange={setTagPopoverOpen}>
@@ -132,7 +134,7 @@ export const CandidateListFilters = ({
                   className="max-h-60 overflow-y-auto"
                 >
                   {tags.map((tag) => {
-                    const selected = filters.tagIds.includes(tag.id)
+                    const selected = filters.tagIds.includes(tag.id);
                     return (
                       <li key={tag.id} role="option" aria-selected={selected}>
                         <button
@@ -158,7 +160,7 @@ export const CandidateListFilters = ({
                           <span className="truncate">{tag.name}</span>
                         </button>
                       </li>
-                    )
+                    );
                   })}
                 </ul>
               )}
@@ -203,7 +205,7 @@ export const CandidateListFilters = ({
                   className="max-h-60 overflow-y-auto"
                 >
                   {languageNames.map((name) => {
-                    const selected = filters.languageNames.includes(name)
+                    const selected = filters.languageNames.includes(name);
                     return (
                       <li key={name} role="option" aria-selected={selected}>
                         <button
@@ -225,7 +227,7 @@ export const CandidateListFilters = ({
                           <span className="truncate">{name}</span>
                         </button>
                       </li>
-                    )
+                    );
                   })}
                 </ul>
               )}
@@ -234,7 +236,10 @@ export const CandidateListFilters = ({
         </div>
 
         <div className="flex min-w-0 flex-1 flex-col gap-2">
-          <label htmlFor="filter-city" className="text-xs text-muted-foreground">
+          <label
+            htmlFor="filter-city"
+            className="text-xs text-muted-foreground"
+          >
             Ville
           </label>
           <div className="relative">
@@ -271,5 +276,5 @@ export const CandidateListFilters = ({
         )}
       </div>
     </div>
-  )
-}
+  );
+};
