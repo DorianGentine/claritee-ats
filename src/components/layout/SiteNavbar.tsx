@@ -93,7 +93,7 @@ export const SiteNavbar = () => {
   const navLinks = [
     { href: "/dashboard", label: "Dashboard", pathMatch: "/dashboard" },
     { href: "/candidates", label: "Candidats", pathMatch: "/candidates" },
-    { href: "#", label: "Offres (Bientôt)", disabled: true },
+    { href: "/offers", label: "Offres", pathMatch: "/offers" },
     { href: "/clients", label: "Clients", pathMatch: "/clients" },
     { href: "/settings", label: "Paramètres", pathMatch: "/settings" },
   ].map((link) => ({
@@ -145,25 +145,19 @@ export const SiteNavbar = () => {
                     <DropdownMenuSeparator />
                   </>
                 )}
-                {navLinks.map((link) =>
-                  link.disabled ? (
-                    <DropdownMenuItem key={link.label} disabled>
+                {navLinks.map((link) => (
+                  <DropdownMenuItem key={link.label} asChild>
+                    <Link
+                      href={link.href}
+                      className={cn(
+                        link.active && "bg-secondary/20 font-medium text-secondary"
+                      )}
+                      aria-current={link.active ? "page" : undefined}
+                    >
                       {link.label}
-                    </DropdownMenuItem>
-                  ) : (
-                    <DropdownMenuItem key={link.label} asChild>
-                      <Link
-                        href={link.href}
-                        className={cn(
-                          link.active && "bg-secondary/20 font-medium text-secondary"
-                        )}
-                        aria-current={link.active ? "page" : undefined}
-                      >
-                        {link.label}
-                      </Link>
-                    </DropdownMenuItem>
-                  )
-                )}
+                    </Link>
+                  </DropdownMenuItem>
+                ))}
               </DropdownMenuContent>
             </DropdownMenu>
 
@@ -171,19 +165,9 @@ export const SiteNavbar = () => {
               className="hidden items-center gap-1 min-[800px]:flex"
               aria-label="Navigation principale"
             >
-              {navLinks.map((link) =>
-                link.disabled ? (
-                  <span
-                    key={link.label}
-                    className="rounded-md px-3 py-2 text-sm text-muted-foreground/70"
-                    aria-disabled="true"
-                    title="Bientôt"
-                  >
-                    {link.label}
-                  </span>
-                ) : (
-                  <Link
-                    key={link.label}
+              {navLinks.map((link) => (
+                <Link
+                  key={link.label}
                     href={link.href}
                     className={cn(
                       "rounded-md px-3 py-2 text-sm font-medium transition-colors hover:text-primary",
@@ -193,8 +177,7 @@ export const SiteNavbar = () => {
                   >
                     {link.label}
                   </Link>
-                ),
-              )}
+                ))}
             </nav>
           </>
         )}
