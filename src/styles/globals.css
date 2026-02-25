@@ -25,6 +25,8 @@
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
@@ -69,6 +71,8 @@
   --border: #e5dfd6;
   --input: #e5dfd6;
   --ring: #b85a3b;
+  --success: #e8f5ec;
+  --success-foreground: #2e6b3e;
   --chart-1: #d4a5a5;
   --chart-2: #8fa89e;
   --chart-3: #c9b896;
@@ -93,6 +97,8 @@
   --popover-foreground: oklch(0.985 0 0);
   --primary: oklch(0.922 0 0);
   --primary-foreground: oklch(0.205 0 0);
+  --success: oklch(0.83 0.09 150);
+  --success-foreground: oklch(0.35 0.06 150);
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
