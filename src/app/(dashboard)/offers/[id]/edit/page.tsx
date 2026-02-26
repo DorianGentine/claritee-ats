@@ -32,6 +32,8 @@ const EditOfferPage = () => {
     }
   }, [offerQuery.isError, offerQuery.isLoading, router])
 
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+
   if (offerQuery.isLoading || !id || typeof id !== "string") {
     return (
       <main className="min-h-[calc(100vh-3.5rem)] bg-background p-6">
@@ -57,8 +59,6 @@ const EditOfferPage = () => {
   const offer = offerQuery.data as typeof offerQuery.data & {
     clientContactId?: string | null
   }
-
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
 
   const handleConfirmDelete = () => {
     if (!offer?.id) return
