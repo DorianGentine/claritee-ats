@@ -1,37 +1,36 @@
-"use client";
+"use client"
 
-import { useState, useCallback, useRef, useEffect } from "react";
-import { Pencil, Trash2, Copy, ExternalLink } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { useState, useCallback, useRef, useEffect } from "react"
+import { Pencil, Trash2, Copy, ExternalLink } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
+import { toast } from "sonner"
 
 type Contact = {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string | null;
-  phone: string | null;
-  position: string | null;
-  linkedinUrl: string | null;
-};
+  id: string
+  firstName: string
+  lastName: string
+  email: string | null
+  phone: string | null
+  position: string | null
+  linkedinUrl: string | null
+}
 
 type Props = {
-  contact: Contact;
-  onEdit: () => void;
-  onDelete: () => void;
-  deletePending?: boolean;
-};
-
-type CopyFeedback = { field: "email" | "phone"; success: boolean };
+  contact: Contact
+  onEdit: () => void
+  onDelete: () => void
+  deletePending?: boolean
+}
 
 const copyToClipboard = async (text: string): Promise<boolean> => {
   try {
-    await navigator.clipboard.writeText(text);
-    return true;
+    await navigator.clipboard.writeText(text)
+    return true
   } catch {
-    return false;
+    return false
   }
-};
+}
 
 export const ClientContactCard = ({
   contact,
@@ -39,33 +38,20 @@ export const ClientContactCard = ({
   onDelete,
   deletePending = false,
 }: Props) => {
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [copyFeedback, setCopyFeedback] = useState<CopyFeedback | null>(null);
-  const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
-    };
-  }, []);
-
-  const fullName = `${contact.firstName} ${contact.lastName}`.trim();
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const fullName = `${contact.firstName} ${contact.lastName}`.trim()
 
   const handleCopy = useCallback(
     async (value: string, field: "email" | "phone") => {
-      if (copyTimeoutRef.current) {
-        clearTimeout(copyTimeoutRef.current);
-        copyTimeoutRef.current = null;
+      const ok = await copyToClipboard(value)
+      if (ok) {
+        toast.success(`${field === "email" ? "Email" : "Numéro"} copié.`)
+      } else {
+        toast.error(`Échec de la copie de ${field === "email" ? "email" : "numéro"}.`)
       }
-      const ok = await copyToClipboard(value);
-      setCopyFeedback({ field, success: ok });
-      copyTimeoutRef.current = setTimeout(() => {
-        setCopyFeedback(null);
-        copyTimeoutRef.current = null;
-      }, 2000);
     },
     []
-  );
+  )
 
   return (
     <>
@@ -97,13 +83,6 @@ export const ClientContactCard = ({
                 >
                   <Copy className="size-3" />
                 </Button>
-                {copyFeedback?.field === "email" && (
-                  <span
-                    className={`text-xs ${copyFeedback.success ? "text-muted-foreground" : "text-destructive"}`}
-                  >
-                    {copyFeedback.success ? "Copié !" : "Échec de la copie"}
-                  </span>
-                )}
               </div>
             )}
             {contact.phone && (
@@ -124,13 +103,6 @@ export const ClientContactCard = ({
                 >
                   <Copy className="size-3" />
                 </Button>
-                {copyFeedback?.field === "phone" && (
-                  <span
-                    className={`text-xs ${copyFeedback.success ? "text-muted-foreground" : "text-destructive"}`}
-                  >
-                    {copyFeedback.success ? "Copié !" : "Échec de la copie"}
-                  </span>
-                )}
               </div>
             )}
             {contact.linkedinUrl && (
@@ -177,12 +149,12 @@ export const ClientContactCard = ({
         confirmLabel="Supprimer"
         pendingLabel="Suppression…"
         onConfirm={() => {
-          onDelete();
-          setDeleteOpen(false);
+          onDelete()
+          setDeleteOpen(false)
         }}
         pending={deletePending}
         confirmVariant="destructive"
       />
     </>
-  );
-};
+  )
+}

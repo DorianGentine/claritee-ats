@@ -1,39 +1,41 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { useParams } from "next/navigation";
-import { api } from "@/lib/trpc/client";
-import { formatSiren } from "@/lib/format";
-import { Button } from "@/components/ui/button";
-import { ClientContactCard } from "@/components/clients/ClientContactCard";
-import { ClientContactFormModal } from "@/components/clients/ClientContactFormModal";
+import { useState } from "react"
+import { useParams } from "next/navigation"
+import { api } from "@/lib/trpc/client"
+import { formatSiren } from "@/lib/format"
+import { Button } from "@/components/ui/button"
+import { ClientContactCard } from "@/components/clients/ClientContactCard"
+import { ClientContactFormModal } from "@/components/clients/ClientContactFormModal"
+import { toast } from "sonner"
 
 export default function ClientDetailPage() {
-  const params = useParams<{ id: string }>();
-  const id = params?.id;
+  const params = useParams<{ id: string }>()
+  const id = params?.id
 
-  const [modalOpen, setModalOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false)
   const [editingContact, setEditingContact] = useState<{
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string | null;
-    phone: string | null;
-    position: string | null;
-    linkedinUrl: string | null;
-  } | null>(null);
+    id: string
+    firstName: string
+    lastName: string
+    email: string | null
+    phone: string | null
+    position: string | null
+    linkedinUrl: string | null
+  } | null>(null)
 
   const { data, isLoading, isError } = api.clientCompany.getById.useQuery(
     { id },
     { enabled: !!id }
-  );
+  )
 
-  const utils = api.useUtils();
+  const utils = api.useUtils()
   const deleteContactMutation = api.clientCompany.deleteContact.useMutation({
     onSuccess: () => {
-      if (id) void utils.clientCompany.getById.invalidate({ id });
+      if (id) void utils.clientCompany.getById.invalidate({ id })
+      toast.success("Contact supprimé.")
     },
-  });
+  })
 
   if (!id) {
     return (
@@ -47,7 +49,7 @@ export default function ClientDetailPage() {
           </p>
         </div>
       </main>
-    );
+    )
   }
 
   if (isLoading) {
@@ -59,7 +61,7 @@ export default function ClientDetailPage() {
           <div className="mt-8 h-40 animate-pulse rounded-lg border border-border bg-card" />
         </div>
       </main>
-    );
+    )
   }
 
   if (isError || !data) {
@@ -74,23 +76,23 @@ export default function ClientDetailPage() {
           </p>
         </div>
       </main>
-    );
+    )
   }
 
   const openAddModal = () => {
-    setEditingContact(null);
-    setModalOpen(true);
-  };
+    setEditingContact(null)
+    setModalOpen(true)
+  }
 
   const openEditModal = (contact: (typeof data.contacts)[0]) => {
-    setEditingContact(contact);
-    setModalOpen(true);
-  };
+    setEditingContact(contact)
+    setModalOpen(true)
+  }
 
   const handleModalClose = (open: boolean) => {
-    if (!open) setEditingContact(null);
-    setModalOpen(open);
-  };
+    if (!open) setEditingContact(null)
+    setModalOpen(open)
+  }
 
   return (
     <main className="min-h-[calc(100vh-3.5rem)] bg-background p-6">
@@ -153,6 +155,6 @@ export default function ClientDetailPage() {
         </section>
       </div>
     </main>
-  );
+  )
 }
 

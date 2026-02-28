@@ -21,11 +21,11 @@ const formatSalaryRange = (
   salaryMax: number | null
 ): string => {
   if (salaryMin == null && salaryMax == null) return "Salaire non précisé"
-  const min = salaryMin != null ? Math.round(salaryMin / 1000) : null
-  const max = salaryMax != null ? Math.round(salaryMax / 1000) : null
-  if (min != null && max != null) return `${min}–${max} k€`
-  if (min != null) return `À partir de ${min} k€`
-  if (max != null) return `Jusqu'à ${max} k€`
+  const min = salaryMin != null && salaryMin > 0 ? salaryMin : null
+  const max = salaryMax != null && salaryMax > 0 ? salaryMax : null
+  if (min != null && max != null) return `${min}–${max} €`
+  if (min != null) return `À partir de ${min} €`
+  if (max != null) return `Jusqu'à ${max} €`
   return "Salaire non précisé"
 }
 
