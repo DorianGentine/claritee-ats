@@ -238,6 +238,13 @@ export const offerRouter = router({
         }
       }
 
+      if (
+        resolvedClientCompanyId === null &&
+        clientContactId === undefined
+      ) {
+        resolvedClientContactId = null
+      }
+
       const data: {
         title?: string
         description?: string | null

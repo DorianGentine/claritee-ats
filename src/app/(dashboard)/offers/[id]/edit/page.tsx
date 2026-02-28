@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
+import { toast } from "sonner"
 import { api } from "@/lib/trpc/client"
 import { JobOfferForm } from "@/components/offers/JobOfferForm"
 import { Button } from "@/components/ui/button"
@@ -22,7 +23,8 @@ const EditOfferPage = () => {
   const deleteMutation = api.offer.delete.useMutation({
     onSuccess: async () => {
       await utils.offer.list.invalidate()
-      router.push("/offers?deleted=1")
+      toast.success("Offre supprimée.")
+      router.push("/offers")
     },
   })
 

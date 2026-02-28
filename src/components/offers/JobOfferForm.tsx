@@ -6,6 +6,7 @@ import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 import { api } from "@/lib/trpc/client"
 import {
   createJobOfferSchema,
@@ -150,7 +151,8 @@ export const JobOfferForm = ({
       if (mode === "create") {
         const created = await createMutation.mutateAsync(payload)
         onSuccess?.(created)
-        router.push("/offers?created=1")
+        toast.success("Offre créée.")
+        router.push("/offers")
         return
       }
 
@@ -172,7 +174,8 @@ export const JobOfferForm = ({
 
       const updated = await updateMutation.mutateAsync(updatePayload)
       onSuccess?.(updated)
-      router.push(`/offers?updated=1`)
+      toast.success("Offre mise à jour.")
+      router.push("/offers")
     } catch (err) {
       const message =
         (err as { message?: string })?.message ??

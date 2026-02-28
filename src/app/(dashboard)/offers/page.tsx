@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { useSearchParams } from "next/navigation"
 import { api } from "@/lib/trpc/client"
 import { Button } from "@/components/ui/button"
 import {
@@ -55,11 +54,6 @@ export default function OffersPage() {
   const [sortOption, setSortOption] = useState<SortOption>("createdAt_desc")
   const { sortBy, sortOrder } = parseSort(sortOption)
 
-  const searchParams = useSearchParams()
-  const creationSuccess = searchParams.get("created") === "1"
-  const updateSuccess = searchParams.get("updated") === "1"
-  const deleteSuccess = searchParams.get("deleted") === "1"
-
   const listQuery = api.offer.list.useQuery({
     page: 1,
     pageSize: PAGE_SIZE,
@@ -75,18 +69,6 @@ export default function OffersPage() {
   return (
     <main className="min-h-[calc(100vh-3.5rem)] bg-background p-6">
       <div className="mx-auto max-w-6xl">
-        {(creationSuccess || updateSuccess || deleteSuccess) && (
-          <div
-            role="status"
-            className="mb-4 rounded-md border border-emerald-500 bg-emerald-500/10 px-3 py-2.5 text-sm text-emerald-700"
-          >
-            {creationSuccess
-              ? "Offre créée."
-              : updateSuccess
-                ? "Offre mise à jour."
-                : "Offre supprimée."}
-          </div>
-        )}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">
             Offres

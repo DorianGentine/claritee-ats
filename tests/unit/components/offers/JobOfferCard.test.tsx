@@ -23,7 +23,7 @@ describe("JobOfferCard", () => {
     expect(card.getByText("Développeur Full Stack")).toBeDefined()
     expect(card.getByText("Acme Corp")).toBeDefined()
     expect(card.getByText("Paris")).toBeDefined()
-    expect(card.getByText(/45–55 k€/)).toBeDefined()
+    expect(card.getByText(/45000–55000 €/)).toBeDefined()
   })
 
   it("renders status badge with label En cours", () => {

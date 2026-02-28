@@ -105,6 +105,7 @@ export const updateJobOfferSchema = jobOfferBaseFieldsSchema
   .partial()
   .extend({
     id: z.uuid(),
+    status: jobOfferStatusSchema.optional(),
     description: optionalNullableString,
     location: optionalNullableString,
     salaryMin: z
