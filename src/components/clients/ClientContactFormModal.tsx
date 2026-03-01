@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createClientContactSchema } from "@/lib/validations/client";
 import type { z } from "zod";
+import { toast } from "sonner";
 
 type ClientContactFormInput = z.input<typeof createClientContactSchema>;
 
@@ -88,6 +89,7 @@ export const ClientContactFormModal = ({
       onSuccess?.();
       onOpenChange(false);
       reset(defaultFormValues);
+      toast.success("Contact créé.")
     },
   });
 
@@ -97,6 +99,7 @@ export const ClientContactFormModal = ({
       onSuccess?.();
       onOpenChange(false);
       reset(defaultFormValues);
+      toast.success("Contact modifié.")
     },
   });
 

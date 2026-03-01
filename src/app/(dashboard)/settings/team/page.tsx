@@ -9,6 +9,7 @@ import { api } from "@/lib/trpc/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 
 const GENERIC_ERROR_MESSAGE = "Une erreur est survenue. Réessayez.";
 
@@ -56,6 +57,7 @@ export default function SettingsTeamPage() {
 
   const handleCopyUrl = (url: string) => {
     void navigator.clipboard.writeText(url);
+    toast.success("Lien copié.")
   };
 
   const getInvitationStatus = (
