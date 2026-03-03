@@ -1,0 +1,30 @@
+---
+description: When drafting user stories, always add a code-review task and a test-cases file task
+globs: docs/stories/*.md
+alwaysApply: true
+---
+
+# Story draft — tâches obligatoires
+
+Lorsque tu rédiges une **user story** (tâche create-next-story, *draft, ou "rédiger la prochaine story"), applique systématiquement les règles suivantes dans la section **Tasks / Subtasks** :
+
+1. **Étape 0 – Lecture des standards & architecture**  
+   - Ajouter en tout début de liste une task demandant au dev agent de **prendre connaissance des documents d’architecture avant toute implémentation** :  
+     - `docs/architecture/coding-standards.md`  
+     - `docs/frontend-architecture.md`  
+     - `docs/architecture.md`  
+   - L’objectif est de rappeler explicitement que **toutes les décisions d’implémentation et de tests doivent respecter ces guides** (structure des routers tRPC, patterns frontend, pratiques de tests, a11y, etc.).
+
+2. **Cas de test**  
+   - Ajouter une task précisant de **rédiger les cas de test dans un fichier à part** (ex. `docs/stories/cases/<epic>.<story>-test-cases.md` ou dans `docs/qa/`) **afin de faciliter la review de la story**.
+
+3. **Review de code**  
+   - Ajouter une task précisant de **lancer une review de code en fin de développement** (avant clôture de la story).
+
+Exemple de libellés à inclure dans les tasks :
+
+- `- [ ] Task 0 – Standards & architecture : Lire docs/architecture/coding-standards.md, docs/frontend-architecture.md et docs/architecture.md avant de commencer l’implémentation.`
+- `- [ ] Task N (QA): Rédiger les cas de test dans un fichier dédié (ex. docs/stories/cases/1.5-test-cases.md) pour faciliter la review de la story.`
+- `- [ ] Task N (review): Lancer une review de code en fin de développement avant clôture de la story.`
+
+Ces tâches s’ajoutent en plus des tâches techniques et de test déjà prévues pour la story.

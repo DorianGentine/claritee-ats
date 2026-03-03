@@ -133,6 +133,13 @@ export const createExampleSchema = z.object({
 - **État serveur** : **TanStack Query** (v5) pour cache et mutations. Stale time et invalidation cohérentes avec l'usage (listes vs détail).
 - **Formulaires** : **React Hook Form** + Zod pour la validation partagée.
 
+### Notifications / toasts
+
+- **Librairie unique** : toutes les notifications utilisateur de type toast doivent utiliser **`sonner`**. Importer `toast` depuis `"sonner"` dans les composants client (`"use client"`).
+- **Cas d'usage typiques** : utiliser `toast.success("…")` pour les succès (création, mise à jour, suppression), `toast.error("…")` pour les erreurs récupérables et les échecs métier, et une variante neutre (`toast.message` ou équivalent) pour les informations non bloquantes.
+- **Standard de message** : respecter les règles de messages d'erreur génériques (pas de détails techniques exposés à l'utilisateur final, voir `docs/architecture.md` pour le détail).
+- **Pas d'alternative locale** : ne pas introduire d'autres systèmes de toasts (ex. `useToast` shadcn/ui, `window.alert`, modals dédiées) sans décision explicite documentée dans `docs/architecture.md`.
+
 ---
 
 ## 5. Multi-tenancy et sécurité

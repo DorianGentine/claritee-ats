@@ -1,0 +1,26 @@
+---
+description: Use Context7 MCP for research on library and framework integration
+alwaysApply: true
+---
+
+# Recherche d’intégration — MCP Context7
+
+Pour toute **recherche sur l’intégration de librairies ou de frameworks** (installation, configuration, API, bonnes pratiques, exemples de code), **utilise le MCP Context7** en priorité.
+
+Context7 fournit un accès en temps réel à la documentation à jour de milliers de librairies et frameworks, ce qui évite de s’appuyer sur des données d’entraînement obsolètes ou des exemples inventés.
+
+## Quand l’utiliser
+
+- Choix ou comparaison de librairies pour une fonctionnalité
+- Intégration d’une nouvelle dépendance (npm, etc.)
+- Utilisation d’une API ou d’un framework (React, tRPC, Zod, etc.)
+- Recherche d’exemples de code ou de bonnes pratiques pour une lib connue
+- Vérification de la doc officielle (versions, breaking changes)
+
+## Comportement attendu
+
+1. **Priorité** : avant une recherche web générique ou des suppositions, interroger Context7 pour la doc et les exemples liés à la lib concernée.
+2. **Contexte** : préciser la librairie/framework et, si pertinent, la version ou le cas d’usage (ex. « React Server Components », « tRPC v11 »).
+3. **Adaptation** : utiliser les résultats de Context7 pour proposer du code et des patterns adaptés au projet (stack, conventions existantes).
+
+Si Context7 n’est pas disponible dans l’environnement courant, le préciser et recourir aux autres outils (recherche web, doc officielle) en le mentionnant.
