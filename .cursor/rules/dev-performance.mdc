@@ -1,0 +1,52 @@
+---
+description: Règles de performance pour le serveur de développement Next.js (Turbopack). À consulter lors de l'ajout de dépendances, la modification de la config, ou en cas de problème CPU/mémoire.
+globs:
+  - package.json
+  - tsconfig.json
+  - next.config.ts
+  - src/server/db.ts
+  - src/styles/globals.css
+  - src/components/ui/**
+---
+
+# Performance du serveur de développement (Turbopack)
+
+Référence complète : `docs/architecture.md` §10.2.1
+
+## Règles critiques
+
+### 1. Radix UI — packages individuels uniquement
+
+Ne JAMAIS installer le package monolithique `radix-ui` (umbrella).
+Toujours utiliser les packages individuels : `@radix-ui/react-slot`, `@radix-ui/react-label`, etc.
+
+Le package umbrella charge l'intégralité des primitives Radix (~30+ composants) en mémoire en dev, ce qui provoque des fuites mémoire et une boucle de recompilation avec Turbopack.
+
+Quand shadcn/ui génère un composant qui importe `from "radix-ui"`, remplacer immédiatement par le package individuel correspondant.
+
+### 2. Prisma — pas de log "query" en dev
+
+```typescript
+// src/server/db.ts — BON
+log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
+
+// MAUVAIS — "query" accumule des strings en mémoire
+log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
+```
+
+### 3. tsconfig.json — ne pas toucher à jsx
+
+Next.js 16 impose `"jsx": "react-jsx"` et le réécrit au démarrage. Ne pas le modifier.
+
+### 4. CSS — pas de règles dupliquées dans globals.css
+
+Vérifier qu'aucune règle `@apply` n'est dupliquée.
+
+## Diagnostic en cas de problème
+
+Si le serveur consomme trop de CPU/mémoire ou affiche "Compiling..." en permanence :
+
+1. `rm -rf .next && pnpm dev` (nettoyer le cache)
+2. Vérifier qu'aucun package umbrella (ex. `radix-ui`) n'a été ajouté
+3. Vérifier l'onglet Network du navigateur (polling/retry en boucle ?)
+4. En dernier recours : `pnpm next dev --no-turbopack`
