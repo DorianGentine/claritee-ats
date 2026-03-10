@@ -4,6 +4,7 @@ import { PrismaClient } from "@prisma/client"
 import { appRouter } from "@/server/trpc/routers/_app"
 import type { Context } from "@/server/trpc/context"
 import type { OfferMutationResult } from "@/server/trpc/routers/offer"
+import { MAX_TAGS_PER_OFFER } from "@/lib/validations/tag"
 
 const connectionString = process.env.DATABASE_URL
 
@@ -14,6 +15,7 @@ describe.runIf(!!connectionString)("offer router", () => {
   let offerA1Id: string
   let offerA2Id: string
   let offerB1Id: string
+  let tagCompanyAId: string
 
   const createContext = (companyId: string | null): Context =>
     ({
@@ -44,6 +46,15 @@ describe.runIf(!!connectionString)("offer router", () => {
     companyAId = companyA.id
     companyBId = companyB.id
 
+    const tagA = await db.tag.create({
+      data: {
+        name: "Tag A",
+        color: "#ff0000",
+        companyId: companyAId,
+      },
+    })
+    tagCompanyAId = tagA.id
+
     const [oA1, oA2, oB1] = await Promise.all([
       db.jobOffer.create({
         data: {
@@ -73,8 +84,26 @@ describe.runIf(!!connectionString)("offer router", () => {
   })
 
   afterAll(async () => {
+    await db.offerTag.deleteMany({
+      where: { jobOffer: { companyId: { in: [companyAId, companyBId] } } },
+    })
+    await db.tag.deleteMany({
+      where: { companyId: { in: [companyAId, companyBId] } },
+    })
+    await db.candidature.deleteMany({
+      where: { jobOffer: { companyId: { in: [companyAId, companyBId] } } },
+    })
     await db.jobOffer.deleteMany({
-      where: { id: { in: [offerA1Id, offerA2Id, offerB1Id] } },
+      where: { companyId: { in: [companyAId, companyBId] } },
+    })
+    await db.clientContact.deleteMany({
+      where: { clientCompany: { companyId: { in: [companyAId, companyBId] } } },
+    })
+    await db.clientCompany.deleteMany({
+      where: { companyId: { in: [companyAId, companyBId] } },
+    })
+    await db.candidate.deleteMany({
+      where: { companyId: { in: [companyAId, companyBId] } },
     })
     await db.company.deleteMany({
       where: { id: { in: [companyAId, companyBId] } },
@@ -351,5 +380,115 @@ describe.runIf(!!connectionString)("offer router", () => {
       where: { id: candidature.id },
     })
     expect(candidatureInDb).toBeNull()
+  })
+
+  it("allows adding and removing tags on offers scoped to the caller company", async () => {
+    const offer = await db.jobOffer.create({
+      data: {
+        title: "Offer with tags",
+        companyId: companyAId,
+        status: "TODO",
+      },
+    })
+
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
+
+    const addResult = await caller.offer.addTag({
+      offerId: offer.id,
+      tagName: "Backend",
+    })
+
+    expect(addResult.tag).toBeDefined()
+    expect(addResult.tag.name).toBe("Backend")
+
+    const inDb = await db.offerTag.findFirst({
+      where: { offerId: offer.id, tagId: addResult.tag.id },
+    })
+    expect(inDb).not.toBeNull()
+
+    const removeResult = await caller.offer.removeTag({
+      offerId: offer.id,
+      tagId: addResult.tag.id,
+    })
+    expect(removeResult).toEqual({ success: true })
+
+    const linkAfterDelete = await db.offerTag.findFirst({
+      where: { offerId: offer.id, tagId: addResult.tag.id },
+    })
+    expect(linkAfterDelete).toBeNull()
+
+    await db.jobOffer.delete({ where: { id: offer.id } })
+  })
+
+  it("enforces max 20 tags per offer", async () => {
+    const offer = await db.jobOffer.create({
+      data: {
+        title: "Offer max tags",
+        companyId: companyAId,
+        status: "TODO",
+      },
+    })
+
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
+
+    for (let i = 0; i < MAX_TAGS_PER_OFFER; i++) {
+      const name = `Tag ${i}`
+      const result = await caller.offer.addTag({
+        offerId: offer.id,
+        tagName: name,
+      })
+      expect(result.tag.name).toBe(name)
+    }
+
+    await expect(
+      caller.offer.addTag({
+        offerId: offer.id,
+        tagName: "Tag overflow",
+      }),
+    ).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+      message:
+        "Maximum 20 tags par élément. Supprimez un tag existant pour en ajouter un nouveau.",
+    })
+
+    await db.offerTag.deleteMany({
+      where: { offerId: offer.id },
+    })
+    await db.jobOffer.delete({ where: { id: offer.id } })
+  })
+
+  it("prevents cross-company tag manipulation on offers", async () => {
+    const offerCompanyA = await db.jobOffer.create({
+      data: {
+        title: "Offer company A tags",
+        companyId: companyAId,
+        status: "TODO",
+      },
+    })
+
+    const ctxB = createContext(companyBId)
+    const callerB = appRouter.createCaller(ctxB)
+
+    await expect(
+      callerB.offer.addTag({
+        offerId: offerCompanyA.id,
+        tagName: "Should fail",
+      }),
+    ).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    })
+
+    await expect(
+      callerB.offer.removeTag({
+        offerId: offerCompanyA.id,
+        tagId: tagCompanyAId,
+      }),
+    ).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    })
+
+    await db.jobOffer.delete({ where: { id: offerCompanyA.id } })
   })
 })

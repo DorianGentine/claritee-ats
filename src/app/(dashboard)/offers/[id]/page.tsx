@@ -1,10 +1,14 @@
-export default function OfferPage() {
-  return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-4 p-8 text-center">
-      <h1 className="text-xl font-semibold">Page bientôt disponible</h1>
-      <p className="text-muted-foreground">
-        La fiche offre sera implémentée dans une prochaine version.
-      </p>
-    </div>
-  )
+import type { Metadata } from "next"
+import { OfferDetailView } from "@/components/offers/OfferDetailView"
+
+export const metadata: Metadata = {
+  title: "Détail de l'offre | Claritee ATS",
+  description: "Détail de l'offre d'emploi",
+}
+
+type Props = { params: Promise<{ id: string }> }
+
+export default async function OfferDetailPage({ params }: Props) {
+  const { id } = await params
+  return <OfferDetailView offerId={id} />
 }

@@ -149,6 +149,8 @@ export default function OffersPage() {
                       salaryMax: offer.salaryMax,
                       status: offer.status,
                       clientCompanyName: offer.clientCompanyName,
+                      tags: offer.tags ?? [],
+                      tagCount: offer.tagCount ?? 0,
                     }}
                   />
                 </li>

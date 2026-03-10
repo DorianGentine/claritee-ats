@@ -1,3 +1,5 @@
+import type React from "react"
+
 /**
  * Palette de couleurs pour les tags (design-system §2).
  * Assignation : colorIndex = hash(tagName) % 8.
@@ -26,3 +28,16 @@ export const getTagColor = (tagName: string): string => {
   const index = hashString(tagName.trim()) % TAG_PALETTE.length
   return TAG_PALETTE[index]
 }
+
+export const getTagBadgeStyle = (
+  color: string,
+): React.CSSProperties | undefined =>
+  color
+    ? {
+        backgroundColor: `${color}20`,
+        borderColor: color,
+        color,
+        borderWidth: 1,
+        borderStyle: "solid",
+      }
+    : undefined

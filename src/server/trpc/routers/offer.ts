@@ -7,6 +7,12 @@ import {
   updateJobOfferSchema,
   jobOfferStatusSchema,
 } from "@/lib/validations/offer"
+import {
+  addOfferTagSchema,
+  removeOfferTagSchema,
+  MAX_TAGS_PER_OFFER,
+} from "@/lib/validations/tag"
+import { getTagColor } from "@/lib/tag-colors"
 
 type JobOfferStatus = z.infer<typeof jobOfferStatusSchema>
 
@@ -49,6 +55,15 @@ export const offerRouter = router({
             clientCompany: {
               select: { name: true },
             },
+            tags: {
+              take: 4,
+              include: {
+                tag: {
+                  select: { id: true, name: true, color: true },
+                },
+              },
+            },
+            _count: { select: { tags: true } },
           },
         }),
         ctx.db.jobOffer.count({
@@ -65,6 +80,8 @@ export const offerRouter = router({
           status: o.status,
           createdAt: o.createdAt,
           clientCompanyName: o.clientCompany?.name ?? null,
+          tags: o.tags.map((ot) => ot.tag),
+          tagCount: o._count.tags,
         })),
         totalCount,
         page,
@@ -83,12 +100,20 @@ export const offerRouter = router({
         include: {
           clientCompany: true,
           clientContact: true,
+          tags: {
+            include: {
+              tag: true,
+            },
+          },
         },
       })
       if (!offer) {
         throw new TRPCError({ code: "NOT_FOUND" })
       }
-      return offer
+      return {
+        ...offer,
+        tags: offer.tags.map((ot) => ot.tag),
+      }
     }),
 
   /**
@@ -307,6 +332,107 @@ export const offerRouter = router({
       await ctx.db.jobOffer.delete({
         where: { id: input.id },
       })
+      return { success: true }
+    }),
+
+  /**
+   * Ajoute un tag à une offre.
+   * Si le tag n'existe pas pour le cabinet, le crée avec une couleur issue de la palette.
+   * Max 20 tags par offre.
+   */
+  addTag: protectedProcedure
+    .input(addOfferTagSchema)
+    .mutation(async ({ ctx, input }) => {
+      const offer = await ctx.db.jobOffer.findFirst({
+        where: { id: input.offerId, companyId: ctx.companyId },
+        include: { tags: true },
+      })
+      if (!offer) {
+        throw new TRPCError({ code: "NOT_FOUND" })
+      }
+      if (offer.tags.length >= MAX_TAGS_PER_OFFER) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            "Maximum 20 tags par élément. Supprimez un tag existant pour en ajouter un nouveau.",
+        })
+      }
+
+      const tagName = input.tagName
+
+      let tag = await ctx.db.tag.findUnique({
+        where: {
+          name_companyId: { name: tagName, companyId: ctx.companyId },
+        },
+      })
+
+      if (!tag) {
+        tag = await ctx.db.tag.create({
+          data: {
+            name: tagName,
+            color: getTagColor(tagName),
+            companyId: ctx.companyId,
+          },
+        })
+      }
+
+      const existingLink = await ctx.db.offerTag.findUnique({
+        where: {
+          offerId_tagId: {
+            offerId: input.offerId,
+            tagId: tag.id,
+          },
+        },
+      })
+
+      if (existingLink) {
+        return { tag }
+      }
+
+      await ctx.db.offerTag.create({
+        data: { offerId: input.offerId, tagId: tag.id },
+      })
+
+      return { tag }
+    }),
+
+  /**
+   * Supprime un tag d'une offre.
+   * Vérifie que l'offre appartient au cabinet et que le tag lui est associé.
+   */
+  removeTag: protectedProcedure
+    .input(removeOfferTagSchema)
+    .mutation(async ({ ctx, input }) => {
+      const offer = await ctx.db.jobOffer.findFirst({
+        where: { id: input.offerId, companyId: ctx.companyId },
+      })
+      if (!offer) {
+        throw new TRPCError({ code: "NOT_FOUND" })
+      }
+
+      const existing = await ctx.db.offerTag.findUnique({
+        where: {
+          offerId_tagId: {
+            offerId: input.offerId,
+            tagId: input.tagId,
+          },
+        },
+        include: { tag: true },
+      })
+
+      if (!existing || existing.tag.companyId !== ctx.companyId) {
+        throw new TRPCError({ code: "NOT_FOUND" })
+      }
+
+      await ctx.db.offerTag.delete({
+        where: {
+          offerId_tagId: {
+            offerId: input.offerId,
+            tagId: input.tagId,
+          },
+        },
+      })
+
       return { success: true }
     }),
 })
