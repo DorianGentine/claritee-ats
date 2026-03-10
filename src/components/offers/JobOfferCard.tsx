@@ -4,7 +4,9 @@ import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { getOfferStatusStyle } from "@/lib/offer-status-style"
+import { getTagBadgeStyle } from "@/lib/tag-colors"
 import type { JobOfferStatus } from "@prisma/client"
+import type { TagItem } from "@/components/shared/TagsSection"
 
 export type JobOfferCardItem = {
   id: string
@@ -14,6 +16,8 @@ export type JobOfferCardItem = {
   salaryMax: number | null
   status: JobOfferStatus
   clientCompanyName: string | null
+  tags?: TagItem[]
+  tagCount?: number
 }
 
 const formatSalaryRange = (
@@ -33,6 +37,10 @@ export const JobOfferCard = ({ offer }: { offer: JobOfferCardItem }) => {
   const { label, badgeClassName } = getOfferStatusStyle(offer.status)
   const salaryText = formatSalaryRange(offer.salaryMin, offer.salaryMax)
   const clientName = offer.clientCompanyName ?? "Client non défini"
+  const tags = offer.tags ?? []
+  const visibleTags = tags.slice(0, 3)
+  const totalCount = offer.tagCount ?? tags.length
+  const remainingCount = totalCount > 3 ? totalCount - 3 : 0
 
   return (
     <Link
@@ -55,6 +63,28 @@ export const JobOfferCard = ({ offer }: { offer: JobOfferCardItem }) => {
           <p className="text-sm text-muted-foreground">{offer.location}</p>
         ) : null}
         <p className="text-sm text-muted-foreground">{salaryText}</p>
+        {visibleTags.length > 0 && (
+          <div className="mt-1 flex flex-wrap gap-1.5">
+            {visibleTags.map((tag) => (
+              <Badge
+                key={tag.id}
+                variant="secondary"
+                className="h-5 gap-1 px-1.5 text-[10px]"
+                style={getTagBadgeStyle(tag.color)}
+              >
+                {tag.name}
+              </Badge>
+            ))}
+            {remainingCount > 0 && (
+              <Badge
+                variant="outline"
+                className="h-5 px-1.5 text-[10px] text-muted-foreground"
+              >
+                +{remainingCount}
+              </Badge>
+            )}
+          </div>
+        )}
       </div>
     </Link>
   )

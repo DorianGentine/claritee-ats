@@ -25,7 +25,7 @@ describe("offer-status-style", () => {
   it("returns badge classes that include bg- for each status", () => {
     expect(getOfferStatusBadgeClass("TODO")).toMatch(/bg-muted/)
     expect(getOfferStatusBadgeClass("IN_PROGRESS")).toMatch(/bg-secondary/)
-    expect(getOfferStatusBadgeClass("DONE")).toMatch(/bg-\[#E8F5EC\]/)
+    expect(getOfferStatusBadgeClass("DONE")).toMatch(/bg-success/)
   })
 
   it("getOfferStatusStyle returns label and badgeClassName", () => {

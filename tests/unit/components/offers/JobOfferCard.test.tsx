@@ -5,7 +5,7 @@ import { describe, it, expect } from "vitest"
 import { render, within } from "@testing-library/react"
 import { JobOfferCard, type JobOfferCardItem } from "@/components/offers/JobOfferCard"
 
-const mockOffer = {
+const mockOffer: JobOfferCardItem = {
   id: "offer-1",
   title: "Développeur Full Stack",
   location: "Paris",
@@ -61,5 +61,26 @@ describe("JobOfferCard", () => {
     )
     const card = within(container)
     expect(card.getByText("Salaire non précisé")).toBeDefined()
+  })
+
+  it("renders up to 3 tags and +N badge using tagCount", () => {
+    const offerWithTags: JobOfferCardItem = {
+      ...mockOffer,
+      tags: [
+        { id: "t1", name: "CDI", color: "#ff0000" },
+        { id: "t2", name: "Remote", color: "#00ff00" },
+        { id: "t3", name: "Senior", color: "#0000ff" },
+        { id: "t4", name: "Tech Lead", color: "#aaaaaa" },
+      ],
+      tagCount: 7,
+    }
+
+    const { container } = render(<JobOfferCard offer={offerWithTags} />)
+    const card = within(container)
+
+    expect(card.getByText("CDI")).toBeDefined()
+    expect(card.getByText("Remote")).toBeDefined()
+    expect(card.getByText("Senior")).toBeDefined()
+    expect(card.getByText("+4")).toBeDefined()
   })
 })
