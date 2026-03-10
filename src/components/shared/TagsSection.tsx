@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useId, useRef, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -39,6 +39,8 @@ export const TagsSection = ({
   const [showForm, setShowForm] = useState(false)
   const [pendingTags, setPendingTags] = useState<TagItem[]>([])
   const [removingIds, setRemovingIds] = useState<Set<string>>(new Set())
+  const pendingIdCounter = useRef(0)
+  const stableId = useId()
 
   const tagListQuery = api.tag.list.useQuery()
   const existingTags = tagListQuery.data ?? []
@@ -77,7 +79,7 @@ export const TagsSection = ({
 
   const handleAdd = async (tagName: string) => {
     const optimisticTag: TagItem = {
-      id: `pending-${Date.now()}`,
+      id: `pending-${stableId}-${++pendingIdCounter.current}`,
       name: tagName,
       color: getTagColor(tagName),
     }
