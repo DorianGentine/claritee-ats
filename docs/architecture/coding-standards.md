@@ -131,6 +131,7 @@ export const createExampleSchema = z.object({
 - **Styles** : **Tailwind CSS** + variables CSS du design-system (`docs/design-system.md`). Pas de CSS inline arbitraire pour les couleurs ; utiliser les tokens (e.g. `bg-primary`, `text-muted-foreground`).
 - **Variables CSS dans Tailwind** : utiliser la syntaxe courte pour les variables CSS. Par ex. `w-(--radix-popover-trigger-width)` plutôt que `w-[var(--radix-popover-trigger-width)]`. S’applique à toute propriété utilisant `var(--...)`.
 - **État serveur** : **TanStack Query** (v5) pour cache et mutations. Stale time et invalidation cohérentes avec l'usage (listes vs détail).
+- **Mutations optimistes** : toute mutation qui applique un `onMutate` modifiant le cache **doit** déclarer `networkMode: "always"`. Sans cela, TanStack Query met la mutation en file d'attente quand `navigator.onLine === false` (ex. mode Offline DevTools) au lieu de l'exécuter, et `onError` n'est jamais déclenché — l'UI optimiste ne se reverte jamais. Voir §3.1.1 de `docs/frontend-architecture.md` pour le détail et le template.
 - **Formulaires** : **React Hook Form** + Zod pour la validation partagée.
 
 ### Notifications / toasts
@@ -189,4 +190,4 @@ export const createExampleSchema = z.object({
 
 ---
 
-*Dernière mise à jour : 2026-02-23. Aligné avec `docs/architecture.md`, `docs/design-system.md` et `docs/frontend-architecture.md`.*
+*Dernière mise à jour : 2026-03-11. Ajout §4 : règle `networkMode: "always"` pour les mutations optimistes. Aligné avec `docs/architecture.md`, `docs/design-system.md` et `docs/frontend-architecture.md`.*

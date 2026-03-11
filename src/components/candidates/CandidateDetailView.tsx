@@ -104,7 +104,7 @@ export const CandidateDetailView = ({ candidateId }: Props) => {
           />
         </div>
 
-        <CandidateCandidaturesSection candidatures={candidate.candidatures} />
+        <CandidateCandidaturesSection candidateId={candidateId} candidatures={candidate.candidatures} />
         <CandidateNotesSection candidateId={candidateId} />
       </div>
 
