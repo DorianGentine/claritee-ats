@@ -60,7 +60,39 @@ Référence structure : `docs/architecture/source-tree.md` et `docs/architecture
 - **Stale time** : adapter par type (ex. listes 30–60 s, détail candidat 1–2 min) ; invalidation après mutations (create/update/delete).
 - Les mutations utilisent les hooks tRPC (`useMutation`) et invalident les queries concernées (ex. `utils.candidate.list.invalidate()`).
 
-#### 3.1.1 Configuration du QueryClient (staleTime)
+#### 3.1.1 Mutations optimistes — `networkMode: "always"`
+
+Toute mutation qui applique une **mise à jour optimiste** (pattern `onMutate` / `onError` / `onSettled`) **doit** déclarer `networkMode: "always"`.
+
+**Pourquoi ?**
+TanStack Query v5 utilise par défaut `networkMode: "online"` : quand `navigator.onLine === false` (ce que le mode « Offline » de Chrome DevTools active), la mutation est **mise en file d'attente** au lieu d'être exécutée. `onMutate` s'exécute néanmoins (l'UI optimiste est appliquée), mais `onError` ne s'exécute jamais — la mise à jour optimiste reste visible indéfiniment sans jamais être annulée ni sauvegardée, silencieusement. Le résultat est trompeur : l'utilisateur croit que son action est sauvegardée alors qu'elle ne l'est pas.
+
+Avec `networkMode: "always"`, la mutation tente immédiatement le fetch réseau quel que soit l'état de `navigator.onLine`. Quand l'appareil est hors ligne, le `fetch` échoue en quelques millisecondes, `onError` est appelé → l'UI est revertée au snapshot → un toast d'erreur est affiché. L'utilisateur reçoit un feedback honnête et peut réessayer.
+
+**Quand ne pas l'utiliser :** si une mutation n'a pas d'optimistic update (pas de `onMutate` qui modifie le cache), le comportement par défaut `"online"` est acceptable — la mutation sera simplement différée jusqu'au retour de la connexion.
+
+**Template :**
+
+```ts
+api.someResource.update.useMutation({
+  networkMode: "always", // obligatoire si onMutate modifie le cache
+  onMutate: async (input) => {
+    await utils.someResource.getById.cancel(...)
+    const snapshot = utils.someResource.getById.getData(...)
+    utils.someResource.getById.setData(..., (old) => /* update */)
+    return { snapshot }
+  },
+  onError: (_err, _input, context) => {
+    if (context?.snapshot) utils.someResource.getById.setData(..., context.snapshot)
+    toast.error("Une erreur est survenue.")
+  },
+  onSettled: () => { void utils.someResource.getById.invalidate(...) },
+})
+```
+
+Pour partager ce pattern entre plusieurs composants, extraire un hook générique (ex. `useCandidatureUpdateStatus<T>` dans `src/hooks/`).
+
+#### 3.1.2 Configuration du QueryClient (staleTime)
 
 Le QueryClient est configuré dans `src/components/providers.tsx` avec un **staleTime par défaut** (actuellement 5 min) :
 
@@ -246,4 +278,4 @@ Référence visuelle et tokens : `docs/design-system.md`.
 
 ---
 
-*Dernière mise à jour : 2026-02-21. TanStack Query : staleTime 5 minutes, convention isLoading vs isFetching (§3.1.1, §5). Aligné avec `docs/architecture.md`.*
+*Dernière mise à jour : 2026-03-11. Ajout §3.1.1 : convention `networkMode: "always"` pour les mutations optimistes. TanStack Query : staleTime 5 minutes, convention isLoading vs isFetching (§3.1.2, §5). Aligné avec `docs/architecture.md`.*

@@ -7,12 +7,12 @@
 import type { CandidatureStatus } from "@prisma/client"
 
 export const CANDIDATURE_STATUS_LABELS: Record<CandidatureStatus, string> = {
-  CONTACTED_LINKEDIN: "Contacté LinkedIn",
-  PHONE_CONTACT: "Entretien téléphonique",
-  APPLIED: "Candidature envoyée",
+  CONTACTED_LINKEDIN: "Contacté sur LinkedIn",
+  PHONE_CONTACT: "Contact téléphonique",
+  APPLIED: "Postulé",
   ACCEPTED: "Accepté",
   REJECTED_BY_EMPLOYER: "Refusé par l'employeur",
-  REJECTED_BY_CANDIDATE: "Refusé par le candidat",
+  REJECTED_BY_CANDIDATE: "Rejeté par le candidat",
 }
 
 /** Classes Tailwind pour le badge (design tokens quand possible). */
