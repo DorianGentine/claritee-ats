@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server"
 import { z } from "zod"
+import type { CandidatureStatus } from "@prisma/client"
 import { router, protectedProcedure } from "../trpc"
 import {
   offerListInputSchema,
@@ -91,6 +92,7 @@ export const offerRouter = router({
 
   /**
    * Récupère une offre par id pour le cabinet courant.
+   * Inclut clientCompany, clientContact, tags, candidatures avec candidate, et les comptes par statut.
    */
   getById: protectedProcedure
     .input(z.object({ id: z.uuid() }))
@@ -98,11 +100,37 @@ export const offerRouter = router({
       const offer = await ctx.db.jobOffer.findFirst({
         where: { id: input.id, companyId: ctx.companyId },
         include: {
-          clientCompany: true,
-          clientContact: true,
+          clientCompany: {
+            select: { id: true, name: true },
+          },
+          clientContact: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              phone: true,
+              position: true,
+            },
+          },
           tags: {
             include: {
-              tag: true,
+              tag: {
+                select: { id: true, name: true, color: true },
+              },
+            },
+          },
+          candidatures: {
+            include: {
+              candidate: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  title: true,
+                  photoUrl: true,
+                },
+              },
             },
           },
         },
@@ -110,9 +138,23 @@ export const offerRouter = router({
       if (!offer) {
         throw new TRPCError({ code: "NOT_FOUND" })
       }
+
+      const candidatureCountByStatus = offer.candidatures.reduce<
+        Partial<Record<CandidatureStatus, number>>
+      >((acc, c) => {
+        acc[c.status] = (acc[c.status] ?? 0) + 1
+        return acc
+      }, {})
+
       return {
         ...offer,
         tags: offer.tags.map((ot) => ot.tag),
+        candidatures: offer.candidatures.map((c) => ({
+          id: c.id,
+          status: c.status,
+          candidate: c.candidate,
+        })),
+        candidatureCountByStatus,
       }
     }),
 
