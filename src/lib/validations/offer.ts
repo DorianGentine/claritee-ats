@@ -127,3 +127,11 @@ export const updateJobOfferSchema = jobOfferBaseFieldsSchema
 
 export type CreateJobOfferInput = z.infer<typeof createJobOfferSchema>
 export type UpdateJobOfferInput = z.infer<typeof updateJobOfferSchema>
+
+/** Schéma pour associer des candidats à une offre */
+export const addCandidatesSchema = z.object({
+  offerId: z.uuid(),
+  candidateIds: z.array(z.uuid()).min(1),
+})
+
+export type AddCandidatesInput = z.infer<typeof addCandidatesSchema>

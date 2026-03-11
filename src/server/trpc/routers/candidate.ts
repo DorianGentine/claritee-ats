@@ -230,6 +230,14 @@ export const candidateRouter = router({
           formations: { orderBy: [{ endDate: "desc" }, { startDate: "desc" }] },
           languages: true,
           tags: { include: { tag: true } },
+          candidatures: {
+            orderBy: { createdAt: "desc" },
+            include: {
+              jobOffer: {
+                select: { id: true, title: true },
+              },
+            },
+          },
         },
       });
       if (!candidate) {

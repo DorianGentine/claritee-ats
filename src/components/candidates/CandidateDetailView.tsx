@@ -11,6 +11,7 @@ import { CandidateDetailHeader } from "./CandidateDetailHeader";
 import { CandidateDetailSidebar } from "./CandidateDetailSidebar";
 import { CandidateDetailContent } from "./CandidateDetailContent";
 import { CandidateNotesSection } from "./CandidateNotesSection";
+import { CandidateCandidaturesSection } from "./CandidateCandidaturesSection";
 
 type Props = { candidateId: string };
 
@@ -103,6 +104,7 @@ export const CandidateDetailView = ({ candidateId }: Props) => {
           />
         </div>
 
+        <CandidateCandidaturesSection candidatures={candidate.candidatures} />
         <CandidateNotesSection candidateId={candidateId} />
       </div>
 

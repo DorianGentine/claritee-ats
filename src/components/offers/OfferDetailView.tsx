@@ -246,6 +246,7 @@ export const OfferDetailView = ({ offerId }: Props) => {
 
         {/* Section Candidats */}
         <OfferCandidatesSection
+          offerId={offerId}
           candidatures={offer.candidatures}
           candidatureCountByStatus={offer.candidatureCountByStatus}
         />

@@ -1,6 +1,8 @@
 "use client"
 
+import { useState } from "react"
 import Link from "next/link"
+import { api } from "@/lib/trpc/client"
 import type { CandidatureStatus } from "@prisma/client"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -10,6 +12,8 @@ import {
   CANDIDATURE_STATUS_LABELS,
   CANDIDATURE_STATUS_ORDER,
 } from "@/lib/candidature-status-style"
+import { getInitials } from "@/lib/candidate-utils"
+import { CandidateSelectDialog } from "./CandidateSelectDialog"
 
 export type CandidatureItem = {
   id: string
@@ -24,23 +28,28 @@ export type CandidatureItem = {
 }
 
 export type OfferCandidatesSectionProps = {
+  offerId: string
   candidatures: CandidatureItem[]
   candidatureCountByStatus: Partial<Record<CandidatureStatus, number>>
 }
 
-const getInitials = (firstName: string, lastName: string): string => {
-  const f = firstName.trim().charAt(0).toUpperCase()
-  const l = lastName.trim().charAt(0).toUpperCase()
-  return `${f}${l}`
-}
-
 export const OfferCandidatesSection = ({
+  offerId,
   candidatures,
   candidatureCountByStatus,
 }: OfferCandidatesSectionProps) => {
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const utils = api.useUtils()
+
   const statusesWithCount = CANDIDATURE_STATUS_ORDER.filter(
     (s) => (candidatureCountByStatus[s] ?? 0) > 0,
   )
+
+  const existingCandidateIds = candidatures.map((c) => c.candidate.id)
+
+  const handleSuccess = () => {
+    void utils.offer.getById.invalidate({ id: offerId })
+  }
 
   return (
     <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
@@ -50,8 +59,7 @@ export const OfferCandidatesSection = ({
           type="button"
           variant="outline"
           size="sm"
-          disabled
-          title="Disponible dans la Story 3.7"
+          onClick={() => setDialogOpen(true)}
         >
           Associer un candidat
         </Button>
@@ -61,7 +69,7 @@ export const OfferCandidatesSection = ({
         <div className="py-6 text-center">
           <p className="font-medium text-muted-foreground">Aucun candidat associé</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            Vous pourrez associer des candidats à cette offre depuis le bouton dédié.
+            Cliquez sur "Associer un candidat" pour commencer.
           </p>
         </div>
       ) : (
@@ -115,6 +123,14 @@ export const OfferCandidatesSection = ({
           </ul>
         </>
       )}
+
+      <CandidateSelectDialog
+        offerId={offerId}
+        existingCandidateIds={existingCandidateIds}
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        onSuccess={handleSuccess}
+      />
     </section>
   )
 }

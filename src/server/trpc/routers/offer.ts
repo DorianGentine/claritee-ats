@@ -7,6 +7,7 @@ import {
   createJobOfferSchema,
   updateJobOfferSchema,
   jobOfferStatusSchema,
+  addCandidatesSchema,
 } from "@/lib/validations/offer"
 import {
   addOfferTagSchema,
@@ -476,5 +477,53 @@ export const offerRouter = router({
       })
 
       return { success: true }
+    }),
+
+  /**
+   * Associe un ou plusieurs candidats à une offre (bulk).
+   * Vérifie que l'offre et les candidats appartiennent au companyId courant.
+   * Statut initial : CONTACTED_LINKEDIN. Ignore les doublons (skipDuplicates).
+   * Retourne CONFLICT si tous les candidats sont déjà associés.
+   */
+  addCandidates: protectedProcedure
+    .input(addCandidatesSchema)
+    .mutation(async ({ ctx, input }) => {
+      const offer = await ctx.db.jobOffer.findFirst({
+        where: { id: input.offerId, companyId: ctx.companyId },
+      })
+      if (!offer) {
+        throw new TRPCError({ code: "NOT_FOUND" })
+      }
+
+      const uniqueCandidateIds = [...new Set(input.candidateIds)]
+
+      const validCandidates = await ctx.db.candidate.findMany({
+        where: { id: { in: uniqueCandidateIds }, companyId: ctx.companyId },
+        select: { id: true },
+      })
+      if (validCandidates.length !== uniqueCandidateIds.length) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Certains candidats sont invalides.",
+        })
+      }
+
+      const result = await ctx.db.candidature.createMany({
+        data: uniqueCandidateIds.map((candidateId) => ({
+          candidateId,
+          offerId: input.offerId,
+          status: "CONTACTED_LINKEDIN" as const,
+        })),
+        skipDuplicates: true,
+      })
+
+      if (result.count === 0) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "Tous les candidats sélectionnés sont déjà associés à cette offre.",
+        })
+      }
+
+      return { count: result.count }
     }),
 })
