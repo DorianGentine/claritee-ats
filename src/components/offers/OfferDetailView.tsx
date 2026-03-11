@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button"
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
 import { OfferTagsSection } from "@/components/offers/OfferTagsSection"
 import { OfferCandidatesSection } from "@/components/offers/OfferCandidatesSection"
+import { OfferNotesSection } from "@/components/offers/OfferNotesSection"
 
 type Props = { offerId: string }
 
@@ -250,6 +251,11 @@ export const OfferDetailView = ({ offerId }: Props) => {
           candidatures={offer.candidatures}
           candidatureCountByStatus={offer.candidatureCountByStatus}
         />
+
+        {/* Section Notes */}
+        <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
+          <OfferNotesSection offerId={offerId} />
+        </section>
       </div>
 
       <ConfirmDialog
