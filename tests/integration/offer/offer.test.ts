@@ -491,4 +491,145 @@ describe.runIf(!!connectionString)("offer router", () => {
 
     await db.jobOffer.delete({ where: { id: offerCompanyA.id } })
   })
+
+  it("getById returns offer with all relations for the caller company", async () => {
+    const clientCompany = await db.clientCompany.create({
+      data: {
+        name: "Client GetById Test",
+        companyId: companyAId,
+      },
+    })
+    const contact = await db.clientContact.create({
+      data: {
+        clientCompanyId: clientCompany.id,
+        firstName: "Marie",
+        lastName: "Dupont",
+        email: "marie@example.com",
+        phone: "0600000001",
+        position: "DRH",
+      },
+    })
+    const candidate = await db.candidate.create({
+      data: {
+        firstName: "Alice",
+        lastName: "Martin",
+        title: "Développeuse",
+        companyId: companyAId,
+      },
+    })
+    const offer = await db.jobOffer.create({
+      data: {
+        title: "Offer GetById Full",
+        companyId: companyAId,
+        status: "IN_PROGRESS",
+        clientCompanyId: clientCompany.id,
+        clientContactId: contact.id,
+      },
+    })
+    const tag = await db.tag.create({
+      data: {
+        name: "GetById Tag",
+        color: "#aabbcc",
+        companyId: companyAId,
+      },
+    })
+    await db.offerTag.create({
+      data: { offerId: offer.id, tagId: tag.id },
+    })
+    const candidature = await db.candidature.create({
+      data: {
+        candidateId: candidate.id,
+        offerId: offer.id,
+        status: "APPLIED",
+      },
+    })
+
+    try {
+      const ctx = createContext(companyAId)
+      const caller = appRouter.createCaller(ctx)
+
+      const result = await caller.offer.getById({ id: offer.id })
+
+      expect(result.title).toBe("Offer GetById Full")
+      expect(result.clientCompany?.name).toBe("Client GetById Test")
+      expect(result.clientContact?.firstName).toBe("Marie")
+      expect(result.tags).toHaveLength(1)
+      expect(result.tags[0].name).toBe("GetById Tag")
+      expect(result.candidatures).toHaveLength(1)
+      expect(result.candidatures[0].candidate.firstName).toBe("Alice")
+      expect(result.candidatureCountByStatus["APPLIED"]).toBe(1)
+    } finally {
+      await db.candidature.delete({ where: { id: candidature.id } })
+      await db.offerTag.delete({ where: { offerId_tagId: { offerId: offer.id, tagId: tag.id } } })
+      await db.tag.delete({ where: { id: tag.id } })
+      await db.jobOffer.delete({ where: { id: offer.id } })
+      await db.clientContact.delete({ where: { id: contact.id } })
+      await db.clientCompany.delete({ where: { id: clientCompany.id } })
+      await db.candidate.delete({ where: { id: candidate.id } })
+    }
+  })
+
+  it("getById throws NOT_FOUND for offer belonging to another company", async () => {
+    const ctxB = createContext(companyBId)
+    const callerB = appRouter.createCaller(ctxB)
+
+    await expect(callerB.offer.getById({ id: offerA1Id })).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    })
+  })
+
+  it("getById candidatureCountByStatus sums correctly", async () => {
+    const candidate1 = await db.candidate.create({
+      data: {
+        firstName: "Bob",
+        lastName: "Count",
+        companyId: companyAId,
+      },
+    })
+    const candidate2 = await db.candidate.create({
+      data: {
+        firstName: "Clara",
+        lastName: "Count",
+        companyId: companyAId,
+      },
+    })
+    const candidate3 = await db.candidate.create({
+      data: {
+        firstName: "David",
+        lastName: "Count",
+        companyId: companyAId,
+      },
+    })
+    const offer = await db.jobOffer.create({
+      data: {
+        title: "Offer Status Count",
+        companyId: companyAId,
+        status: "TODO",
+      },
+    })
+    const c1 = await db.candidature.create({
+      data: { candidateId: candidate1.id, offerId: offer.id, status: "APPLIED" },
+    })
+    const c2 = await db.candidature.create({
+      data: { candidateId: candidate2.id, offerId: offer.id, status: "APPLIED" },
+    })
+    const c3 = await db.candidature.create({
+      data: { candidateId: candidate3.id, offerId: offer.id, status: "ACCEPTED" },
+    })
+
+    try {
+      const ctx = createContext(companyAId)
+      const caller = appRouter.createCaller(ctx)
+
+      const result = await caller.offer.getById({ id: offer.id })
+
+      expect(result.candidatureCountByStatus["APPLIED"]).toBe(2)
+      expect(result.candidatureCountByStatus["ACCEPTED"]).toBe(1)
+      expect(result.candidatureCountByStatus["CONTACTED_LINKEDIN"]).toBeUndefined()
+    } finally {
+      await db.candidature.deleteMany({ where: { id: { in: [c1.id, c2.id, c3.id] } } })
+      await db.jobOffer.delete({ where: { id: offer.id } })
+      await db.candidate.deleteMany({ where: { id: { in: [candidate1.id, candidate2.id, candidate3.id] } } })
+    }
+  })
 })
