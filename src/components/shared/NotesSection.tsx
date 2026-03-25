@@ -80,7 +80,7 @@ export const NotesSection = ({
   const editingNote = editNoteId ? notes.find((n) => n.id === editNoteId) : null
 
   return (
-    <section className="mt-6 flex w-full flex-col gap-4">
+    <section className="flex w-full flex-col gap-4">
       <h2 className="text-lg font-semibold">Notes</h2>
 
       {/* Bulles (style chat) */}
