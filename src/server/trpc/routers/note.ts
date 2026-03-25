@@ -25,6 +25,21 @@ export const noteRouter = router({
       return notes
     }),
 
+  listByOffer: protectedProcedure
+    .input(z.object({ offerId: z.uuid() }))
+    .query(async ({ ctx, input }) => {
+      const offer = await ctx.db.jobOffer.findFirst({
+        where: { id: input.offerId, companyId: ctx.companyId },
+      })
+      if (!offer) throw new TRPCError({ code: "NOT_FOUND" })
+      return ctx.db.note.findMany({
+        where: { offerId: input.offerId, companyId: ctx.companyId },
+        orderBy: { createdAt: "asc" },
+        take: NOTE_LIST_LIMIT,
+        include: noteAuthorInclude,
+      })
+    }),
+
   create: protectedProcedure
     .input(createNoteSchema)
     .mutation(async ({ ctx, input }) => {

@@ -6,9 +6,9 @@ import { createClient } from "@/lib/supabase/client"
 import { api } from "@/lib/trpc/client"
 import { NotesSection } from "@/components/shared/NotesSection"
 
-type Props = { candidateId: string }
+type Props = { offerId: string }
 
-export const CandidateNotesSection = ({ candidateId }: Props) => {
+export const OfferNotesSection = ({ offerId }: Props) => {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const utils = api.useUtils()
 
@@ -19,26 +19,26 @@ export const CandidateNotesSection = ({ candidateId }: Props) => {
     })
   }, [])
 
-  const notesQuery = api.note.list.useQuery({ candidateId })
+  const notesQuery = api.note.listByOffer.useQuery({ offerId })
 
   const createMutation = api.note.create.useMutation({
     onSuccess: () => {
       toast.success("Note ajoutée.")
-      void utils.note.list.invalidate({ candidateId })
+      void utils.note.listByOffer.invalidate({ offerId })
     },
     onError: () => toast.error("Impossible d'ajouter la note."),
   })
   const updateMutation = api.note.update.useMutation({
     onSuccess: () => {
       toast.success("Note mise à jour.")
-      void utils.note.list.invalidate({ candidateId })
+      void utils.note.listByOffer.invalidate({ offerId })
     },
     onError: () => toast.error("Impossible de modifier la note."),
   })
   const deleteMutation = api.note.delete.useMutation({
     onSuccess: () => {
       toast.success("Note supprimée.")
-      void utils.note.list.invalidate({ candidateId })
+      void utils.note.listByOffer.invalidate({ offerId })
     },
     onError: () => toast.error("Impossible de supprimer la note."),
   })
@@ -49,7 +49,7 @@ export const CandidateNotesSection = ({ candidateId }: Props) => {
       isLoading={notesQuery.isLoading}
       currentUserId={currentUserId}
       onCreateNote={(content, onSuccess) =>
-        createMutation.mutate({ candidateId, content }, { onSuccess })
+        createMutation.mutate({ offerId, content }, { onSuccess })
       }
       onUpdateNote={(id, content, onSuccess) =>
         updateMutation.mutate({ id, content }, { onSuccess })

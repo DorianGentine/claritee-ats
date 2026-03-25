@@ -317,6 +317,67 @@ describe.runIf(!!connectionString)("note", () => {
     await db.note.delete({ where: { id: created.id } });
   });
 
+  it("listByOffer: returns notes for offer scoped by companyId, ordered createdAt asc", async () => {
+    const ctx = createContext(companyAId, userAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const n1 = await caller.note.create({ offerId: offerA1Id, content: blockNoteContent });
+    const n2Content = JSON.stringify([{ id: "b2", type: "paragraph", content: [{ type: "text", text: "Note 2", styles: {} }], children: [] }]);
+    const n2 = await caller.note.create({ offerId: offerA1Id, content: n2Content });
+
+    const list = await caller.note.listByOffer({ offerId: offerA1Id });
+    expect(list.length).toBeGreaterThanOrEqual(2);
+    // ordered asc: n1 before n2
+    const ids = list.map((n) => n.id);
+    expect(ids.indexOf(n1.id)).toBeLessThan(ids.indexOf(n2.id));
+    expect(list[0]).toMatchObject({ author: { firstName: "User", lastName: "A" } });
+
+    await db.note.deleteMany({ where: { id: { in: [n1.id, n2.id] } } });
+  });
+
+  it("listByOffer: throws NOT_FOUND when offer belongs to another company", async () => {
+    const ctxB = createContext(companyBId, userCId);
+    const callerB = appRouter.createCaller(ctxB);
+
+    await expect(
+      callerB.note.listByOffer({ offerId: offerA1Id })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+
+  it("listByOffer: throws UNAUTHORIZED when not authenticated", async () => {
+    const ctx = createContext(null);
+    const caller = appRouter.createCaller(ctx);
+
+    await expect(
+      caller.note.listByOffer({ offerId: offerA1Id })
+    ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+  });
+
+  it("create: creates note for offer with correct authorId, companyId, offerId", async () => {
+    const ctx = createContext(companyAId, userAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const created = await caller.note.create({ offerId: offerA1Id, content: blockNoteContent });
+
+    expect(created.id).toBeDefined();
+    expect(created.authorId).toBe(userAId);
+    expect(created.companyId).toBe(companyAId);
+    expect(created.offerId).toBe(offerA1Id);
+    expect(created.candidateId).toBeNull();
+    expect(created.author).toEqual({ firstName: "User", lastName: "A" });
+
+    await db.note.delete({ where: { id: created.id } });
+  });
+
+  it("create: throws NOT_FOUND when offer belongs to another company", async () => {
+    const ctxB = createContext(companyBId, userCId);
+    const callerB = appRouter.createCaller(ctxB);
+
+    await expect(
+      callerB.note.create({ offerId: offerA1Id, content: blockNoteContent })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+
   it("create: creates free note without candidateId or offerId (Story 3.11)", async () => {
     const ctx = createContext(companyAId, userAId);
     const caller = appRouter.createCaller(ctx);

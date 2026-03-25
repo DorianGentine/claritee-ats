@@ -22,6 +22,10 @@ vi.mock("@/components/offers/OfferCandidatesSection", () => ({
   ),
 }))
 
+vi.mock("@/components/offers/OfferNotesSection", () => ({
+  OfferNotesSection: () => <div data-testid="offer-notes-section" />,
+}))
+
 vi.mock("@/lib/trpc/client", () => ({
   api: {
     offer: {
