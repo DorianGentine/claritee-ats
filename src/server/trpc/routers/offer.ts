@@ -1,13 +1,13 @@
 import { TRPCError } from "@trpc/server"
 import { z } from "zod"
-import type { CandidatureStatus } from "@prisma/client"
+import type { CandidatureStatus, Prisma } from "@prisma/client"
 import { router, protectedProcedure } from "../trpc"
 import {
   offerListInputSchema,
   createJobOfferSchema,
   updateJobOfferSchema,
-  jobOfferStatusSchema,
   addCandidatesSchema,
+  type JobOfferStatus,
 } from "@/lib/validations/offer"
 import {
   addOfferTagSchema,
@@ -15,8 +15,6 @@ import {
   MAX_TAGS_PER_OFFER,
 } from "@/lib/validations/tag"
 import { getTagColor } from "@/lib/tag-colors"
-
-type JobOfferStatus = z.infer<typeof jobOfferStatusSchema>
 
 /** Résultat create/update avec clientContactId dérivé (pour typage explicite côté appelant). */
 export type OfferMutationResult = {
@@ -38,11 +36,52 @@ export const offerRouter = router({
   list: protectedProcedure
     .input(offerListInputSchema)
     .query(async ({ ctx, input }) => {
-      const { page, pageSize, sortBy, sortOrder } = input
+      const {
+        page,
+        pageSize,
+        sortBy,
+        sortOrder,
+        statuses,
+        tagIds,
+        salaryMin,
+        salaryMax,
+        location,
+        clientCompanyId,
+      } = input
       const skip = (page - 1) * pageSize
+
+      const where: Prisma.JobOfferWhereInput = {
+        companyId: ctx.companyId,
+      }
+
+      if (statuses && statuses.length > 0) {
+        where.status = { in: statuses }
+      }
+
+      if (tagIds && tagIds.length > 0) {
+        where.AND = tagIds.map((tagId) => ({
+          tags: { some: { tagId } },
+        }))
+      }
+
+      if (salaryMin !== undefined) {
+        where.salaryMax = { gte: salaryMin }
+      }
+      if (salaryMax !== undefined) {
+        where.salaryMin = { lte: salaryMax }
+      }
+
+      if (location) {
+        where.location = { contains: location, mode: "insensitive" }
+      }
+
+      if (clientCompanyId) {
+        where.clientCompanyId = clientCompanyId
+      }
+
       const [items, totalCount] = await Promise.all([
         ctx.db.jobOffer.findMany({
-          where: { companyId: ctx.companyId },
+          where,
           orderBy: { [sortBy]: sortOrder },
           skip,
           take: pageSize,
@@ -68,9 +107,7 @@ export const offerRouter = router({
             _count: { select: { tags: true } },
           },
         }),
-        ctx.db.jobOffer.count({
-          where: { companyId: ctx.companyId },
-        }),
+        ctx.db.jobOffer.count({ where }),
       ])
       return {
         items: items.map((o) => ({
