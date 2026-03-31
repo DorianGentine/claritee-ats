@@ -632,4 +632,229 @@ describe.runIf(!!connectionString)("offer router", () => {
       await db.candidate.deleteMany({ where: { id: { in: [candidate1.id, candidate2.id, candidate3.id] } } })
     }
   })
+
+  describe("offer.list filters", () => {
+    let filterOfferTodo: string
+    let filterOfferDone: string
+    let filterOfferParis: string
+    let filterTagAlpha: string
+    let filterTagBeta: string
+    let filterClientId: string
+
+    beforeAll(async () => {
+      const client = await db.clientCompany.create({
+        data: { name: "Filter Client", companyId: companyAId },
+      })
+      filterClientId = client.id
+
+      const [oTodo, oDone, oParis] = await Promise.all([
+        db.jobOffer.create({
+          data: {
+            title: "Filter TODO",
+            companyId: companyAId,
+            status: "TODO",
+            salaryMin: 30000,
+            salaryMax: 50000,
+            location: "Lyon",
+          },
+        }),
+        db.jobOffer.create({
+          data: {
+            title: "Filter DONE",
+            companyId: companyAId,
+            status: "DONE",
+            salaryMin: 60000,
+            salaryMax: 80000,
+            location: "Marseille",
+            clientCompanyId: client.id,
+          },
+        }),
+        db.jobOffer.create({
+          data: {
+            title: "Filter Paris",
+            companyId: companyAId,
+            status: "IN_PROGRESS",
+            salaryMin: 40000,
+            salaryMax: 55000,
+            location: "Paris",
+          },
+        }),
+      ])
+      filterOfferTodo = oTodo.id
+      filterOfferDone = oDone.id
+      filterOfferParis = oParis.id
+
+      const [tagAlpha, tagBeta] = await Promise.all([
+        db.tag.create({
+          data: { name: "FilterAlpha", color: "#aaa", companyId: companyAId },
+        }),
+        db.tag.create({
+          data: { name: "FilterBeta", color: "#bbb", companyId: companyAId },
+        }),
+      ])
+      filterTagAlpha = tagAlpha.id
+      filterTagBeta = tagBeta.id
+
+      await db.offerTag.createMany({
+        data: [
+          { offerId: filterOfferTodo, tagId: filterTagAlpha },
+          { offerId: filterOfferTodo, tagId: filterTagBeta },
+          { offerId: filterOfferDone, tagId: filterTagAlpha },
+          { offerId: filterOfferParis, tagId: filterTagBeta },
+        ],
+      })
+    })
+
+    afterAll(async () => {
+      await db.offerTag.deleteMany({
+        where: {
+          offerId: { in: [filterOfferTodo, filterOfferDone, filterOfferParis] },
+        },
+      })
+      await db.tag.deleteMany({
+        where: { id: { in: [filterTagAlpha, filterTagBeta] } },
+      })
+      await db.jobOffer.deleteMany({
+        where: {
+          id: { in: [filterOfferTodo, filterOfferDone, filterOfferParis] },
+        },
+      })
+      await db.clientCompany.delete({ where: { id: filterClientId } })
+    })
+
+    it("filters by single status", async () => {
+      const caller = appRouter.createCaller(createContext(companyAId))
+      const result = await caller.offer.list({ statuses: ["TODO"] })
+
+      const filterIds = result.items.map((o) => o.id)
+      expect(filterIds).toContain(filterOfferTodo)
+      expect(filterIds).not.toContain(filterOfferDone)
+      expect(filterIds).not.toContain(filterOfferParis)
+    })
+
+    it("filters by multiple statuses", async () => {
+      const caller = appRouter.createCaller(createContext(companyAId))
+      const result = await caller.offer.list({
+        statuses: ["TODO", "IN_PROGRESS"],
+      })
+
+      const filterIds = result.items.map((o) => o.id)
+      expect(filterIds).toContain(filterOfferTodo)
+      expect(filterIds).toContain(filterOfferParis)
+      expect(filterIds).not.toContain(filterOfferDone)
+    })
+
+    it("filters by single tag", async () => {
+      const caller = appRouter.createCaller(createContext(companyAId))
+      const result = await caller.offer.list({
+        tagIds: [filterTagAlpha],
+      })
+
+      const filterIds = result.items.map((o) => o.id)
+      expect(filterIds).toContain(filterOfferTodo)
+      expect(filterIds).toContain(filterOfferDone)
+      expect(filterIds).not.toContain(filterOfferParis)
+    })
+
+    it("filters by multiple tags with AND logic", async () => {
+      const caller = appRouter.createCaller(createContext(companyAId))
+      const result = await caller.offer.list({
+        tagIds: [filterTagAlpha, filterTagBeta],
+      })
+
+      const filterIds = result.items.map((o) => o.id)
+      expect(filterIds).toContain(filterOfferTodo)
+      expect(filterIds).not.toContain(filterOfferDone)
+      expect(filterIds).not.toContain(filterOfferParis)
+    })
+
+    it("filters by salaryMin only", async () => {
+      const caller = appRouter.createCaller(createContext(companyAId))
+      const result = await caller.offer.list({ salaryMin: 55000 })
+
+      const filterIds = result.items.map((o) => o.id)
+      expect(filterIds).toContain(filterOfferDone)
+      expect(filterIds).toContain(filterOfferParis)
+      expect(filterIds).not.toContain(filterOfferTodo)
+    })
+
+    it("filters by salaryMax only", async () => {
+      const caller = appRouter.createCaller(createContext(companyAId))
+      const result = await caller.offer.list({ salaryMax: 45000 })
+
+      const filterIds = result.items.map((o) => o.id)
+      expect(filterIds).toContain(filterOfferTodo)
+      expect(filterIds).toContain(filterOfferParis)
+      expect(filterIds).not.toContain(filterOfferDone)
+    })
+
+    it("filters by salary range (min + max)", async () => {
+      const caller = appRouter.createCaller(createContext(companyAId))
+      const result = await caller.offer.list({
+        salaryMin: 45000,
+        salaryMax: 55000,
+      })
+
+      const filterIds = result.items.map((o) => o.id)
+      expect(filterIds).toContain(filterOfferTodo)
+      expect(filterIds).toContain(filterOfferParis)
+      expect(filterIds).not.toContain(filterOfferDone)
+    })
+
+    it("filters by location (case-insensitive)", async () => {
+      const caller = appRouter.createCaller(createContext(companyAId))
+      const result = await caller.offer.list({ location: "paris" })
+
+      const filterIds = result.items.map((o) => o.id)
+      expect(filterIds).toContain(filterOfferParis)
+      expect(filterIds).not.toContain(filterOfferTodo)
+      expect(filterIds).not.toContain(filterOfferDone)
+    })
+
+    it("filters by clientCompanyId", async () => {
+      const caller = appRouter.createCaller(createContext(companyAId))
+      const result = await caller.offer.list({
+        clientCompanyId: filterClientId,
+      })
+
+      const filterIds = result.items.map((o) => o.id)
+      expect(filterIds).toContain(filterOfferDone)
+      expect(filterIds).not.toContain(filterOfferTodo)
+      expect(filterIds).not.toContain(filterOfferParis)
+    })
+
+    it("combines multiple filters with AND logic", async () => {
+      const caller = appRouter.createCaller(createContext(companyAId))
+      const result = await caller.offer.list({
+        statuses: ["DONE"],
+        tagIds: [filterTagAlpha],
+        clientCompanyId: filterClientId,
+      })
+
+      expect(result.items).toHaveLength(1)
+      expect(result.items[0].id).toBe(filterOfferDone)
+      expect(result.totalCount).toBe(1)
+    })
+
+    it("returns totalCount reflecting filtered results", async () => {
+      const caller = appRouter.createCaller(createContext(companyAId))
+      const result = await caller.offer.list({ statuses: ["TODO"] })
+
+      const unfilteredResult = await caller.offer.list({})
+      expect(result.totalCount).toBeLessThanOrEqual(unfilteredResult.totalCount)
+      expect(result.totalCount).toBeGreaterThanOrEqual(1)
+    })
+
+    it("multi-tenancy: filters do not leak cross-company data", async () => {
+      const callerB = appRouter.createCaller(createContext(companyBId))
+      const result = await callerB.offer.list({
+        statuses: ["TODO", "IN_PROGRESS", "DONE"],
+      })
+
+      const ids = result.items.map((o) => o.id)
+      expect(ids).not.toContain(filterOfferTodo)
+      expect(ids).not.toContain(filterOfferDone)
+      expect(ids).not.toContain(filterOfferParis)
+    })
+  })
 })

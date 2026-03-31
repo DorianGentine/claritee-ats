@@ -61,6 +61,108 @@ describe("offerListInputSchema", () => {
     const result = offerListInputSchema.safeParse({ pageSize: 101 })
     expect(result.success).toBe(false)
   })
+
+  it("accepts valid statuses filter", () => {
+    const result = offerListInputSchema.safeParse({
+      statuses: ["TODO", "DONE"],
+    })
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.statuses).toEqual(["TODO", "DONE"])
+    }
+  })
+
+  it("rejects invalid status value in statuses filter", () => {
+    const result = offerListInputSchema.safeParse({
+      statuses: ["TODO", "INVALID"],
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it("accepts valid tagIds filter", () => {
+    const result = offerListInputSchema.safeParse({
+      tagIds: ["a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11"],
+    })
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.tagIds).toHaveLength(1)
+    }
+  })
+
+  it("rejects invalid UUID in tagIds filter", () => {
+    const result = offerListInputSchema.safeParse({
+      tagIds: ["not-a-uuid"],
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it("accepts valid salary range filters", () => {
+    const result = offerListInputSchema.safeParse({
+      salaryMin: 30000,
+      salaryMax: 60000,
+    })
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.salaryMin).toBe(30000)
+      expect(result.data.salaryMax).toBe(60000)
+    }
+  })
+
+  it("rejects negative salary values", () => {
+    expect(
+      offerListInputSchema.safeParse({ salaryMin: -1 }).success
+    ).toBe(false)
+    expect(
+      offerListInputSchema.safeParse({ salaryMax: -100 }).success
+    ).toBe(false)
+  })
+
+  it("accepts location filter and trims whitespace", () => {
+    const result = offerListInputSchema.safeParse({
+      location: "  Paris  ",
+    })
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.location).toBe("Paris")
+    }
+  })
+
+  it("transforms empty location string to undefined", () => {
+    const result = offerListInputSchema.safeParse({
+      location: "   ",
+    })
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.location).toBeUndefined()
+    }
+  })
+
+  it("accepts valid clientCompanyId filter", () => {
+    const result = offerListInputSchema.safeParse({
+      clientCompanyId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it("rejects invalid clientCompanyId filter", () => {
+    const result = offerListInputSchema.safeParse({
+      clientCompanyId: "not-a-uuid",
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it("all filter fields are optional", () => {
+    const result = offerListInputSchema.safeParse({})
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.statuses).toBeUndefined()
+      expect(result.data.tagIds).toBeUndefined()
+      expect(result.data.salaryMin).toBeUndefined()
+      expect(result.data.salaryMax).toBeUndefined()
+      expect(result.data.location).toBeUndefined()
+      expect(result.data.clientCompanyId).toBeUndefined()
+    }
+  })
 })
 
 describe("jobOfferStatusSchema", () => {

@@ -7,6 +7,10 @@ const MAX_PAGE_SIZE = 100
 export const offerSortBySchema = z.enum(["createdAt", "status"])
 export const offerSortOrderSchema = z.enum(["asc", "desc"])
 
+/** Enum de statut d'offre (miroir de JobOfferStatus Prisma) */
+export const jobOfferStatusSchema = z.enum(["TODO", "IN_PROGRESS", "DONE"])
+export type JobOfferStatus = z.infer<typeof jobOfferStatusSchema>
+
 /** Input pour la liste paginée des offres (offer.list) */
 export const offerListInputSchema = z.object({
   page: z.number().int().min(1).default(1),
@@ -18,6 +22,18 @@ export const offerListInputSchema = z.object({
     .default(DEFAULT_PAGE_SIZE),
   sortBy: offerSortBySchema.default("createdAt"),
   sortOrder: offerSortOrderSchema.default("desc"),
+  statuses: z.array(jobOfferStatusSchema).optional(),
+  tagIds: z.array(z.uuid()).optional(),
+  salaryMin: z.number().int().nonnegative().optional(),
+  salaryMax: z.number().int().nonnegative().optional(),
+  location: z
+    .string()
+    .optional()
+    .transform((s) => {
+      const trimmed = typeof s === "string" ? s.trim() : s
+      return trimmed || undefined
+    }),
+  clientCompanyId: z.uuid().optional(),
 })
 
 export type OfferListInput = z.infer<typeof offerListInputSchema>
@@ -25,9 +41,6 @@ export type OfferListInput = z.infer<typeof offerListInputSchema>
 /** Trim et vide → undefined pour les champs optionnels */
 const trimToUndefined = (s: string | undefined) =>
   (typeof s === "string" ? s.trim() : s) || undefined
-
-/** Enum de statut d'offre (miroir de JobOfferStatus Prisma) */
-export const jobOfferStatusSchema = z.enum(["TODO", "IN_PROGRESS", "DONE"])
 
 /** Champs de base (sans refinements) pour réutiliser en create et update */
 const jobOfferBaseFieldsSchema = z.object({

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useCallback, useState } from "react"
 import Link from "next/link"
 import { api } from "@/lib/trpc/client"
 import { Button } from "@/components/ui/button"
@@ -12,6 +12,13 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { JobOfferCard } from "@/components/offers/JobOfferCard"
+import {
+  OfferListFilters,
+  EMPTY_OFFER_FILTERS,
+  hasActiveOfferFilters,
+  type OfferFilters,
+} from "@/components/offers/OfferListFilters"
+import { ActiveOfferFilterChips } from "@/components/offers/ActiveOfferFilterChips"
 
 type SortOption = "createdAt_desc" | "createdAt_asc" | "status_asc" | "status_desc"
 
@@ -52,6 +59,7 @@ const PAGE_SIZE = 20
 
 export default function OffersPage() {
   const [sortOption, setSortOption] = useState<SortOption>("createdAt_desc")
+  const [filters, setFilters] = useState<OfferFilters>(EMPTY_OFFER_FILTERS)
   const { sortBy, sortOrder } = parseSort(sortOption)
 
   const listQuery = api.offer.list.useQuery({
@@ -59,12 +67,28 @@ export default function OffersPage() {
     pageSize: PAGE_SIZE,
     sortBy,
     sortOrder,
+    statuses: filters.statuses.length > 0 ? filters.statuses : undefined,
+    tagIds: filters.tagIds.length > 0 ? filters.tagIds : undefined,
+    salaryMin: filters.salaryMin,
+    salaryMax: filters.salaryMax,
+    location: filters.location,
+    clientCompanyId: filters.clientCompanyId,
   })
   const data = listQuery.data
   const items = data?.items ?? []
   const totalCount = data?.totalCount ?? 0
   const isLoading = listQuery.isLoading
   const isError = listQuery.isError
+
+  const hasActiveFilters = hasActiveOfferFilters(filters)
+
+  const handleClearFilters = useCallback(() => {
+    setFilters(EMPTY_OFFER_FILTERS)
+  }, [])
+
+  const handleFiltersChange = useCallback((next: OfferFilters) => {
+    setFilters(next)
+  }, [])
 
   return (
     <main className="min-h-[calc(100vh-3.5rem)] bg-background p-6">
@@ -98,6 +122,48 @@ export default function OffersPage() {
           </div>
         </div>
 
+        <div className="mt-4">
+          <OfferListFilters
+            filters={filters}
+            onFiltersChange={handleFiltersChange}
+            onClear={handleClearFilters}
+          />
+        </div>
+
+        {hasActiveFilters && (
+          <div className="mt-3">
+            <ActiveOfferFilterChips
+              filters={filters}
+              totalCount={totalCount}
+              isLoading={isLoading}
+              onRemoveStatus={(status) =>
+                setFilters((f) => ({
+                  ...f,
+                  statuses: f.statuses.filter((s) => s !== status),
+                }))
+              }
+              onRemoveTag={(tagId) =>
+                setFilters((f) => ({
+                  ...f,
+                  tagIds: f.tagIds.filter((id) => id !== tagId),
+                }))
+              }
+              onRemoveSalaryMin={() =>
+                setFilters((f) => ({ ...f, salaryMin: undefined }))
+              }
+              onRemoveSalaryMax={() =>
+                setFilters((f) => ({ ...f, salaryMax: undefined }))
+              }
+              onRemoveLocation={() =>
+                setFilters((f) => ({ ...f, location: undefined }))
+              }
+              onRemoveClientCompany={() =>
+                setFilters((f) => ({ ...f, clientCompanyId: undefined }))
+              }
+            />
+          </div>
+        )}
+
         {isError ? (
           <section
             className="mt-8 flex flex-col items-center justify-center rounded-lg border border-border bg-card/50 py-16 text-center"
@@ -123,14 +189,29 @@ export default function OffersPage() {
             className="mt-8 flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-card/50 py-16 text-center"
             aria-label="Aucune offre"
           >
-            <p className="text-muted-foreground">Aucune offre créée.</p>
-            <Button variant="default" className="mt-4" asChild>
-              <Link href="/offers/new">Nouvelle offre</Link>
-            </Button>
+            <p className="text-muted-foreground">
+              {hasActiveFilters
+                ? "Aucune offre ne correspond aux filtres sélectionnés."
+                : "Aucune offre créée."}
+            </p>
+            {!hasActiveFilters && (
+              <Button variant="default" className="mt-4" asChild>
+                <Link href="/offers/new">Nouvelle offre</Link>
+              </Button>
+            )}
+            {hasActiveFilters && (
+              <Button
+                variant="outline"
+                className="mt-4"
+                onClick={handleClearFilters}
+              >
+                Effacer les filtres
+              </Button>
+            )}
           </section>
         ) : (
           <>
-            {totalCount > 0 ? (
+            {!hasActiveFilters && totalCount > 0 ? (
               <p className="mt-4 text-sm text-muted-foreground" aria-live="polite">
                 {totalCount <= PAGE_SIZE
                   ? `${totalCount} offre${totalCount > 1 ? "s" : ""}`

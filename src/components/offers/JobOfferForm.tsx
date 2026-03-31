@@ -256,7 +256,7 @@ export const JobOfferForm = ({
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <Label htmlFor="salaryMin">Salaire min (k€ annuel)</Label>
+            <Label htmlFor="salaryMin">Salaire min (€ annuel)</Label>
             <Input
               id="salaryMin"
               type="number"
@@ -274,7 +274,7 @@ export const JobOfferForm = ({
             )}
           </div>
           <div>
-            <Label htmlFor="salaryMax">Salaire max (k€ annuel)</Label>
+            <Label htmlFor="salaryMax">Salaire&nbsp;max&nbsp;(€&nbsp;annuel)</Label>
             <Input
               id="salaryMax"
               type="number"
