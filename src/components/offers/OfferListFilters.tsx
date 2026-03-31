@@ -75,28 +75,32 @@ export const OfferListFilters = ({
   )
 
   const debouncedLocation = useDebounce(locationInput.trim(), 300)
-  const filtersRef = useRef(filters)
-  filtersRef.current = filters
+  const prevDebouncedLocationRef = useRef(debouncedLocation)
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync props → state
     setLocationInput(filters.location ?? "")
   }, [filters.location])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync props → state
     setSalaryMinInput(filters.salaryMin?.toString() ?? "")
   }, [filters.salaryMin])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync props → state
     setSalaryMaxInput(filters.salaryMax?.toString() ?? "")
   }, [filters.salaryMax])
 
   useEffect(() => {
+    if (debouncedLocation === prevDebouncedLocationRef.current) return
+    prevDebouncedLocationRef.current = debouncedLocation
     const nextLocation = debouncedLocation || undefined
-    const currentLocation = filtersRef.current.location ?? undefined
+    const currentLocation = filters.location ?? undefined
     if (nextLocation !== currentLocation) {
-      onFiltersChange({ ...filtersRef.current, location: nextLocation })
+      onFiltersChange({ ...filters, location: nextLocation })
     }
-  }, [debouncedLocation, onFiltersChange])
+  }, [debouncedLocation, filters, onFiltersChange])
 
   const { data: tags = [] } = api.tag.list.useQuery()
   const { data: clients = [] } = api.clientCompany.list.useQuery()
