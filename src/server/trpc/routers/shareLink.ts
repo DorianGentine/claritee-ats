@@ -1,12 +1,14 @@
 import { TRPCError } from "@trpc/server"
 import { randomUUID } from "crypto"
-import { router, protectedProcedure } from "../trpc"
+import { z } from "zod"
+import { router, protectedProcedure, publicProcedure } from "../trpc"
 import {
   createShareLinkSchema,
   listShareLinksByCandidateSchema,
   type ShareLinkExpiration,
 } from "@/lib/validations/shareLink"
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit"
+import { publicCandidateSelect } from "@/server/publicCandidateSelect"
 
 const computeExpiresAt = (expiration: ShareLinkExpiration): Date | null => {
   if (expiration === "never") return null
@@ -78,5 +80,40 @@ export const shareLinkRouter = router({
         where: { candidateId: input.candidateId },
         orderBy: { createdAt: "desc" },
       })
+    }),
+
+  /**
+   * Procédure publique (sans auth) : résout un token NORMAL et retourne le
+   * DTO public du candidat. Utilisée pour les tests d'intégration ; la page
+   * publique interroge directement Prisma côté serveur pour le SSR.
+   *
+   * Erreurs :
+   *   NOT_FOUND  — token inconnu ou type !== NORMAL
+   *   FORBIDDEN  — token expiré (message: "TOKEN_EXPIRED")
+   */
+  getPublicByToken: publicProcedure
+    .input(z.object({ token: z.string().min(1) }))
+    .query(async ({ ctx, input }) => {
+      const link = await ctx.db.shareLink.findUnique({
+        where: { token: input.token },
+        select: {
+          type: true,
+          expiresAt: true,
+          candidate: { select: publicCandidateSelect },
+        },
+      })
+
+      if (!link) {
+        throw new TRPCError({ code: "NOT_FOUND" })
+      }
+      // Les liens ANONYMOUS seront gérés en Story 4.6
+      if (link.type !== "NORMAL") {
+        throw new TRPCError({ code: "NOT_FOUND" })
+      }
+      if (link.expiresAt && link.expiresAt < new Date()) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "TOKEN_EXPIRED" })
+      }
+
+      return link.candidate
     }),
 })

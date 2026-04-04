@@ -209,4 +209,71 @@ describe.runIf(!!connectionString)("shareLink router", () => {
       caller.shareLink.listByCandidate({ candidateId: candidateAId })
     ).rejects.toMatchObject({ code: "UNAUTHORIZED" })
   })
+
+  // ─── shareLink.getPublicByToken ──────────────────────────────────────────
+
+  it("getPublicByToken returns public candidate data for a valid NORMAL token", async () => {
+    // Create a NORMAL link with no expiration
+    const creator = appRouter.createCaller(createContext(companyAId))
+    const link = await creator.shareLink.create({
+      candidateId: candidateAId,
+      type: "NORMAL",
+      expiration: "never",
+    })
+
+    // Public caller (unauthenticated)
+    const publicCaller = appRouter.createCaller(createContext(null))
+    const data = await publicCaller.shareLink.getPublicByToken({ token: link.token })
+
+    expect(data.firstName).toBe("Alice")
+    expect(data.lastName).toBe("Test")
+    // Must not expose internal fields
+    expect("tags" in data).toBe(false)
+    expect("candidatures" in data).toBe(false)
+    expect("notes" in data).toBe(false)
+    expect("cvUrl" in data).toBe(false)
+    // Must expose public fields
+    expect(Array.isArray(data.experiences)).toBe(true)
+    expect(Array.isArray(data.formations)).toBe(true)
+    expect(Array.isArray(data.languages)).toBe(true)
+    expect(data.company).toMatchObject({ name: expect.any(String) })
+  })
+
+  it("getPublicByToken throws FORBIDDEN (TOKEN_EXPIRED) for an expired token", async () => {
+    // Insert an already-expired link directly in DB
+    const expiredLink = await db.shareLink.create({
+      data: {
+        candidateId: candidateAId,
+        token: `expired-${Date.now()}`,
+        type: "NORMAL",
+        expiresAt: new Date(Date.now() - 1000), // 1 second in the past
+      },
+    })
+
+    const publicCaller = appRouter.createCaller(createContext(null))
+    await expect(
+      publicCaller.shareLink.getPublicByToken({ token: expiredLink.token })
+    ).rejects.toMatchObject({ code: "FORBIDDEN", message: "TOKEN_EXPIRED" })
+  })
+
+  it("getPublicByToken throws NOT_FOUND for an unknown token", async () => {
+    const publicCaller = appRouter.createCaller(createContext(null))
+    await expect(
+      publicCaller.shareLink.getPublicByToken({ token: "does-not-exist" })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" })
+  })
+
+  it("getPublicByToken throws NOT_FOUND for an ANONYMOUS token (reserved for Story 4.6)", async () => {
+    const creator = appRouter.createCaller(createContext(companyAId))
+    const link = await creator.shareLink.create({
+      candidateId: candidateAId,
+      type: "ANONYMOUS",
+      expiration: "never",
+    })
+
+    const publicCaller = appRouter.createCaller(createContext(null))
+    await expect(
+      publicCaller.shareLink.getPublicByToken({ token: link.token })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" })
+  })
 })
