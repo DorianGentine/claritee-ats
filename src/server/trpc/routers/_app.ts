@@ -9,6 +9,7 @@ import { searchRouter } from "./search"
 import { tagRouter } from "./tag"
 import { clientRouter } from "./client"
 import { offerRouter } from "./offer"
+import { shareLinkRouter } from "./shareLink"
 
 export const appRouter = router({
   auth: authRouter,
@@ -20,6 +21,7 @@ export const appRouter = router({
   note: noteRouter,
   offer: offerRouter,
   search: searchRouter,
+  shareLink: shareLinkRouter,
   tag: tagRouter,
 })
 

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Share2 } from "lucide-react";
 import { api } from "@/lib/trpc/client";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
@@ -12,12 +13,14 @@ import { CandidateDetailSidebar } from "./CandidateDetailSidebar";
 import { CandidateDetailContent } from "./CandidateDetailContent";
 import { CandidateNotesSection } from "./CandidateNotesSection";
 import { CandidateCandidaturesSection } from "./CandidateCandidaturesSection";
+import { ShareLinkDialog } from "./ShareLinkDialog";
 
 type Props = { candidateId: string };
 
 export const CandidateDetailView = ({ candidateId }: Props) => {
   const router = useRouter();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const utils = api.useUtils();
   const getByIdQuery = api.candidate.getById.useQuery({ id: candidateId });
   const deleteMutation = api.candidate.delete.useMutation({
@@ -68,6 +71,14 @@ export const CandidateDetailView = ({ candidateId }: Props) => {
             <Link href={`/candidates/${candidateId}/edit`}>Modifier</Link>
           </Button>
           <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShareDialogOpen(true)}
+          >
+            <Share2 className="size-3.5" aria-hidden />
+            Partager
+          </Button>
+          <Button
             variant="destructive"
             size="sm"
             onClick={() => setDeleteDialogOpen(true)}
@@ -107,6 +118,12 @@ export const CandidateDetailView = ({ candidateId }: Props) => {
         <CandidateCandidaturesSection candidateId={candidateId} candidatures={candidate.candidatures} />
         <CandidateNotesSection candidateId={candidateId} />
       </div>
+
+      <ShareLinkDialog
+        open={shareDialogOpen}
+        onOpenChange={setShareDialogOpen}
+        candidateId={candidateId}
+      />
 
       <ConfirmDialog
         open={deleteDialogOpen}

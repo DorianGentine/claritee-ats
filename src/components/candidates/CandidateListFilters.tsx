@@ -1,22 +1,28 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
-import { Check, Filter } from "lucide-react"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { Filter } from "lucide-react"
 import { api } from "@/lib/trpc/client"
 import { useDebounce } from "@/hooks/useDebounce"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
-import { cn } from "@/lib/utils"
+import { MultiSelectPopover } from "@/components/shared/MultiSelectPopover"
 
 export type CandidateFilters = {
   tagIds: string[]
   city?: string
   languageNames: string[]
+}
+
+export const hasActiveCandidateFilters = (filters: CandidateFilters): boolean =>
+  filters.tagIds.length > 0 ||
+  (filters.city?.trim() ?? "").length > 0 ||
+  filters.languageNames.length > 0
+
+export const EMPTY_CANDIDATE_FILTERS: CandidateFilters = {
+  tagIds: [],
+  city: undefined,
+  languageNames: [],
 }
 
 type CandidateListFiltersProps = {
@@ -31,35 +37,43 @@ export const CandidateListFilters = ({
   onClear,
 }: CandidateListFiltersProps) => {
   const [tagPopoverOpen, setTagPopoverOpen] = useState(false)
+  const [languagePopoverOpen, setLanguagePopoverOpen] = useState(false)
   const [cityInput, setCityInput] = useState(filters.city ?? "")
 
   const debouncedCity = useDebounce(cityInput.trim(), 300)
+  const prevDebouncedCityRef = useRef(debouncedCity)
 
   useEffect(() => {
-    // Sync local input when filters change externally (URL, clear)
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- légitime : sync props → state pour input
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync props → state
     setCityInput(filters.city ?? "")
   }, [filters.city])
 
   useEffect(() => {
-    const nextCity = debouncedCity ? debouncedCity : undefined
+    if (debouncedCity === prevDebouncedCityRef.current) return
+    prevDebouncedCityRef.current = debouncedCity
+    const nextCity = debouncedCity || undefined
     const currentCity = filters.city ?? undefined
     if (nextCity !== currentCity) {
       onFiltersChange({ ...filters, city: nextCity })
     }
   }, [debouncedCity, filters, onFiltersChange])
 
-  const [languagePopoverOpen, setLanguagePopoverOpen] = useState(false)
-
   const { data: tags = [] } = api.tag.list.useQuery()
   const { data: cities = [] } = api.candidate.listDistinctCities.useQuery()
   const { data: languageNames = [] } =
     api.candidate.listDistinctLanguageNames.useQuery()
 
-  const hasActiveFilters =
-    filters.tagIds.length > 0 ||
-    (filters.city?.trim() ?? "").length > 0 ||
-    filters.languageNames.length > 0
+  const hasActiveFilters = hasActiveCandidateFilters(filters)
+
+  const tagItems = useMemo(
+    () => tags.map((t) => ({ value: t.id, label: t.name, color: t.color })),
+    [tags]
+  )
+
+  const languageItems = useMemo(
+    () => languageNames.map((name) => ({ value: name, label: name })),
+    [languageNames]
+  )
 
   const cityOptions = useMemo(() => {
     const value = cityInput.trim().toLowerCase()
@@ -68,10 +82,9 @@ export const CandidateListFilters = ({
   }, [cities, cityInput])
 
   const toggleTag = (tagId: string) => {
-    const next =
-      filters.tagIds.includes(tagId)
-        ? filters.tagIds.filter((id) => id !== tagId)
-        : [...filters.tagIds, tagId]
+    const next = filters.tagIds.includes(tagId)
+      ? filters.tagIds.filter((id) => id !== tagId)
+      : [...filters.tagIds, tagId]
     onFiltersChange({ ...filters, tagIds: next })
   }
 
@@ -80,10 +93,6 @@ export const CandidateListFilters = ({
       ? filters.languageNames.filter((n) => n !== name)
       : [...filters.languageNames, name]
     onFiltersChange({ ...filters, languageNames: next })
-  }
-
-  const handleCityChange = (value: string) => {
-    setCityInput(value)
   }
 
   const handleCityKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -100,153 +109,61 @@ export const CandidateListFilters = ({
         Filtres
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
-        <div className="flex min-w-0 flex-1 flex-col gap-2">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start">
+        {/* Tags */}
+        <div className="flex min-w-0 flex-col gap-2">
           <label htmlFor="filter-tags" className="text-xs text-muted-foreground">
             Tags
           </label>
-          <Popover open={tagPopoverOpen} onOpenChange={setTagPopoverOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                id="filter-tags"
-                variant="outline"
-                size="sm"
-                className="w-full justify-between text-left font-normal sm:w-48"
-                aria-expanded={tagPopoverOpen}
-                aria-haspopup="listbox"
-              >
-                {filters.tagIds.length > 0
-                  ? `${filters.tagIds.length} tag(s) sélectionné(s)`
-                  : "Sélectionner des tags"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent align="start" className="w-56 p-2">
-              {tags.length === 0 ? (
-                <p className="py-4 text-center text-sm text-muted-foreground">
-                  Aucun tag disponible
-                </p>
-              ) : (
-                <ul
-                  role="listbox"
-                  aria-multiselectable
-                  className="max-h-60 overflow-y-auto"
-                >
-                  {tags.map((tag) => {
-                    const selected = filters.tagIds.includes(tag.id)
-                    return (
-                      <li key={tag.id} role="option" aria-selected={selected}>
-                        <button
-                          type="button"
-                          className={cn(
-                            "flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-accent hover:text-accent-foreground",
-                            selected && "bg-accent/80"
-                          )}
-                          onClick={() => toggleTag(tag.id)}
-                        >
-                          <span
-                            className="flex size-4 shrink-0 items-center justify-center rounded border border-border"
-                            aria-hidden
-                          >
-                            {selected ? (
-                              <Check className="size-3 text-foreground" />
-                            ) : null}
-                          </span>
-                          <span
-                            className="inline-block size-2 shrink-0 rounded-full"
-                            style={{ backgroundColor: tag.color }}
-                          />
-                          <span className="truncate">{tag.name}</span>
-                        </button>
-                      </li>
-                    )
-                  })}
-                </ul>
-              )}
-            </PopoverContent>
-          </Popover>
+          <MultiSelectPopover
+            triggerId="filter-tags"
+            items={tagItems}
+            selectedValues={filters.tagIds}
+            onToggle={toggleTag}
+            open={tagPopoverOpen}
+            onOpenChange={setTagPopoverOpen}
+            placeholder="Sélectionner des tags"
+            selectedLabel={(n) => `${n} tag(s) sélectionné(s)`}
+            emptyMessage="Aucun tag disponible"
+          />
         </div>
 
-        <div className="flex min-w-0 flex-1 flex-col gap-2">
+        {/* Langues */}
+        <div className="flex min-w-0 flex-col gap-2">
           <label
             htmlFor="filter-languages"
             className="text-xs text-muted-foreground"
           >
             Langues
           </label>
-          <Popover
+          <MultiSelectPopover
+            triggerId="filter-languages"
+            items={languageItems}
+            selectedValues={filters.languageNames}
+            onToggle={toggleLanguage}
             open={languagePopoverOpen}
             onOpenChange={setLanguagePopoverOpen}
-          >
-            <PopoverTrigger asChild>
-              <Button
-                id="filter-languages"
-                variant="outline"
-                size="sm"
-                className="w-full justify-between text-left font-normal sm:w-48"
-                aria-expanded={languagePopoverOpen}
-                aria-haspopup="listbox"
-              >
-                {filters.languageNames.length > 0
-                  ? `${filters.languageNames.length} langue(s) sélectionnée(s)`
-                  : "Sélectionner des langues"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent align="start" className="w-56 p-2">
-              {languageNames.length === 0 ? (
-                <p className="py-4 text-center text-sm text-muted-foreground">
-                  Aucune langue disponible
-                </p>
-              ) : (
-                <ul
-                  role="listbox"
-                  aria-multiselectable
-                  className="max-h-60 overflow-y-auto"
-                >
-                  {languageNames.map((name) => {
-                    const selected = filters.languageNames.includes(name)
-                    return (
-                      <li key={name} role="option" aria-selected={selected}>
-                        <button
-                          type="button"
-                          className={cn(
-                            "flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-accent hover:text-accent-foreground",
-                            selected && "bg-accent/80"
-                          )}
-                          onClick={() => toggleLanguage(name)}
-                        >
-                          <span
-                            className="flex size-4 shrink-0 items-center justify-center rounded border border-border"
-                            aria-hidden
-                          >
-                            {selected ? (
-                              <Check className="size-3 text-foreground" />
-                            ) : null}
-                          </span>
-                          <span className="truncate">{name}</span>
-                        </button>
-                      </li>
-                    )
-                  })}
-                </ul>
-              )}
-            </PopoverContent>
-          </Popover>
+            placeholder="Sélectionner des langues"
+            selectedLabel={(n) => `${n} langue(s) sélectionnée(s)`}
+            emptyMessage="Aucune langue disponible"
+          />
         </div>
 
-        <div className="flex min-w-0 flex-1 flex-col gap-2">
+        {/* Ville */}
+        <div className="flex min-w-0 flex-col gap-2">
           <label htmlFor="filter-city" className="text-xs text-muted-foreground">
             Ville
           </label>
-          <div className="relative">
+          <div className="relative" suppressHydrationWarning>
             <Input
               id="filter-city"
               type="text"
               placeholder="Ex: Paris"
               value={cityInput}
-              onChange={(e) => handleCityChange(e.target.value)}
+              onChange={(e) => setCityInput(e.target.value)}
               onKeyDown={handleCityKeyDown}
               list="filter-city-datalist"
-              className="w-full sm:w-48"
+              className="w-full sm:w-40"
               aria-autocomplete="list"
             />
             <datalist id="filter-city-datalist">
@@ -257,6 +174,7 @@ export const CandidateListFilters = ({
           </div>
         </div>
 
+        {/* Effacer */}
         {hasActiveFilters && (
           <div className="flex items-end">
             <Button

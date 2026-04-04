@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button"
 import { CandidateCard } from "@/components/candidates/CandidateCard"
 import {
   CandidateListFilters,
+  hasActiveCandidateFilters,
+  EMPTY_CANDIDATE_FILTERS,
   type CandidateFilters,
 } from "@/components/candidates/CandidateListFilters"
 import { ActiveFilterChips } from "@/components/candidates/ActiveFilterChips"
@@ -112,7 +114,7 @@ export default function CandidatesPage() {
 
   const handleClearFilters = useCallback(() => {
     setCursor(undefined)
-    syncUrl({ tagIds: [], city: undefined, languageNames: [] })
+    syncUrl(EMPTY_CANDIDATE_FILTERS)
   }, [syncUrl])
 
   const handleRemoveTag = useCallback(
@@ -182,9 +184,7 @@ export default function CandidatesPage() {
           />
         </div>
 
-        {(filters.tagIds.length > 0 ||
-          (filters.city?.trim() ?? "").length > 0 ||
-          filters.languageNames.length > 0) && (
+        {hasActiveCandidateFilters(filters) && (
           <div className="mt-4">
             <ActiveFilterChips
               filters={filters}
@@ -223,15 +223,11 @@ export default function CandidatesPage() {
             aria-label="Aucun candidat"
           >
             <p className="text-muted-foreground">
-              {filters.tagIds.length > 0 ||
-              filters.city?.trim() ||
-              filters.languageNames.length > 0
+              {hasActiveCandidateFilters(filters)
                 ? "Aucun candidat ne correspond aux filtres."
                 : "Vous n'avez pas encore de candidat."}
             </p>
-            {filters.tagIds.length > 0 ||
-            filters.city?.trim() ||
-            filters.languageNames.length > 0 ? (
+            {hasActiveCandidateFilters(filters) ? (
               <Button
                 variant="outline"
                 className="mt-4"

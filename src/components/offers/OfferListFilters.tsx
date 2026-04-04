@@ -1,16 +1,11 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
-import { Check, Filter } from "lucide-react"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { Filter } from "lucide-react"
 import { api } from "@/lib/trpc/client"
 import { useDebounce } from "@/hooks/useDebounce"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
 import {
   Select,
   SelectContent,
@@ -18,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { cn } from "@/lib/utils"
+import { MultiSelectPopover } from "@/components/shared/MultiSelectPopover"
 import type { JobOfferStatus } from "@/lib/validations/offer"
 
 const STATUS_OPTIONS: { value: JobOfferStatus; label: string }[] = [
@@ -66,6 +61,16 @@ export const OfferListFilters = ({
 }: OfferListFiltersProps) => {
   const [statusPopoverOpen, setStatusPopoverOpen] = useState(false)
   const [tagPopoverOpen, setTagPopoverOpen] = useState(false)
+
+  const statusItems = useMemo(
+    () => STATUS_OPTIONS.map((o) => ({ value: o.value, label: o.label })),
+    []
+  )
+  const { data: tags = [] } = api.tag.list.useQuery()
+  const tagItems = useMemo(
+    () => tags.map((t) => ({ value: t.id, label: t.name, color: t.color })),
+    [tags]
+  )
   const [locationInput, setLocationInput] = useState(filters.location ?? "")
   const [salaryMinInput, setSalaryMinInput] = useState(
     filters.salaryMin?.toString() ?? ""
@@ -102,7 +107,6 @@ export const OfferListFilters = ({
     }
   }, [debouncedLocation, filters, onFiltersChange])
 
-  const { data: tags = [] } = api.tag.list.useQuery()
   const { data: clients = [] } = api.clientCompany.list.useQuery()
 
   const hasActiveFilters = hasActiveOfferFilters(filters)
@@ -170,59 +174,16 @@ export const OfferListFilters = ({
           >
             Statut
           </label>
-          <Popover open={statusPopoverOpen} onOpenChange={setStatusPopoverOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                id="filter-offer-statuses"
-                variant="outline"
-                size="sm"
-                className="w-full justify-between text-left font-normal sm:w-48"
-                aria-expanded={statusPopoverOpen}
-                aria-haspopup="listbox"
-              >
-                {filters.statuses.length > 0
-                  ? `${filters.statuses.length} statut(s)`
-                  : "Tous les statuts"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent align="start" className="w-56 p-2">
-              <ul
-                role="listbox"
-                aria-multiselectable
-                className="max-h-60 overflow-y-auto"
-              >
-                {STATUS_OPTIONS.map((opt) => {
-                  const selected = filters.statuses.includes(opt.value)
-                  return (
-                    <li
-                      key={opt.value}
-                      role="option"
-                      aria-selected={selected}
-                    >
-                      <button
-                        type="button"
-                        className={cn(
-                          "flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-accent hover:text-accent-foreground",
-                          selected && "bg-accent/80"
-                        )}
-                        onClick={() => toggleStatus(opt.value)}
-                      >
-                        <span
-                          className="flex size-4 shrink-0 items-center justify-center rounded border border-border"
-                          aria-hidden
-                        >
-                          {selected ? (
-                            <Check className="size-3 text-foreground" />
-                          ) : null}
-                        </span>
-                        <span className="truncate">{opt.label}</span>
-                      </button>
-                    </li>
-                  )
-                })}
-              </ul>
-            </PopoverContent>
-          </Popover>
+          <MultiSelectPopover
+            triggerId="filter-offer-statuses"
+            items={statusItems}
+            selectedValues={filters.statuses}
+            onToggle={(v) => toggleStatus(v as JobOfferStatus)}
+            open={statusPopoverOpen}
+            onOpenChange={setStatusPopoverOpen}
+            placeholder="Tous les statuts"
+            selectedLabel={(n) => `${n} statut(s)`}
+          />
         </div>
 
         {/* Tags */}
@@ -233,69 +194,17 @@ export const OfferListFilters = ({
           >
             Tags
           </label>
-          <Popover open={tagPopoverOpen} onOpenChange={setTagPopoverOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                id="filter-offer-tags"
-                variant="outline"
-                size="sm"
-                className="w-full justify-between text-left font-normal sm:w-48"
-                aria-expanded={tagPopoverOpen}
-                aria-haspopup="listbox"
-              >
-                {filters.tagIds.length > 0
-                  ? `${filters.tagIds.length} tag(s) sélectionné(s)`
-                  : "Sélectionner des tags"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent align="start" className="w-56 p-2">
-              {tags.length === 0 ? (
-                <p className="py-4 text-center text-sm text-muted-foreground">
-                  Aucun tag disponible
-                </p>
-              ) : (
-                <ul
-                  role="listbox"
-                  aria-multiselectable
-                  className="max-h-60 overflow-y-auto"
-                >
-                  {tags.map((tag) => {
-                    const selected = filters.tagIds.includes(tag.id)
-                    return (
-                      <li
-                        key={tag.id}
-                        role="option"
-                        aria-selected={selected}
-                      >
-                        <button
-                          type="button"
-                          className={cn(
-                            "flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-accent hover:text-accent-foreground",
-                            selected && "bg-accent/80"
-                          )}
-                          onClick={() => toggleTag(tag.id)}
-                        >
-                          <span
-                            className="flex size-4 shrink-0 items-center justify-center rounded border border-border"
-                            aria-hidden
-                          >
-                            {selected ? (
-                              <Check className="size-3 text-foreground" />
-                            ) : null}
-                          </span>
-                          <span
-                            className="inline-block size-2 shrink-0 rounded-full"
-                            style={{ backgroundColor: tag.color }}
-                          />
-                          <span className="truncate">{tag.name}</span>
-                        </button>
-                      </li>
-                    )
-                  })}
-                </ul>
-              )}
-            </PopoverContent>
-          </Popover>
+          <MultiSelectPopover
+            triggerId="filter-offer-tags"
+            items={tagItems}
+            selectedValues={filters.tagIds}
+            onToggle={toggleTag}
+            open={tagPopoverOpen}
+            onOpenChange={setTagPopoverOpen}
+            placeholder="Sélectionner des tags"
+            selectedLabel={(n) => `${n} tag(s) sélectionné(s)`}
+            emptyMessage="Aucun tag disponible"
+          />
         </div>
 
         {/* Salaire min / max */}
