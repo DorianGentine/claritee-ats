@@ -9,7 +9,6 @@ import { Toaster } from "@/components/ui/sonner"
 const queryClientConfig = {
   defaultOptions: {
     queries: {
-      // staleTime : évite refetch à chaque navigation / focus onglet. Voir docs/frontend-architecture.md §3.1.1
       staleTime: 5 * 60 * 1000,
     },
   },

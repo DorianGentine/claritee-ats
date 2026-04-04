@@ -1,9 +1,8 @@
 "use client"
 
-import { X } from "lucide-react"
 import { api } from "@/lib/trpc/client"
-import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
+import { FilterChip } from "@/components/shared/FilterChip"
 import { hasActiveOfferFilters, type OfferFilters } from "./OfferListFilters"
 
 const STATUS_LABELS: Record<string, string> = {
@@ -51,126 +50,56 @@ export const ActiveOfferFilterChips = ({
       role="list"
       aria-label="Filtres actifs"
     >
-      {filters.statuses.map((status) => (
-        <Badge
-          key={status}
-          variant="secondary"
-          className="gap-1 py-1 pl-2 pr-1"
-          role="listitem"
-        >
-          <span className="truncate">
-            Statut: {STATUS_LABELS[status] ?? status}
-          </span>
-          <button
-            type="button"
-            onClick={() => onRemoveStatus(status)}
-            className="rounded-sm p-0.5 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            aria-label={`Retirer le filtre statut ${STATUS_LABELS[status] ?? status}`}
-          >
-            <X className="size-3" />
-          </button>
-        </Badge>
-      ))}
-
-      {filters.tagIds.map((tagId) => {
-        const tag = tagById[tagId]
-        const label = tag?.name ?? tagId
+      {filters.statuses.map((status) => {
+        const label = STATUS_LABELS[status] ?? status
         return (
-          <Badge
-            key={tagId}
-            variant="secondary"
-            className="gap-1 py-1 pl-2 pr-1"
-            role="listitem"
-          >
-            <span className="truncate">Tag: {label}</span>
-            <button
-              type="button"
-              onClick={() => onRemoveTag(tagId)}
-              className="rounded-sm p-0.5 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              aria-label={`Retirer le filtre tag ${label}`}
-            >
-              <X className="size-3" />
-            </button>
-          </Badge>
+          <FilterChip
+            key={status}
+            label={`Statut: ${label}`}
+            onRemove={() => onRemoveStatus(status)}
+            removeAriaLabel={`Retirer le filtre statut ${label}`}
+          />
         )
       })}
-
+      {filters.tagIds.map((tagId) => {
+        const label = tagById[tagId]?.name ?? tagId
+        return (
+          <FilterChip
+            key={tagId}
+            label={`Tag: ${label}`}
+            onRemove={() => onRemoveTag(tagId)}
+            removeAriaLabel={`Retirer le filtre tag ${label}`}
+          />
+        )
+      })}
       {filters.salaryMin !== undefined && (
-        <Badge
-          variant="secondary"
-          className="gap-1 py-1 pl-2 pr-1"
-          role="listitem"
-        >
-          <span className="truncate">Salaire min: {filters.salaryMin}</span>
-          <button
-            type="button"
-            onClick={onRemoveSalaryMin}
-            className="rounded-sm p-0.5 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            aria-label="Retirer le filtre salaire minimum"
-          >
-            <X className="size-3" />
-          </button>
-        </Badge>
+        <FilterChip
+          label={`Salaire min: ${filters.salaryMin}`}
+          onRemove={onRemoveSalaryMin}
+          removeAriaLabel="Retirer le filtre salaire minimum"
+        />
       )}
-
       {filters.salaryMax !== undefined && (
-        <Badge
-          variant="secondary"
-          className="gap-1 py-1 pl-2 pr-1"
-          role="listitem"
-        >
-          <span className="truncate">Salaire max: {filters.salaryMax}</span>
-          <button
-            type="button"
-            onClick={onRemoveSalaryMax}
-            className="rounded-sm p-0.5 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            aria-label="Retirer le filtre salaire maximum"
-          >
-            <X className="size-3" />
-          </button>
-        </Badge>
+        <FilterChip
+          label={`Salaire max: ${filters.salaryMax}`}
+          onRemove={onRemoveSalaryMax}
+          removeAriaLabel="Retirer le filtre salaire maximum"
+        />
       )}
-
       {filters.location?.trim() && (
-        <Badge
-          variant="secondary"
-          className="gap-1 py-1 pl-2 pr-1"
-          role="listitem"
-        >
-          <span className="truncate">Ville: {filters.location}</span>
-          <button
-            type="button"
-            onClick={onRemoveLocation}
-            className="rounded-sm p-0.5 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            aria-label={`Retirer le filtre ville ${filters.location}`}
-          >
-            <X className="size-3" />
-          </button>
-        </Badge>
+        <FilterChip
+          label={`Ville: ${filters.location}`}
+          onRemove={onRemoveLocation}
+          removeAriaLabel={`Retirer le filtre ville ${filters.location}`}
+        />
       )}
-
       {filters.clientCompanyId && (
-        <Badge
-          variant="secondary"
-          className="gap-1 py-1 pl-2 pr-1"
-          role="listitem"
-        >
-          <span className="truncate">
-            Client:{" "}
-            {clientById[filters.clientCompanyId]?.name ??
-              filters.clientCompanyId}
-          </span>
-          <button
-            type="button"
-            onClick={onRemoveClientCompany}
-            className="rounded-sm p-0.5 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            aria-label="Retirer le filtre client"
-          >
-            <X className="size-3" />
-          </button>
-        </Badge>
+        <FilterChip
+          label={`Client: ${clientById[filters.clientCompanyId]?.name ?? filters.clientCompanyId}`}
+          onRemove={onRemoveClientCompany}
+          removeAriaLabel="Retirer le filtre client"
+        />
       )}
-
       <span
         className="text-sm text-muted-foreground"
         aria-live="polite"
