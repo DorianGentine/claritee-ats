@@ -145,8 +145,8 @@ describe("ShareLinkDialog", () => {
     expect(screen.getAllByText("Fiche complète").length).toBeGreaterThanOrEqual(1)
     // Second link: ANONYMOUS
     expect(screen.getByText("Fiche anonymisée")).toBeDefined()
-    // Never expiration label
-    expect(screen.getByText("Expire : Jamais")).toBeDefined()
+    // Never expiration label (text split across nodes: "Expire : " + "Jamais")
+    expect(screen.getByText(/Expire.*Jamais/)).toBeDefined()
   })
 
   it("copy button for existing link calls clipboard", async () => {
