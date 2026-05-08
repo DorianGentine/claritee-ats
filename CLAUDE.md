@@ -2,6 +2,12 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Project
+
+**Claritee ATS** — lightweight recruitment management platform for small French recruitment agencies. Centralises candidates, job offers, clients, and collaboration. Built solo, deployed free (Supabase + Vercel). All UI text is in **French**.
+
+4 epics, 39 stories. Fully specified in `docs/prd.md`. Current progress: stories 1.1 → 4.6 implemented.
+
 ## Commands
 
 ```bash
@@ -84,12 +90,31 @@ Browser → Supabase Auth (JWT cookie)
 - ESLint warns on `console.log`; `console.warn` and `console.error` are allowed
 - Unused variables prefixed with `_` are ignored by ESLint
 - Path alias `@/` maps to `src/`
+- **TypeScript strict:** `strict: true` — no untyped `any`; use `unknown` then narrow
+- **Arrow functions** preferred over `function` declarations
+- **CSS variables:** use short Tailwind syntax `w-(--radix-popover-trigger-width)` not `w-[var(--radix-popover-trigger-width)]`
+- **JSX text:** use `'` and `"` directly — do not use `&apos;` or `&quot;`
+- **Optimistic mutations:** always add `networkMode: "always"` when using `onMutate` (avoids silent queue on offline DevTools)
+- **Loading skeletons:** use `isLoading`, not `isFetching`
+- **Toasts:** always use `sonner` (`import { toast } from "sonner"`) — never shadcn `useToast` or `window.alert`
+
+### Design system (palette)
+
+| Token | Hex | Usage |
+|-------|-----|-------|
+| Background | `#F5F0E8` | Page background (beige) |
+| Primary | `#B85A3B` | CTA, links (terracotta) |
+| Secondary | `#5A7A6E` | Accents (sage green) |
+
+Use Tailwind tokens (`bg-primary`, `text-muted-foreground`) — no raw hex in class attributes.
 
 ## Docs
 
 In-repo documentation lives in `/docs/`:
+- `prd.md` — Full product requirements (4 epics, 39 stories, acceptance criteria)
 - `architecture.md` — Full technical design and RLS policies
-- `architecture/coding-standards.md` — Naming conventions, tRPC templates
+- `architecture/coding-standards.md` — Naming conventions, tRPC templates, pitfalls table
 - `architecture/source-tree.md` — Where to place new files
 - `frontend-architecture.md` — Routing, state management, component patterns
 - `design-system.md` — Design tokens, colors, typography
+- `stories/` — One story file per feature with tasks, dev notes, and completion status

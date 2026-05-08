@@ -2,8 +2,12 @@ import { cache } from "react"
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
 import { db } from "@/server/db"
-import { publicCandidateSelect } from "@/server/publicCandidateSelect"
+import {
+  publicCandidateSelect,
+  mapToAnonymousPublicDto,
+} from "@/server/publicCandidateSelect"
 import { PublicCandidateProfile } from "@/components/share/PublicCandidateProfile"
+import { AnonymousCandidateProfile } from "@/components/share/AnonymousCandidateProfile"
 import { ShareErrorState } from "@/components/share/ShareErrorState"
 
 type Props = { params: Promise<{ token: string }> }
@@ -27,30 +31,33 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { token } = await params
   const link = await getShareLink(token)
 
-  if (
-    !link ||
-    link.type !== "NORMAL" ||
-    (link.expiresAt && link.expiresAt < new Date())
-  ) {
+  if (!link || (link.expiresAt && link.expiresAt < new Date())) {
     return { title: "Fiche candidat | Claritee" }
   }
 
-  const { firstName, lastName, company } = link.candidate
-  const fullName =
-    [firstName, lastName].filter(Boolean).join(" ") || "candidat"
-
-  return {
-    title: `Fiche ${company.name} | ${fullName}`,
-    description: `Profil de ${fullName} partagé par ${company.name}`,
+  if (link.type === "ANONYMOUS") {
+    return { title: "Fiche anonymisée | Claritee" }
   }
+
+  if (link.type === "NORMAL") {
+    const { firstName, lastName, company } = link.candidate
+    const fullName =
+      [firstName, lastName].filter(Boolean).join(" ") || "candidat"
+
+    return {
+      title: `Fiche ${company.name} | ${fullName}`,
+      description: `Profil de ${fullName} partagé par ${company.name}`,
+    }
+  }
+
+  return { title: "Fiche candidat | Claritee" }
 }
 
 export default async function SharePage({ params }: Props) {
   const { token } = await params
   const link = await getShareLink(token)
 
-  // Token inexistant ou type non géré dans cette story
-  if (!link || link.type !== "NORMAL") {
+  if (!link) {
     notFound()
   }
 
@@ -58,12 +65,25 @@ export default async function SharePage({ params }: Props) {
     return <ShareErrorState variant="expired" />
   }
 
-  const { company, ...candidateFields } = link.candidate
+  if (link.type === "NORMAL") {
+    const { company, ...candidateFields } = link.candidate
+    return (
+      <PublicCandidateProfile
+        candidate={candidateFields}
+        companyName={company.name}
+      />
+    )
+  }
 
-  return (
-    <PublicCandidateProfile
-      candidate={candidateFields}
-      companyName={company.name}
-    />
-  )
+  if (link.type === "ANONYMOUS") {
+    const { company, ...candidateFields } = link.candidate
+    return (
+      <AnonymousCandidateProfile
+        candidate={mapToAnonymousPublicDto(candidateFields)}
+        companyName={company.name}
+      />
+    )
+  }
+
+  notFound()
 }

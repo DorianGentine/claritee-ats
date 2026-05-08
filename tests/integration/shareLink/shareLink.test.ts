@@ -225,6 +225,8 @@ describe.runIf(!!connectionString)("shareLink router", () => {
     const publicCaller = appRouter.createCaller(createContext(null))
     const data = await publicCaller.shareLink.getPublicByToken({ token: link.token })
 
+    expect(data.type).toBe("NORMAL")
+    if (data.type !== "NORMAL") throw new Error("Expected NORMAL")
     expect(data.firstName).toBe("Alice")
     expect(data.lastName).toBe("Test")
     // Must not expose internal fields
@@ -263,7 +265,7 @@ describe.runIf(!!connectionString)("shareLink router", () => {
     ).rejects.toMatchObject({ code: "NOT_FOUND" })
   })
 
-  it("getPublicByToken throws NOT_FOUND for an ANONYMOUS token (reserved for Story 4.6)", async () => {
+  it("getPublicByToken returns anonymized DTO for a valid ANONYMOUS token", async () => {
     const creator = appRouter.createCaller(createContext(companyAId))
     const link = await creator.shareLink.create({
       candidateId: candidateAId,
@@ -272,8 +274,35 @@ describe.runIf(!!connectionString)("shareLink router", () => {
     })
 
     const publicCaller = appRouter.createCaller(createContext(null))
+    const data = await publicCaller.shareLink.getPublicByToken({ token: link.token })
+
+    expect(data.type).toBe("ANONYMOUS")
+    // Identity fields must be absent
+    expect("firstName" in data).toBe(false)
+    expect("lastName" in data).toBe(false)
+    expect("email" in data).toBe(false)
+    expect("phone" in data).toBe(false)
+    expect("linkedinUrl" in data).toBe(false)
+    expect("photoUrl" in data).toBe(false)
+    // Public fields must be present
+    expect(Array.isArray(data.experiences)).toBe(true)
+    expect(Array.isArray(data.formations)).toBe(true)
+    expect(Array.isArray(data.languages)).toBe(true)
+  })
+
+  it("getPublicByToken throws FORBIDDEN (TOKEN_EXPIRED) for an expired ANONYMOUS token", async () => {
+    const expiredLink = await db.shareLink.create({
+      data: {
+        candidateId: candidateAId,
+        token: `expired-anon-${Date.now()}`,
+        type: "ANONYMOUS",
+        expiresAt: new Date(Date.now() - 1000),
+      },
+    })
+
+    const publicCaller = appRouter.createCaller(createContext(null))
     await expect(
-      publicCaller.shareLink.getPublicByToken({ token: link.token })
-    ).rejects.toMatchObject({ code: "NOT_FOUND" })
+      publicCaller.shareLink.getPublicByToken({ token: expiredLink.token })
+    ).rejects.toMatchObject({ code: "FORBIDDEN", message: "TOKEN_EXPIRED" })
   })
 })
