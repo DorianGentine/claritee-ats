@@ -3,6 +3,7 @@ import { authRouter } from "./auth"
 import { candidateRouter } from "./candidate"
 import { candidatureRouter } from "./candidature"
 import { companyRouter } from "./company"
+import { dashboardRouter } from "./dashboard"
 import { invitationRouter } from "./invitation"
 import { noteRouter } from "./note"
 import { searchRouter } from "./search"
@@ -17,6 +18,7 @@ export const appRouter = router({
   candidature: candidatureRouter,
   clientCompany: clientRouter,
   company: companyRouter,
+  dashboard: dashboardRouter,
   invitation: invitationRouter,
   note: noteRouter,
   offer: offerRouter,
