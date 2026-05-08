@@ -6,6 +6,7 @@ import {
   createClientContactSchema,
   updateClientContactSchema,
 } from "@/lib/validations/client";
+import { checkMutationRateLimit } from "@/lib/rate-limit";
 
 export const clientRouter = router({
   /**
@@ -92,6 +93,7 @@ export const clientRouter = router({
   create: protectedProcedure
     .input(createClientCompanySchema)
     .mutation(async ({ ctx, input }) => {
+      await checkMutationRateLimit(ctx.user!.id);
       const client = await ctx.db.clientCompany.create({
         data: {
           name: input.name,
@@ -112,6 +114,7 @@ export const clientRouter = router({
       z.object({ clientCompanyId: z.uuid() }).merge(createClientContactSchema)
     )
     .mutation(async ({ ctx, input }) => {
+      await checkMutationRateLimit(ctx.user!.id);
       const company = await ctx.db.clientCompany.findFirst({
         where: {
           id: input.clientCompanyId,
@@ -144,6 +147,7 @@ export const clientRouter = router({
   updateContact: protectedProcedure
     .input(updateClientContactSchema)
     .mutation(async ({ ctx, input }) => {
+      await checkMutationRateLimit(ctx.user!.id);
       const contact = await ctx.db.clientContact.findFirst({
         where: { id: input.id },
         include: { clientCompany: true },
@@ -176,6 +180,7 @@ export const clientRouter = router({
   deleteContact: protectedProcedure
     .input(z.object({ id: z.uuid() }))
     .mutation(async ({ ctx, input }) => {
+      await checkMutationRateLimit(ctx.user!.id);
       const contact = await ctx.db.clientContact.findFirst({
         where: { id: input.id },
         include: { clientCompany: true },

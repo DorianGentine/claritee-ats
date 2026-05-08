@@ -2,6 +2,7 @@ import { TRPCError } from "@trpc/server"
 import { z } from "zod"
 import { router, protectedProcedure } from "../trpc"
 import { createNoteSchema, updateNoteSchema } from "@/lib/validations/note"
+import { checkMutationRateLimit } from "@/lib/rate-limit"
 
 const noteAuthorInclude = {
   author: { select: { firstName: true, lastName: true } },
@@ -44,6 +45,7 @@ export const noteRouter = router({
     .input(createNoteSchema)
     .mutation(async ({ ctx, input }) => {
       if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" })
+      await checkMutationRateLimit(ctx.user.id)
       if (input.candidateId) {
         const candidate = await ctx.db.candidate.findFirst({
           where: { id: input.candidateId, companyId: ctx.companyId },
@@ -87,6 +89,7 @@ export const noteRouter = router({
     .input(updateNoteSchema)
     .mutation(async ({ ctx, input }) => {
       if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" })
+      await checkMutationRateLimit(ctx.user.id)
       const existing = await ctx.db.note.findFirst({
         where: { id: input.id, companyId: ctx.companyId },
       })
@@ -110,6 +113,7 @@ export const noteRouter = router({
     .input(z.object({ id: z.uuid() }))
     .mutation(async ({ ctx, input }) => {
       if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" })
+      await checkMutationRateLimit(ctx.user.id)
       const existing = await ctx.db.note.findFirst({
         where: { id: input.id, companyId: ctx.companyId },
       })
