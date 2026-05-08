@@ -168,16 +168,16 @@ export const SiteNavbar = () => {
               {navLinks.map((link) => (
                 <Link
                   key={link.label}
-                    href={link.href}
-                    className={cn(
-                      "rounded-md px-3 py-2 text-sm font-medium transition-colors hover:text-primary",
-                      link.active ? "bg-secondary/20 text-secondary" : "text-foreground"
-                    )}
-                    aria-current={link.active ? "page" : undefined}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
+                  href={link.href}
+                  className={cn(
+                    "rounded-md px-3 py-2 text-sm font-medium transition-colors hover:text-primary",
+                    link.active ? "bg-secondary/20 text-secondary" : "text-foreground"
+                  )}
+                  aria-current={link.active ? "page" : undefined}
+                >
+                  {link.label}
+                </Link>
+              ))}
             </nav>
           </>
         )}
@@ -224,7 +224,7 @@ export const SiteNavbar = () => {
                   </div>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild className="justify-end">
-                    <Link href="/settings/team">Équipe</Link>
+                    <Link href="/settings">Paramètres</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild className="justify-end">
                     <Link href="/notes">Mes notes</Link>
