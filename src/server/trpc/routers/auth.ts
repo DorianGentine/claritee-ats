@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
-import { router, publicProcedure } from "../trpc";
+import { router, publicProcedure, protectedProcedure } from "../trpc";
 import { registerSchema } from "@/lib/validations/auth";
+import { updateProfileSchema } from "@/lib/validations/user";
 import {
   checkRateLimit,
   RATE_LIMITS,
@@ -108,5 +109,28 @@ export const authRouter = router({
       });
 
       return { companyId: company.id };
+    }),
+
+  getMe: protectedProcedure.query(async ({ ctx }) => {
+    const user = await ctx.db.user.findUnique({
+      where: { id: ctx.user.id },
+      select: { id: true, firstName: true, lastName: true, email: true },
+    });
+    if (!user) throw new TRPCError({ code: "NOT_FOUND" });
+    return user;
+  }),
+
+  updateProfile: protectedProcedure
+    .input(updateProfileSchema)
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db.user.update({
+        where: { id: ctx.user.id },
+        data: { firstName: input.firstName, lastName: input.lastName },
+      });
+      const supabaseAdmin = createAdminClient();
+      await supabaseAdmin.auth.admin.updateUserById(ctx.user.id, {
+        user_metadata: { firstName: input.firstName, lastName: input.lastName },
+      });
+      return { success: true };
     }),
 });
