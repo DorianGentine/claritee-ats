@@ -26,7 +26,7 @@ import {
   MAX_TAGS_PER_CANDIDATE,
 } from "@/lib/validations/tag"
 import { getTagColor } from "@/lib/tag-colors"
-import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { checkRateLimit, checkMutationRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /** Magic bytes PDF (%PDF) */
@@ -255,6 +255,7 @@ export const candidateRouter = router({
   delete: protectedProcedure
     .input(z.object({ id: z.uuid() }))
     .mutation(async ({ ctx, input }) => {
+      await checkMutationRateLimit(ctx.user!.id);
       const existing = await ctx.db.candidate.findFirst({
         where: { id: input.id, companyId: ctx.companyId },
       });
@@ -272,6 +273,7 @@ export const candidateRouter = router({
   update: protectedProcedure
     .input(updateCandidateSchema)
     .mutation(async ({ ctx, input }) => {
+      await checkMutationRateLimit(ctx.user!.id);
       const { id, ...rest } = input;
       const existing = await ctx.db.candidate.findFirst({
         where: { id, companyId: ctx.companyId },
@@ -292,6 +294,7 @@ export const candidateRouter = router({
   create: protectedProcedure
     .input(createCandidateSchema)
     .mutation(async ({ ctx, input }) => {
+      await checkMutationRateLimit(ctx.user!.id);
       const candidate = await ctx.db.candidate.create({
         data: {
           firstName: input.firstName,

@@ -29,8 +29,42 @@ import {
 } from "@/components/shared/NoteBlockNoteEditor"
 import { Pencil, Trash2, Maximize2, Minimize2 } from "lucide-react"
 import type { RouterOutputs } from "@/lib/trpc/client"
+import { toast } from "sonner"
 
 type NoteItem = RouterOutputs["note"]["listFree"][number]
+
+function MoveToSelect<T extends { id: string }>({
+  items,
+  isPending,
+  placeholder,
+  getLabel,
+  onSelect,
+}: {
+  items: T[]
+  isPending: boolean
+  placeholder: string
+  getLabel: (item: T) => string
+  onSelect: (id: string) => void
+}) {
+  return (
+    <Select
+      value=""
+      onValueChange={(v) => { if (v) onSelect(v) }}
+      disabled={isPending || items.length === 0}
+    >
+      <SelectTrigger className="w-(--radix-select-trigger-width) max-w-[240px]">
+        <SelectValue placeholder={placeholder} />
+      </SelectTrigger>
+      <SelectContent>
+        {items.map((item) => (
+          <SelectItem key={item.id} value={item.id}>
+            {getLabel(item)}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  )
+}
 
 export default function NotesPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -50,8 +84,17 @@ export default function NotesPage() {
     { limit: 100 },
     { enabled: !!selectedId }
   )
+  const offersQuery = api.offer.list.useQuery(
+    {},
+    { enabled: !!selectedId }
+  )
   const notes = freeNotesQuery.data ?? []
   const selectedNote = selectedId ? notes.find((n) => n.id === selectedId) : null
+
+  const closeAndRefresh = () => {
+    setSelectedId(null)
+    void utils.note.listFree.invalidate()
+  }
 
   const updateMutation = api.note.update.useMutation({
     onSuccess: () => {
@@ -61,14 +104,26 @@ export default function NotesPage() {
   const deleteMutation = api.note.delete.useMutation({
     onSuccess: () => {
       setDeleteId(null)
-      setSelectedId(null)
-      void utils.note.listFree.invalidate()
+      closeAndRefresh()
     },
   })
   const moveToCandidateMutation = api.note.moveToCandidate.useMutation({
-    onSuccess: () => {
-      setSelectedId(null)
-      void utils.note.listFree.invalidate()
+    onSuccess: (_, variables) => {
+      const candidate = candidateItems.find((c) => c.id === variables.candidateId)
+      if (candidate) {
+        const name = [candidate.firstName, candidate.lastName].filter(Boolean).join(" ") || "Sans nom"
+        toast.success(`Note déplacée vers ${name}`)
+      }
+      closeAndRefresh()
+    },
+  })
+  const moveToOfferMutation = api.note.moveToOffer.useMutation({
+    onSuccess: (_, variables) => {
+      const offer = offerItems.find((o) => o.id === variables.offerId)
+      if (offer) {
+        toast.success(`Note déplacée vers ${offer.title}`)
+      }
+      closeAndRefresh()
     },
   })
 
@@ -113,11 +168,6 @@ export default function NotesPage() {
     deleteMutation.mutate({ id: deleteId })
   }
 
-  const handleMoveToCandidate = (candidateId: string) => {
-    if (!selectedId) return
-    moveToCandidateMutation.mutate({ id: selectedId, candidateId })
-  }
-
   const handleContentChange = (content: string) => {
     currentContentRef.current = content
     const titleChanged =
@@ -157,6 +207,7 @@ export default function NotesPage() {
   }, [hasChanges])
 
   const candidateItems = candidatesQuery.data?.items ?? []
+  const offerItems = offersQuery.data?.items ?? []
 
   return (
     <main className="min-h-[calc(100vh-3.5rem)] bg-background p-6">
@@ -269,29 +320,20 @@ export default function NotesPage() {
             </div>
             <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-border">
               <span className="text-sm text-muted-foreground">Déplacer vers :</span>
-              <Select
-                value=""
-                onValueChange={(v) => {
-                  if (v) handleMoveToCandidate(v)
-                }}
-                disabled={moveToCandidateMutation.isPending || candidateItems.length === 0}
-              >
-                <SelectTrigger className="w-(--radix-select-trigger-width) max-w-[240px]">
-                  <SelectValue placeholder="Choisir un candidat…" />
-                </SelectTrigger>
-                <SelectContent>
-                  {candidateItems.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {[c.firstName, c.lastName].filter(Boolean).join(" ") || "Sans nom"}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {candidateItems.length === 0 && (
-                <span className="text-xs text-muted-foreground">
-                  Aucun candidat
-                </span>
-              )}
+              <MoveToSelect
+                items={candidateItems}
+                isPending={moveToCandidateMutation.isPending}
+                placeholder="Choisir un candidat…"
+                getLabel={(c) => [c.firstName, c.lastName].filter(Boolean).join(" ") || "Sans nom"}
+                onSelect={(candidateId) => selectedId && moveToCandidateMutation.mutate({ id: selectedId, candidateId })}
+              />
+              <MoveToSelect
+                items={offerItems}
+                isPending={moveToOfferMutation.isPending}
+                placeholder="Choisir une offre…"
+                getLabel={(o) => o.title}
+                onSelect={(offerId) => selectedId && moveToOfferMutation.mutate({ id: selectedId, offerId })}
+              />
             </div>
           </div>
           <DialogFooter className="flex-row gap-2 sm:gap-0">

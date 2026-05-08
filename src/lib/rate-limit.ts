@@ -4,6 +4,7 @@
  *
  * Référence : docs/architecture.md §10.6 et docs/architecture/rate-limiting.md
  */
+import { TRPCError } from "@trpc/server";
 
 export type RateLimitResult = {
   success: boolean;
@@ -61,6 +62,8 @@ export const RATE_LIMITS = {
   UPLOAD_PER_USER: { limit: 30, windowMs: 60 * 60 * 1000 },
   /** Téléchargement CV par token de partage : 30 req / minute par IP */
   CV_DOWNLOAD_SHARE_PER_IP: { limit: 30, windowMs: 60 * 1000 },
+  /** Mutations métier générales par utilisateur : 60 / minute */
+  GENERAL_MUTATION: { limit: 60, windowMs: 60 * 1000 },
 } as const;
 
 /**
@@ -72,3 +75,22 @@ export const checkRateLimit = async (
   limit: number,
   windowMs: number
 ): Promise<RateLimitResult> => inMemoryStore.check(key, limit, windowMs);
+
+/**
+ * Vérifie la limite GENERAL_MUTATION pour un utilisateur authentifié.
+ * Lance une TRPCError TOO_MANY_REQUESTS si la limite est dépassée.
+ * Clé : `mutation:${userId}` — partagée par toutes les mutations métier.
+ */
+export const checkMutationRateLimit = async (userId: string): Promise<void> => {
+  const rl = await checkRateLimit(
+    `mutation:${userId}`,
+    RATE_LIMITS.GENERAL_MUTATION.limit,
+    RATE_LIMITS.GENERAL_MUTATION.windowMs,
+  );
+  if (!rl.success) {
+    throw new TRPCError({
+      code: "TOO_MANY_REQUESTS",
+      message: "Trop de requêtes. Réessayez dans quelques minutes.",
+    });
+  }
+};

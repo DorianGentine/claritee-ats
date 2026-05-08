@@ -16,6 +16,7 @@ const COMPANY_ID = "550e8400-e29b-41d4-a716-446655440001"
 const OFFER_ID = "550e8400-e29b-41d4-a716-446655440002"
 const CANDIDATE_ID = "550e8400-e29b-41d4-a716-446655440003"
 const CANDIDATURE_ID = "550e8400-e29b-41d4-a716-446655440004"
+const USER_ID = "550e8400-e29b-41d4-a716-446655440000"
 
 const createMockDb = () => ({
   candidature: {
@@ -27,7 +28,7 @@ const createMockDb = () => ({
 
 const makeCtx = (db: ReturnType<typeof createMockDb>): Context => ({
   companyId: COMPANY_ID,
-  user: null,
+  user: { id: USER_ID } as Context["user"],
   headers: new Headers(),
   db: db as unknown as Context["db"],
 })

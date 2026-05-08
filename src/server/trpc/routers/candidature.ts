@@ -4,6 +4,7 @@ import {
   updateCandidatureStatusSchema,
   deleteCandidatureSchema,
 } from "@/lib/validations/candidature"
+import { checkMutationRateLimit } from "@/lib/rate-limit"
 
 /**
  * Router pour la gestion des candidatures (statut, dissociation).
@@ -18,6 +19,7 @@ export const candidatureRouter = router({
   updateStatus: protectedProcedure
     .input(updateCandidatureStatusSchema)
     .mutation(async ({ ctx, input }) => {
+      await checkMutationRateLimit(ctx.user!.id)
       const candidature = await ctx.db.candidature.findFirst({
         where: {
           id: input.candidatureId,
@@ -46,6 +48,7 @@ export const candidatureRouter = router({
   delete: protectedProcedure
     .input(deleteCandidatureSchema)
     .mutation(async ({ ctx, input }) => {
+      await checkMutationRateLimit(ctx.user!.id)
       const candidature = await ctx.db.candidature.findFirst({
         where: {
           id: input.candidatureId,
