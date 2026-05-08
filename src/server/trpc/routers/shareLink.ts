@@ -8,7 +8,10 @@ import {
   type ShareLinkExpiration,
 } from "@/lib/validations/shareLink"
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit"
-import { publicCandidateSelect } from "@/server/publicCandidateSelect"
+import {
+  publicCandidateSelect,
+  mapToAnonymousPublicDto,
+} from "@/server/publicCandidateSelect"
 
 const computeExpiresAt = (expiration: ShareLinkExpiration): Date | null => {
   if (expiration === "never") return null
@@ -106,14 +109,16 @@ export const shareLinkRouter = router({
       if (!link) {
         throw new TRPCError({ code: "NOT_FOUND" })
       }
-      // Les liens ANONYMOUS seront gérés en Story 4.6
-      if (link.type !== "NORMAL") {
+      if (link.type !== "NORMAL" && link.type !== "ANONYMOUS") {
         throw new TRPCError({ code: "NOT_FOUND" })
       }
       if (link.expiresAt && link.expiresAt < new Date()) {
         throw new TRPCError({ code: "FORBIDDEN", message: "TOKEN_EXPIRED" })
       }
 
-      return link.candidate
+      if (link.type === "ANONYMOUS") {
+        return { type: "ANONYMOUS" as const, ...mapToAnonymousPublicDto(link.candidate) }
+      }
+      return { type: "NORMAL" as const, ...link.candidate }
     }),
 })

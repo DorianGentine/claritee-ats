@@ -32,3 +32,5 @@ secrets/
 
 # BMAD
 .bmad-infrastructure-devops/
+.claude/
+_bmad/
