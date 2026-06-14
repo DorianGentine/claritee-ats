@@ -1,3 +1,12 @@
 export const dynamic = "force-dynamic";
 
-export const GET = () => new Response(null, { status: 200 });
+import { db } from "@/server/db";
+
+export const GET = async () => {
+  try {
+    await db.$queryRaw`SELECT 1`;
+    return Response.json({ ok: true, db: "ok" });
+  } catch {
+    return Response.json({ ok: false, db: "unavailable" }, { status: 503 });
+  }
+};
