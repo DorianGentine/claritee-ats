@@ -52,7 +52,7 @@ type JobOfferFormProps = {
     status: JobOfferStatus
     clientCompanyId: string | null
     clientContactId: string | null
-    location: string | null
+    cityId: string | null
     salaryMin: number | null
     salaryMax: number | null
   }) => void
@@ -78,7 +78,6 @@ export const JobOfferForm = ({
     defaultValues: {
       title: initialOffer?.title ?? "",
       description: initialOffer?.description ?? "",
-      location: initialOffer?.location ?? "",
       salaryMin: initialOffer?.salaryMin ?? undefined,
       salaryMax: initialOffer?.salaryMax ?? undefined,
       status: initialOffer?.status ?? "TODO",
@@ -139,7 +138,6 @@ export const JobOfferForm = ({
     const payload: CreateJobOfferInput = {
       title: values.title,
       description: values.description,
-      location: values.location,
       salaryMin: values.salaryMin,
       salaryMax: values.salaryMax,
       status: values.status,
@@ -164,7 +162,6 @@ export const JobOfferForm = ({
         id: initialOffer.id,
         title: values.title,
         description: values.description?.trim() ? values.description.trim() : null,
-        location: values.location?.trim() ? values.location.trim() : null,
         salaryMin: values.salaryMin ?? null,
         salaryMax: values.salaryMax ?? null,
         status: values.status,
@@ -236,20 +233,6 @@ export const JobOfferForm = ({
           {errors.description && (
             <p className="mt-1 text-xs text-destructive">
               {errors.description.message}
-            </p>
-          )}
-        </div>
-
-        <div>
-          <Label htmlFor="location">Localisation</Label>
-          <Input
-            id="location"
-            placeholder="Ex. Paris, Remote…"
-            {...register("location")}
-          />
-          {errors.location && (
-            <p className="mt-1 text-xs text-destructive">
-              {errors.location.message}
             </p>
           )}
         </div>

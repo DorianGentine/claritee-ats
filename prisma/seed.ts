@@ -1,5 +1,6 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
+import { seedCities } from "../scripts/seed-cities";
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
@@ -47,6 +48,8 @@ const main = async () => {
     },
     update: {},
   });
+
+  await seedCities(prisma);
 };
 
 main()

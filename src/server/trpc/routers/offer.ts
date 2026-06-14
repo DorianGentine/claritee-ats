@@ -24,7 +24,7 @@ export type OfferMutationResult = {
   status: JobOfferStatus
   clientCompanyId: string | null
   clientContactId: string | null
-  location: string | null
+  cityId: string | null
   salaryMin: number | null
   salaryMax: number | null
 }
@@ -46,7 +46,6 @@ export const offerRouter = router({
         tagIds,
         salaryMin,
         salaryMax,
-        location,
         clientCompanyId,
       } = input
       const skip = (page - 1) * pageSize
@@ -72,10 +71,6 @@ export const offerRouter = router({
         where.salaryMin = { lte: salaryMax }
       }
 
-      if (location) {
-        where.location = { contains: location, mode: "insensitive" }
-      }
-
       if (clientCompanyId) {
         where.clientCompanyId = clientCompanyId
       }
@@ -89,7 +84,7 @@ export const offerRouter = router({
           select: {
             id: true,
             title: true,
-            location: true,
+            cityId: true,
             salaryMin: true,
             salaryMax: true,
             status: true,
@@ -114,7 +109,7 @@ export const offerRouter = router({
         items: items.map((o) => ({
           id: o.id,
           title: o.title,
-          location: o.location,
+          location: null as string | null,
           salaryMin: o.salaryMin,
           salaryMax: o.salaryMax,
           status: o.status,
@@ -268,7 +263,7 @@ export const offerRouter = router({
           status: true,
           clientCompanyId: true,
           clientContact: { select: { id: true } },
-          location: true,
+          cityId: true,
           salaryMin: true,
           salaryMax: true,
         },
@@ -356,7 +351,6 @@ export const offerRouter = router({
       const data: {
         title?: string
         description?: string | null
-        location?: string | null
         salaryMin?: number | null
         salaryMax?: number | null
         status?: JobOfferStatus
@@ -386,7 +380,7 @@ export const offerRouter = router({
           status: true,
           clientCompanyId: true,
           clientContact: { select: { id: true } },
-          location: true,
+          cityId: true,
           salaryMin: true,
           salaryMax: true,
         },

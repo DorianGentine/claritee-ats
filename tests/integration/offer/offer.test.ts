@@ -190,7 +190,6 @@ describe.runIf(!!connectionString)("offer router", () => {
     const created = await caller.offer.create({
       title: "New Offer A",
       description: "Description A",
-      location: "Paris",
       salaryMin: 45000,
       salaryMax: 55000,
       status: "IN_PROGRESS",
@@ -199,7 +198,6 @@ describe.runIf(!!connectionString)("offer router", () => {
     expect(created.id).toBeDefined()
     expect(created.title).toBe("New Offer A")
     expect(created.status).toBe("IN_PROGRESS")
-    expect(created.location).toBe("Paris")
     expect(created.salaryMin).toBe(45000)
     expect(created.salaryMax).toBe(55000)
 
@@ -655,7 +653,6 @@ describe.runIf(!!connectionString)("offer router", () => {
             status: "TODO",
             salaryMin: 30000,
             salaryMax: 50000,
-            location: "Lyon",
           },
         }),
         db.jobOffer.create({
@@ -665,7 +662,6 @@ describe.runIf(!!connectionString)("offer router", () => {
             status: "DONE",
             salaryMin: 60000,
             salaryMax: 80000,
-            location: "Marseille",
             clientCompanyId: client.id,
           },
         }),
@@ -676,7 +672,6 @@ describe.runIf(!!connectionString)("offer router", () => {
             status: "IN_PROGRESS",
             salaryMin: 40000,
             salaryMax: 55000,
-            location: "Paris",
           },
         }),
       ])
@@ -801,15 +796,7 @@ describe.runIf(!!connectionString)("offer router", () => {
       expect(filterIds).not.toContain(filterOfferDone)
     })
 
-    it("filters by location (case-insensitive)", async () => {
-      const caller = appRouter.createCaller(createContext(companyAId))
-      const result = await caller.offer.list({ location: "paris" })
-
-      const filterIds = result.items.map((o) => o.id)
-      expect(filterIds).toContain(filterOfferParis)
-      expect(filterIds).not.toContain(filterOfferTodo)
-      expect(filterIds).not.toContain(filterOfferDone)
-    })
+    it.todo("filters by location (case-insensitive) — replaced by City relation in story 5.7")
 
     it("filters by clientCompanyId", async () => {
       const caller = appRouter.createCaller(createContext(companyAId))

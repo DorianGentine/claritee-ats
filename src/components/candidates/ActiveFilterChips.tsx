@@ -10,7 +10,6 @@ type ActiveFilterChipsProps = {
   totalCount: number
   isLoading?: boolean
   onRemoveTag: (tagId: string) => void
-  onRemoveCity: () => void
   onRemoveLanguage: (name: string) => void
   className?: string
 }
@@ -20,7 +19,6 @@ export const ActiveFilterChips = ({
   totalCount,
   isLoading,
   onRemoveTag,
-  onRemoveCity,
   onRemoveLanguage,
   className,
 }: ActiveFilterChipsProps) => {
@@ -54,13 +52,6 @@ export const ActiveFilterChips = ({
           removeAriaLabel={`Retirer le filtre langue ${name}`}
         />
       ))}
-      {filters.city?.trim() && (
-        <FilterChip
-          label={`Ville: ${filters.city}`}
-          onRemove={onRemoveCity}
-          removeAriaLabel={`Retirer le filtre ville ${filters.city}`}
-        />
-      )}
       <span
         className="text-sm text-muted-foreground"
         aria-live="polite"

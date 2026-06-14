@@ -12,7 +12,6 @@ export type CandidateBasicFields = {
   phone?: string;
   linkedinUrl?: string;
   title?: string;
-  city?: string;
   summary?: string;
 };
 
@@ -126,22 +125,6 @@ export const CandidateBasicFieldsForm = ({
       {errors.title && (
         <p className="text-sm text-destructive" role="alert">
           {errors.title.message}
-        </p>
-      )}
-    </div>
-
-    <div className="space-y-2">
-      <Label htmlFor="city">Ville</Label>
-      <Input
-        id="city"
-        autoComplete="address-level2"
-        placeholder="Paris"
-        aria-invalid={!!errors.city}
-        {...register("city")}
-      />
-      {errors.city && (
-        <p className="text-sm text-destructive" role="alert">
-          {errors.city.message}
         </p>
       )}
     </div>

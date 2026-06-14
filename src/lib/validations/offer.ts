@@ -26,13 +26,6 @@ export const offerListInputSchema = z.object({
   tagIds: z.array(z.uuid()).optional(),
   salaryMin: z.number().int().nonnegative().optional(),
   salaryMax: z.number().int().nonnegative().optional(),
-  location: z
-    .string()
-    .optional()
-    .transform((s) => {
-      const trimmed = typeof s === "string" ? s.trim() : s
-      return trimmed || undefined
-    }),
   clientCompanyId: z.uuid().optional(),
 })
 
@@ -49,10 +42,6 @@ const jobOfferBaseFieldsSchema = z.object({
     .min(1, "Titre est requis.")
     .transform((v) => v.trim()),
   description: z
-    .string()
-    .optional()
-    .transform(trimToUndefined),
-  location: z
     .string()
     .optional()
     .transform(trimToUndefined),
@@ -120,7 +109,6 @@ export const updateJobOfferSchema = jobOfferBaseFieldsSchema
     id: z.uuid(),
     status: jobOfferStatusSchema.optional(),
     description: optionalNullableString,
-    location: optionalNullableString,
     salaryMin: z
       .number()
       .int()

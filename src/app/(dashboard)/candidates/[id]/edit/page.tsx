@@ -98,7 +98,6 @@ export default function EditCandidatePage() {
           phone: getByIdQuery.data.phone ?? "",
           linkedinUrl: getByIdQuery.data.linkedinUrl ?? "",
           title: getByIdQuery.data.title ?? "",
-          city: getByIdQuery.data.city ?? "",
           summary: getByIdQuery.data.summary ?? "",
         }
       : undefined,
@@ -109,7 +108,6 @@ export default function EditCandidatePage() {
       phone: "",
       linkedinUrl: "",
       title: "",
-      city: "",
       summary: "",
     },
   });
@@ -130,7 +128,6 @@ export default function EditCandidatePage() {
         phone: data.phone?.trim() || undefined,
         linkedinUrl: data.linkedinUrl?.trim() || undefined,
         title: data.title?.trim() || undefined,
-        city: data.city?.trim() || undefined,
         summary: data.summary,
       });
 

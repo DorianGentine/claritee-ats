@@ -23,7 +23,6 @@ const buildCandidateSearchWhereInner = (companyId: string, q: string) => ({
     { lastName: { contains: q, mode: "insensitive" as const } },
     { title: { contains: q, mode: "insensitive" as const } },
     { summary: { contains: q, mode: "insensitive" as const } },
-    { city: { contains: q, mode: "insensitive" as const } },
     {
       tags: {
         some: { tag: { name: { contains: q, mode: "insensitive" as const } } },
@@ -83,7 +82,6 @@ export const searchRouter = router({
             firstName: true,
             lastName: true,
             title: true,
-            city: true,
             photoUrl: true,
             tags: {
               take: 3,
@@ -129,7 +127,7 @@ export const searchRouter = router({
           firstName: c.firstName,
           lastName: c.lastName,
           title: c.title,
-          city: c.city,
+          city: null as string | null,
           photoUrl: c.photoUrl,
           tags: c.tags.map((ct) => ct.tag),
         })),

@@ -166,7 +166,7 @@ export const OfferDetailView = ({ offerId }: Props) => {
             {/* Localisation */}
             <DetailField label="Localisation">
               <p className="text-sm text-foreground">
-                {offer.location ?? "Localisation non précisée"}
+                {"Localisation non précisée"}
               </p>
             </DetailField>
 

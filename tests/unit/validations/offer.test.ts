@@ -117,25 +117,8 @@ describe("offerListInputSchema", () => {
     ).toBe(false)
   })
 
-  it("accepts location filter and trims whitespace", () => {
-    const result = offerListInputSchema.safeParse({
-      location: "  Paris  ",
-    })
-    expect(result.success).toBe(true)
-    if (result.success) {
-      expect(result.data.location).toBe("Paris")
-    }
-  })
-
-  it("transforms empty location string to undefined", () => {
-    const result = offerListInputSchema.safeParse({
-      location: "   ",
-    })
-    expect(result.success).toBe(true)
-    if (result.success) {
-      expect(result.data.location).toBeUndefined()
-    }
-  })
+  it.todo("accepts location filter and trims whitespace — location replaced by City relation in story 5.7")
+  it.todo("transforms empty location string to undefined — location replaced by City relation in story 5.7")
 
   it("accepts valid clientCompanyId filter", () => {
     const result = offerListInputSchema.safeParse({
@@ -159,7 +142,6 @@ describe("offerListInputSchema", () => {
       expect(result.data.tagIds).toBeUndefined()
       expect(result.data.salaryMin).toBeUndefined()
       expect(result.data.salaryMax).toBeUndefined()
-      expect(result.data.location).toBeUndefined()
       expect(result.data.clientCompanyId).toBeUndefined()
     }
   })
@@ -277,7 +259,6 @@ describe("updateJobOfferSchema", () => {
     const result = updateJobOfferSchema.safeParse({
       id: "7c3ec936-4a1d-4f2f-9f3e-4a1d4f2f9f3e",
       description: null,
-      location: null,
       salaryMin: null,
       salaryMax: null,
       clientCompanyId: null,
@@ -287,7 +268,6 @@ describe("updateJobOfferSchema", () => {
     expect(result.success).toBe(true)
     if (result.success) {
       expect(result.data.description).toBeNull()
-      expect(result.data.location).toBeNull()
       expect(result.data.salaryMin).toBeNull()
       expect(result.data.salaryMax).toBeNull()
       expect(result.data.clientCompanyId).toBeNull()

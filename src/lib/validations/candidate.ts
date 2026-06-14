@@ -10,12 +10,6 @@ export const candidateListInputSchema = z.object({
     .array(z.uuid())
     .max(20, "Maximum 20 tags pour le filtre")
     .optional(),
-  city: z
-    .string()
-    .optional()
-    .transform((s) =>
-      typeof s === "string" ? (s.trim() || undefined) : undefined
-    ),
   languageNames: z
     .array(z.string().max(50))
     .max(20, "Maximum 20 langues pour le filtre")
@@ -79,7 +73,6 @@ export const createCandidateSchema = z.object({
   phone: optionalPhone,
   linkedinUrl: optionalLinkedInUrl,
   title: z.string().optional().transform(trimToUndefined),
-  city: z.string().optional().transform(trimToUndefined),
 });
 
 export type CreateCandidateInput = z.infer<typeof createCandidateSchema>;
@@ -101,7 +94,6 @@ export const updateCandidateSchema = z.object({
   phone: optionalPhone,
   linkedinUrl: optionalLinkedInUrl,
   title: z.string().optional().transform(trimToUndefined),
-  city: z.string().optional().transform(trimToUndefined),
   summary: z
     .string()
     .max(500, "Le résumé ne peut pas dépasser 500 caractères")

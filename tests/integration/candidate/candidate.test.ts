@@ -77,7 +77,6 @@ describe.runIf(!!connectionString)("candidate", () => {
           lastName: "A1",
           companyId: companyAId,
           title: "Dev",
-          city: "Paris",
         },
       }),
       db.candidate.create({
@@ -86,7 +85,6 @@ describe.runIf(!!connectionString)("candidate", () => {
           lastName: "A2",
           companyId: companyAId,
           title: "Designer",
-          city: "Lyon",
         },
       }),
       db.candidate.create({
@@ -95,7 +93,6 @@ describe.runIf(!!connectionString)("candidate", () => {
           lastName: "B1",
           companyId: companyBId,
           title: "PM",
-          city: "Marseille",
         },
       }),
     ]);
@@ -164,32 +161,7 @@ describe.runIf(!!connectionString)("candidate", () => {
     expect(page2.items[0].id).not.toBe(page1.items[0].id);
   });
 
-  it("list: filters by city (case insensitive, partial match contains)", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
-
-    const result = await caller.candidate.list({
-      limit: 20,
-      city: "paris",
-    });
-    expect(result.items).toHaveLength(1);
-    expect(result.items[0].id).toBe(candidateA1Id);
-    expect(result.items[0].city).toBe("Paris");
-
-    const partialResult = await caller.candidate.list({
-      limit: 20,
-      city: "Par",
-    });
-    expect(partialResult.items).toHaveLength(1);
-    expect(partialResult.items[0].city).toBe("Paris");
-
-    const lyonResult = await caller.candidate.list({
-      limit: 20,
-      city: "Lyon",
-    });
-    expect(lyonResult.items).toHaveLength(1);
-    expect(lyonResult.items[0].id).toBe(candidateA2Id);
-  });
+  it.todo("list: filters by city (case insensitive, partial match contains) — replaced by CandidateCity relation in story 5.7");
 
   it("list: filters by tagIds (AND logic - candidate must have ALL tags)", async () => {
     const ctx = createContext(companyAId);
@@ -244,43 +216,7 @@ describe.runIf(!!connectionString)("candidate", () => {
     await db.tag.deleteMany({ where: { id: { in: [tag1.id, tag2.id] } } });
   });
 
-  it("list: combines city and tagIds filters", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
-
-    const tag = await db.tag.create({
-      data: {
-        name: `CityTag-${Date.now()}`,
-        color: "#9B8BA8",
-        companyId: companyAId,
-      },
-    });
-    await db.candidateTag.create({
-      data: { candidateId: candidateA1Id, tagId: tag.id },
-    });
-
-    const result = await caller.candidate.list({
-      limit: 20,
-      city: "Paris",
-      tagIds: [tag.id],
-    });
-    expect(result.items).toHaveLength(1);
-    expect(result.items[0].id).toBe(candidateA1Id);
-
-    const noMatch = await caller.candidate.list({
-      limit: 20,
-      city: "Lyon",
-      tagIds: [tag.id],
-    });
-    expect(noMatch.items).toHaveLength(0);
-
-    await db.candidateTag.delete({
-      where: {
-        candidateId_tagId: { candidateId: candidateA1Id, tagId: tag.id },
-      },
-    });
-    await db.tag.delete({ where: { id: tag.id } });
-  });
+  it.todo("list: combines city and tagIds filters — replaced by CandidateCity relation in story 5.7");
 
   it("list: filters by languageNames (AND logic)", async () => {
     const ctx = createContext(companyAId);
@@ -351,25 +287,8 @@ describe.runIf(!!connectionString)("candidate", () => {
     });
   });
 
-  it("listDistinctCities: returns distinct cities for the cabinet only", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
-
-    const cities = await caller.candidate.listDistinctCities();
-
-    expect(cities).toContain("Paris");
-    expect(cities).toContain("Lyon");
-    expect(cities).not.toContain("Marseille");
-  });
-
-  it("listDistinctCities: throws UNAUTHORIZED when not authenticated", async () => {
-    const ctx = createContext(null);
-    const caller = appRouter.createCaller(ctx);
-
-    await expect(caller.candidate.listDistinctCities()).rejects.toMatchObject({
-      code: "UNAUTHORIZED",
-    });
-  });
+  it.todo("listDistinctCities: returns distinct cities for the cabinet only — removed, replaced by City relation in story 5.2");
+  it.todo("listDistinctCities: throws UNAUTHORIZED when not authenticated — removed, replaced by City relation in story 5.2");
 
   it("list: throws UNAUTHORIZED when not authenticated", async () => {
     const ctx = createContext(null);
@@ -390,7 +309,6 @@ describe.runIf(!!connectionString)("candidate", () => {
       email: "new@test.com",
       phone: "06 11 22 33 44",
       title: "QA",
-      city: "Lille",
     });
 
     expect(result.id).toBeDefined();
@@ -405,7 +323,6 @@ describe.runIf(!!connectionString)("candidate", () => {
     expect(inDb.email).toBe("new@test.com");
     expect(inDb.phone).toBe("06 11 22 33 44");
     expect(inDb.title).toBe("QA");
-    expect(inDb.city).toBe("Lille");
 
     await db.candidate.delete({ where: { id: result.id } });
   });
@@ -802,7 +719,6 @@ describe.runIf(!!connectionString)("candidate", () => {
     expect(result.lastName).toBe("A1");
     expect(result.companyId).toBe(companyAId);
     expect(result.title).toBe("Dev");
-    expect(result.city).toBe("Paris");
     expect(Array.isArray(result.experiences)).toBe(true);
     expect(Array.isArray(result.formations)).toBe(true);
     expect(Array.isArray(result.languages)).toBe(true);
@@ -875,7 +791,6 @@ describe.runIf(!!connectionString)("candidate", () => {
       phone: "06 99 88 77 66",
       linkedinUrl: "https://linkedin.com/in/alice-a1",
       title: "Senior Dev",
-      city: "Lyon",
       summary: "Profil mis à jour via formulaire complet",
     });
 
@@ -885,7 +800,6 @@ describe.runIf(!!connectionString)("candidate", () => {
     expect(result.phone).toBe("06 99 88 77 66");
     expect(result.linkedinUrl).toBe("https://linkedin.com/in/alice-a1");
     expect(result.title).toBe("Senior Dev");
-    expect(result.city).toBe("Lyon");
     expect(result.summary).toBe("Profil mis à jour via formulaire complet");
 
     const inDb = await db.candidate.findUniqueOrThrow({
@@ -896,7 +810,6 @@ describe.runIf(!!connectionString)("candidate", () => {
     expect(inDb.email).toBe("alice@example.com");
     expect(inDb.phone).toBe("06 99 88 77 66");
     expect(inDb.title).toBe("Senior Dev");
-    expect(inDb.city).toBe("Lyon");
     expect(inDb.summary).toBe("Profil mis à jour via formulaire complet");
 
     await db.candidate.update({
@@ -908,7 +821,6 @@ describe.runIf(!!connectionString)("candidate", () => {
         phone: null,
         linkedinUrl: null,
         title: "Dev",
-        city: "Paris",
         summary: null,
       },
     });

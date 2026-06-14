@@ -18,7 +18,6 @@ import { ActiveFilterChips } from "@/components/candidates/ActiveFilterChips"
 const PAGE_SIZE = 20
 
 const FILTER_TAGS_PARAM = "tags"
-const FILTER_CITY_PARAM = "city"
 const FILTER_LANGUAGES_PARAM = "languages"
 
 const parseFiltersFromSearchParams = (
@@ -32,7 +31,6 @@ const parseFiltersFromSearchParams = (
         .filter((s) => /^[0-9a-f-]{36}$/i.test(s))
         .slice(0, 20)
     : []
-  const city = params.get(FILTER_CITY_PARAM)?.trim() || undefined
   const languagesParam = params.get(FILTER_LANGUAGES_PARAM)
   const languageNames = languagesParam
     ? languagesParam
@@ -41,16 +39,13 @@ const parseFiltersFromSearchParams = (
         .filter((s) => s.length > 0 && s.length <= 50)
         .slice(0, 20)
     : []
-  return { tagIds, city, languageNames }
+  return { tagIds, languageNames }
 }
 
 const buildSearchParams = (filters: CandidateFilters): URLSearchParams => {
   const params = new URLSearchParams()
   if (filters.tagIds.length > 0) {
     params.set(FILTER_TAGS_PARAM, filters.tagIds.join(","))
-  }
-  if (filters.city?.trim()) {
-    params.set(FILTER_CITY_PARAM, filters.city.trim())
   }
   if (filters.languageNames.length > 0) {
     params.set(
@@ -128,11 +123,6 @@ export default function CandidatesPage() {
     [handleFiltersChange]
   )
 
-  const handleRemoveCity = useCallback(() => {
-    const current = filtersRef.current
-    handleFiltersChange({ ...current, city: undefined })
-  }, [handleFiltersChange])
-
   const handleRemoveLanguage = useCallback(
     (name: string) => {
       const current = filtersRef.current
@@ -149,7 +139,6 @@ export default function CandidatesPage() {
       limit: PAGE_SIZE,
       ...(cursor ? { cursor } : {}),
       ...(filters.tagIds.length > 0 ? { tagIds: filters.tagIds } : {}),
-      ...(filters.city?.trim() ? { city: filters.city.trim() } : {}),
       ...(filters.languageNames.length > 0
         ? { languageNames: filters.languageNames }
         : {}),
@@ -191,7 +180,6 @@ export default function CandidatesPage() {
               totalCount={displayCount}
               isLoading={isFetching}
               onRemoveTag={handleRemoveTag}
-              onRemoveCity={handleRemoveCity}
               onRemoveLanguage={handleRemoveLanguage}
             />
           </div>

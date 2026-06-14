@@ -71,7 +71,6 @@ export default function OffersPage() {
     tagIds: filters.tagIds.length > 0 ? filters.tagIds : undefined,
     salaryMin: filters.salaryMin,
     salaryMax: filters.salaryMax,
-    location: filters.location,
     clientCompanyId: filters.clientCompanyId,
   })
   const data = listQuery.data
