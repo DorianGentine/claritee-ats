@@ -1,27 +1,22 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useMemo, useState } from "react"
 import { Filter } from "lucide-react"
 import { api } from "@/lib/trpc/client"
-import { useDebounce } from "@/hooks/useDebounce"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { MultiSelectPopover } from "@/components/shared/MultiSelectPopover"
 
 export type CandidateFilters = {
   tagIds: string[]
-  city?: string
   languageNames: string[]
 }
 
 export const hasActiveCandidateFilters = (filters: CandidateFilters): boolean =>
   filters.tagIds.length > 0 ||
-  (filters.city?.trim() ?? "").length > 0 ||
   filters.languageNames.length > 0
 
 export const EMPTY_CANDIDATE_FILTERS: CandidateFilters = {
   tagIds: [],
-  city: undefined,
   languageNames: [],
 }
 
@@ -38,28 +33,7 @@ export const CandidateListFilters = ({
 }: CandidateListFiltersProps) => {
   const [tagPopoverOpen, setTagPopoverOpen] = useState(false)
   const [languagePopoverOpen, setLanguagePopoverOpen] = useState(false)
-  const [cityInput, setCityInput] = useState(filters.city ?? "")
-
-  const debouncedCity = useDebounce(cityInput.trim(), 300)
-  const prevDebouncedCityRef = useRef(debouncedCity)
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync props → state
-    setCityInput(filters.city ?? "")
-  }, [filters.city])
-
-  useEffect(() => {
-    if (debouncedCity === prevDebouncedCityRef.current) return
-    prevDebouncedCityRef.current = debouncedCity
-    const nextCity = debouncedCity || undefined
-    const currentCity = filters.city ?? undefined
-    if (nextCity !== currentCity) {
-      onFiltersChange({ ...filters, city: nextCity })
-    }
-  }, [debouncedCity, filters, onFiltersChange])
-
   const { data: tags = [] } = api.tag.list.useQuery()
-  const { data: cities = [] } = api.candidate.listDistinctCities.useQuery()
   const { data: languageNames = [] } =
     api.candidate.listDistinctLanguageNames.useQuery()
 
@@ -75,12 +49,6 @@ export const CandidateListFilters = ({
     [languageNames]
   )
 
-  const cityOptions = useMemo(() => {
-    const value = cityInput.trim().toLowerCase()
-    if (!value) return cities
-    return cities.filter((c) => c.toLowerCase().includes(value))
-  }, [cities, cityInput])
-
   const toggleTag = (tagId: string) => {
     const next = filters.tagIds.includes(tagId)
       ? filters.tagIds.filter((id) => id !== tagId)
@@ -93,13 +61,6 @@ export const CandidateListFilters = ({
       ? filters.languageNames.filter((n) => n !== name)
       : [...filters.languageNames, name]
     onFiltersChange({ ...filters, languageNames: next })
-  }
-
-  const handleCityKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      e.preventDefault()
-      ;(e.target as HTMLInputElement).blur()
-    }
   }
 
   return (
@@ -147,31 +108,6 @@ export const CandidateListFilters = ({
             selectedLabel={(n) => `${n} langue(s) sélectionnée(s)`}
             emptyMessage="Aucune langue disponible"
           />
-        </div>
-
-        {/* Ville */}
-        <div className="flex min-w-0 flex-col gap-2">
-          <label htmlFor="filter-city" className="text-xs text-muted-foreground">
-            Ville
-          </label>
-          <div className="relative" suppressHydrationWarning>
-            <Input
-              id="filter-city"
-              type="text"
-              placeholder="Ex: Paris"
-              value={cityInput}
-              onChange={(e) => setCityInput(e.target.value)}
-              onKeyDown={handleCityKeyDown}
-              list="filter-city-datalist"
-              className="w-full sm:w-40"
-              aria-autocomplete="list"
-            />
-            <datalist id="filter-city-datalist">
-              {cityOptions.map((c) => (
-                <option key={c} value={c} />
-              ))}
-            </datalist>
-          </div>
         </div>
 
         {/* Effacer */}

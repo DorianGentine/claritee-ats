@@ -97,7 +97,6 @@ model Candidate {
   phone      String?
   linkedinUrl String?
   title      String?
-  city       String?
   summary    String?  @db.Text
   photoUrl   String?
   cvUrl      String?
@@ -114,8 +113,9 @@ model Candidate {
   candidatures Candidature[]
   notes       Note[]
   shareLinks  ShareLink[]
+  cities      CandidateCity[]
 
-  @@index([companyId, firstName, lastName, title, city])
+  @@index([companyId, firstName, lastName, title])
 }
 
 // ============ EXPERIENCE ============
@@ -200,6 +200,7 @@ model ClientCompany {
   company       Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
   contacts      ClientContact[]
   jobOffers     JobOffer[]
+  cities        ClientCompanyCity[]
 }
 
 // ============ CLIENT CONTACT ============
@@ -225,10 +226,10 @@ model JobOffer {
   id               String         @id @default(uuid())
   title            String
   description      String?        @db.Text
-  location         String?
   salaryMin        Int?
   salaryMax        Int?
   status           JobOfferStatus  @default(TODO)
+  cityId           String?
   clientCompanyId  String?
   clientContactId  String?
   companyId        String
@@ -236,8 +237,9 @@ model JobOffer {
   updatedAt        DateTime       @updatedAt
 
   company        Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  clientCompany  ClientCompany?  @relation(fields: [clientCompanyId], references: [id], onDelete: SetNull)
-   clientContact  ClientContact?  @relation(fields: [clientContactId], references: [id], onDelete: SetNull)
+  city           City?          @relation(fields: [cityId], references: [id], onDelete: SetNull)
+  clientCompany  ClientCompany? @relation(fields: [clientCompanyId], references: [id], onDelete: SetNull)
+  clientContact  ClientContact? @relation(fields: [clientContactId], references: [id], onDelete: SetNull)
   tags           OfferTag[]
   candidatures   Candidature[]
   notes          Note[]
@@ -303,4 +305,50 @@ model ShareLink {
   createdAt  DateTime      @default(now())
 
   candidate Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+}
+
+// ============ CITY (données de référence globales, sans companyId) ============
+
+model City {
+  id        String   @id @default(uuid())
+  name      String
+  region    String?
+  country   String
+  latitude  Decimal  @db.Decimal(8, 6)
+  longitude Decimal  @db.Decimal(9, 6)
+  createdAt DateTime @default(now())
+
+  candidateCities     CandidateCity[]
+  clientCompanyCities ClientCompanyCity[]
+  jobOffers           JobOffer[]
+
+  @@unique([name, country])
+  @@map("cities")
+}
+
+// ============ CANDIDATE <-> CITY (N-N, avec ordre) ============
+
+model CandidateCity {
+  id          String    @id @default(uuid())
+  candidateId String
+  cityId      String
+  order       Int       @default(0)
+
+  candidate Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  city      City      @relation(fields: [cityId], references: [id], onDelete: Restrict)
+
+  @@unique([candidateId, cityId])
+  @@index([candidateId])
+}
+
+// ============ CLIENT COMPANY <-> CITY (N-N, sans ordre) ============
+
+model ClientCompanyCity {
+  clientCompanyId String
+  cityId          String
+
+  clientCompany ClientCompany @relation(fields: [clientCompanyId], references: [id], onDelete: Cascade)
+  city          City          @relation(fields: [cityId], references: [id], onDelete: Restrict)
+
+  @@id([clientCompanyId, cityId])
 }

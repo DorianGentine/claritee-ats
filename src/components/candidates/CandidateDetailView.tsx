@@ -93,7 +93,7 @@ export const CandidateDetailView = ({ candidateId }: Props) => {
           firstName={candidate.firstName}
           lastName={candidate.lastName}
           title={candidate.title}
-          city={candidate.city}
+          city={null}
           email={candidate.email}
           phone={candidate.phone}
           linkedinUrl={candidate.linkedinUrl}

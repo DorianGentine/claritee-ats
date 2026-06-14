@@ -82,7 +82,6 @@ const EditOfferPage = () => {
             id: offer.id,
             title: offer.title,
             description: offer.description ?? "",
-            location: offer.location ?? "",
             salaryMin: offer.salaryMin ?? undefined,
             salaryMax: offer.salaryMax ?? undefined,
             status: offer.status,

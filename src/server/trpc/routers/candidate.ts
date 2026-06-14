@@ -114,7 +114,6 @@ export const candidateRouter = router({
       const tagIds = input.tagIds?.filter(Boolean).length
         ? input.tagIds
         : undefined;
-      const city = input.city;
       const languageNames = input.languageNames?.filter(Boolean).length
         ? input.languageNames
         : undefined;
@@ -125,9 +124,6 @@ export const candidateRouter = router({
           ? tagIds.map((tagId) => ({
               tags: { some: { tagId } },
             }))
-          : []),
-        ...(city
-          ? [{ city: { contains: city, mode: "insensitive" as const } }]
           : []),
         ...(languageNames?.length
           ? languageNames.map((name) => ({
@@ -150,7 +146,6 @@ export const candidateRouter = router({
           firstName: true,
           lastName: true,
           title: true,
-          city: true,
           photoUrl: true,
           tags: {
             take: 3,
@@ -174,7 +169,7 @@ export const candidateRouter = router({
           firstName: c.firstName,
           lastName: c.lastName,
           title: c.title,
-          city: c.city,
+          city: null as string | null,
           photoUrl: c.photoUrl,
           tags: c.tags.map((ct) => ct.tag),
         })),
@@ -196,24 +191,6 @@ export const candidateRouter = router({
       orderBy: { name: "asc" },
     });
     return rows.map((r) => r.name);
-  }),
-
-  /**
-   * Retourne les villes distinctes non nulles des candidats du cabinet (pour autocomplete filtre).
-   */
-  listDistinctCities: protectedProcedure.query(async ({ ctx }) => {
-    const rows = await ctx.db.candidate.findMany({
-      where: {
-        companyId: ctx.companyId,
-        city: { not: null },
-      },
-      distinct: ["city"],
-      select: { city: true },
-      orderBy: { city: "asc" },
-    });
-    return rows
-      .map((r) => r.city)
-      .filter((c): c is string => typeof c === "string" && c.length > 0);
   }),
 
   /**
@@ -303,7 +280,6 @@ export const candidateRouter = router({
           phone: input.phone || null,
           linkedinUrl: input.linkedinUrl || null,
           title: input.title || null,
-          city: input.city || null,
           companyId: ctx.companyId,
         },
       });

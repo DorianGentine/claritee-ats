@@ -78,7 +78,6 @@ export default function NewCandidatePage() {
       phone: "",
       linkedinUrl: "",
       title: "",
-      city: "",
     },
   });
 
@@ -99,7 +98,6 @@ export default function NewCandidatePage() {
           phone: data.phone?.trim() || undefined,
           linkedinUrl: data.linkedinUrl?.trim() || undefined,
           title: data.title?.trim() || undefined,
-          city: data.city?.trim() || undefined,
         });
         candidateId = candidate.id;
         setCreatedCandidateId(candidate.id);

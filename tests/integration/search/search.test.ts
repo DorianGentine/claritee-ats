@@ -68,7 +68,6 @@ describe.runIf(!!connectionString)("search", () => {
           lastName: "Dupont",
           companyId: companyAId,
           title: "Développeuse React",
-          city: "Paris",
           summary: "Expert React et TypeScript",
         },
       }),
@@ -78,7 +77,6 @@ describe.runIf(!!connectionString)("search", () => {
           lastName: "Martin",
           companyId: companyAId,
           title: "Designer",
-          city: "Lyon",
         },
       }),
       db.candidate.create({
@@ -87,7 +85,6 @@ describe.runIf(!!connectionString)("search", () => {
           lastName: "Other",
           companyId: companyBId,
           title: "PM",
-          city: "Marseille",
         },
       }),
     ])
