@@ -21,6 +21,7 @@ Les epics et stories s’appuient sur les livrables suivants ; les critères d�
 | **Epic 2** | Gestion des Candidats | Permettre la création, consultation et gestion complète des fiches candidats avec expériences, formations, CV, tags et layout professionnel type CV |
 | **Epic 3** | Offres, Clients & Pipeline | Gérer les offres d'emploi et entreprises clientes, et permettre le suivi des candidats par offre avec statuts et notes partagées |
 | **Epic 4** | Recherche, Filtres & Partage | Implémenter la recherche/filtrage des candidats et offres, et permettre le partage de fiches candidats (normales et anonymisées) via URLs publiques |
+| **Epic 5** | Villes Structurées | Remplacer les champs texte libres ville/localisation par une table `City` partagée avec autocomplétion hybride (seed local + API Photon), et des relations structurées sur candidats, offres et entreprises clientes |
 
 ## Ordre de priorités de développement
 
