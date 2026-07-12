@@ -35,6 +35,12 @@ jobs:
   test:
     runs-on: ubuntu-latest
     needs: lint-typecheck
+    # Requis dès `pnpm install` : le postinstall `prisma generate` charge prisma.config.ts,
+    # qui résout DATABASE_URL (échoue si absent). test-db.sh surcharge ensuite ces URLs
+    # vers la base de test dédiée (claritee_test) pour les migrations et les tests.
+    env:
+      DATABASE_URL: "postgresql://postgres:postgres@127.0.0.1:54322/postgres"
+      DIRECT_DATABASE_URL: "postgresql://postgres:postgres@127.0.0.1:54322/postgres"
     steps:
       - uses: actions/checkout@v4
 
