@@ -32,6 +32,48 @@ jobs:
       - name: TypeScript
         run: pnpm exec tsc --noEmit
 
+  test:
+    runs-on: ubuntu-latest
+    needs: lint-typecheck
+    # Requis dès `pnpm install` : le postinstall `prisma generate` charge prisma.config.ts,
+    # qui résout DATABASE_URL (échoue si absent). test-db.sh surcharge ensuite ces URLs
+    # vers la base de test dédiée (claritee_test) pour les migrations et les tests.
+    env:
+      DATABASE_URL: "postgresql://postgres:postgres@127.0.0.1:54322/postgres"
+      DIRECT_DATABASE_URL: "postgresql://postgres:postgres@127.0.0.1:54322/postgres"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start Supabase
+        # Fournit l'instance Postgres locale (127.0.0.1:54322) + les rôles Supabase
+        # (anon/authenticated) et le schéma auth attendus par les migrations.
+        # NB : pas de `-x` — exclure kong casse le health-check sur 54321, et les noms
+        # de services valides varient selon la version du CLI. Optimisation possible plus
+        # tard (exclure studio/imgproxy) si le temps de démarrage devient gênant.
+        run: supabase start
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # test = test:unit (sans DB) + test:db (base de test dédiée créée par scripts/test-db.sh).
+      # Les tests d'intégration créent leurs propres données ; pas de seed (Photon = réseau).
+      - name: Run tests (unit + db)
+        run: pnpm test
+
   build:
     runs-on: ubuntu-latest
     needs: lint-typecheck

@@ -64,8 +64,9 @@ _Règles critiques et non-évidentes que les agents IA doivent suivre lors de l'
 - Tests RTL: `/** @vitest-environment jsdom */` en tête de fichier
 - `afterEach(() => cleanup())` dans tous les fichiers RTL
 - Si un texte apparaît plusieurs fois dans le DOM: `getAllByText` pas `getByText`
-- Tests intégration dans `tests/integration/<domaine>/` avec Prisma réel (pas de mock DB)
-- Tests unitaires composants dans `tests/unit/components/<domaine>/`
+- Arbo des tests sous `src/__tests__/`, calquée sur `/src`, splittée par dépendance à la DB :
+  - `src/__tests__/db/**` — tests avec Prisma réel (`pnpm test:db`, base `claritee_test`, en série)
+  - `src/__tests__/unit/**` — tests sans DB (`pnpm test:unit`), dont les composants sous `unit/components/<domaine>/`
 - `isLoading` dans les tests pour les états skeleton, pas `isFetching`
 
 ---

@@ -39,7 +39,21 @@ La migration DB (story 5.1) est appliquée en production. Les 7 stories suivante
 - **Base de données de staging dédiée (Supabase)**
   Actuellement, les migrations Prisma sont testées directement contre la DB de production, ce qui a provoqué une coupure de service (migration appliquée avant le déploiement du code). Créer un projet Supabase séparé pour le développement/staging.
   - *Prérequis :* nouveau projet Supabase, variables `DATABASE_URL` / `DIRECT_URL` de staging dans `.env.local`, variable de prod uniquement dans Vercel.
-  - *Mitigation partielle déjà en place :* `prisma migrate deploy` ajouté au build command Vercel.
+  - *Mitigation déjà en place :* base **Supabase locale** (CLI) pour le dev + les tests DB (`pnpm db:local:start`), migrations rejouables from scratch, job CI `test` qui vérifie migrations + tests. `prisma migrate deploy` ajouté au build command Vercel.
+
+- **Script `dev:prod`** _(à créer)_
+  Permettre de lancer l'app locale branchée sur la **DB de production** (le temps d'un debug avec les vraies données), en basculant temporairement les variables sur `.env.prod.local` sans toucher `.env.local`.
+  - *Idée :* `dev:prod` = charge `.env.prod.local` puis `next dev` (ex. via `dotenv -e .env.prod.local -- next dev` ou un wrapper shell).
+  - ⚠️ *Danger :* toute écriture depuis l'app impacte la **prod**. À réserver au debug lecture, bien signaler dans le terminal.
+
+- **Dé-skipper les tests d'intégration DB en dette** _(introduit avec la base de test locale, 2026-07-12)_
+  14 tests marqués `it.skip` (tag `TODO(db-test-debt)`) car ils échouent/flaky sur base fraîche — problèmes d'isolation / setup de données / tri non déterministe, pas de régression produit. Le reste de la suite DB (197 tests) passe en série via `scripts/test-db.sh`.
+  - *Fichiers :* `shareLink` (×5 `getPublicByToken`), `dashboard` (×2 `recentNotes`), `candidate` (pagination), `client` (tri createdAt), `company` (`getMyCompany`), `invitation` (list other company), `offer` (×2 : sort by status, + default sort createdAt **flaky** — timestamps égaux), `prisma/seed` (dépend du seed).
+  - *Pistes :* fiabiliser le setup/teardown par test (données uniques + cleanup) ; pour les tris, espacer les `createdAt` ou ajouter un tiebreaker ; faire dépendre `seed.test.ts` d'un seed exécuté au préalable.
+
+- **Tests composants flaky (React 19 + vitest jsdom)** 
+  `pnpm test:unit` fait parfois remonter des `ReferenceError: window is not defined` (tâche du scheduler React qui s'exécute après le teardown jsdom d'un fichier). Non déterministe, risque de faux rouge en CI.
+  - *Pistes :* isoler les tests jsdom des tests node (vitest `projects`/workspaces), ou forcer un flush/cleanup synchrone.
 
 ---
 
