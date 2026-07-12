@@ -111,6 +111,7 @@ Use Tailwind tokens (`bg-primary`, `text-muted-foreground`) — no raw hex in cl
 ## Docs
 
 In-repo documentation lives in `/docs/`:
+- `prd/TO-DO.md` — **Source of truth for next dev actions** (current epic, one-off tasks, infra/devops backlog, deferred features). Check this first.
 - `prd.md` — Full product requirements (4 epics, 39 stories, acceptance criteria)
 - `architecture.md` — Full technical design and RLS policies
 - `architecture/coding-standards.md` — Naming conventions, tRPC templates, pitfalls table

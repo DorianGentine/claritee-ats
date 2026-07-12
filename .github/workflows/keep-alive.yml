@@ -1,0 +1,26 @@
+name: DB Keep-Alive
+
+# Maintient la DB Supabase active (plan gratuit : pause après 7 j d'inactivité).
+# Une exécution quotidienne suffit largement ; minute non nulle pour éviter les
+# pics de charge GitHub à HH:00 (les crons planifiés peuvent y être retardés).
+on:
+  schedule:
+    - cron: "17 6 * * *" # tous les jours ~06:17 UTC
+  workflow_dispatch: {} # déclenchement manuel possible
+
+# Secrets requis (Settings → Secrets and variables → Actions) :
+#   KEEPALIVE_URL    → URL de base de la prod, ex. https://claritee-ats.vercel.app
+#   KEEPALIVE_SECRET → même valeur que la variable d'env KEEPALIVE_SECRET sur Vercel
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping keep-alive endpoint
+        run: |
+          status=$(curl -sS --max-time 30 -o /tmp/body -w "%{http_code}" \
+            -H "Authorization: Bearer ${{ secrets.KEEPALIVE_SECRET }}" \
+            "${{ secrets.KEEPALIVE_URL }}/api/keep-alive")
+          echo "HTTP $status"
+          cat /tmp/body
+          echo
+          test "$status" = "200"
