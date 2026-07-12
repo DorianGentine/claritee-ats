@@ -52,10 +52,13 @@ jobs:
         with:
           version: latest
 
-      - name: Start Supabase (Postgres uniquement)
-        # Fournit l'instance Postgres locale (127.0.0.1:54322) avec le schéma `auth`.
-        # -x : on exclut tous les services non-DB pour accélérer le démarrage en CI.
-        run: supabase start -x studio,imgproxy,inbucket,realtime,storage,edge-runtime,functions,vector,analytics,kong,rest,meta
+      - name: Start Supabase
+        # Fournit l'instance Postgres locale (127.0.0.1:54322) + les rôles Supabase
+        # (anon/authenticated) et le schéma auth attendus par les migrations.
+        # NB : pas de `-x` — exclure kong casse le health-check sur 54321, et les noms
+        # de services valides varient selon la version du CLI. Optimisation possible plus
+        # tard (exclure studio/imgproxy) si le temps de démarrage devient gênant.
+        run: supabase start
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile

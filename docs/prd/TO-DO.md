@@ -47,9 +47,9 @@ La migration DB (story 5.1) est appliquée en production. Les 7 stories suivante
   - ⚠️ *Danger :* toute écriture depuis l'app impacte la **prod**. À réserver au debug lecture, bien signaler dans le terminal.
 
 - **Dé-skipper les tests d'intégration DB en dette** _(introduit avec la base de test locale, 2026-07-12)_
-  13 tests marqués `it.skip` (tag `TODO(db-test-debt)`) car ils échouent sur base fraîche — problèmes d'isolation / setup de données, pas de régression produit. Le reste de la suite DB (198 tests) passe en série via `scripts/test-db.sh`.
-  - *Fichiers :* `shareLink` (×5 `getPublicByToken`), `dashboard` (×2 `recentNotes`), `candidate` (pagination), `client` (tri createdAt), `company` (`getMyCompany`), `invitation` (list other company), `offer` (sort by status), `prisma/seed` (dépend du seed).
-  - *Pistes :* fiabiliser le setup/teardown par test (données uniques + cleanup), faire dépendre `seed.test.ts` d'un seed exécuté au préalable.
+  14 tests marqués `it.skip` (tag `TODO(db-test-debt)`) car ils échouent/flaky sur base fraîche — problèmes d'isolation / setup de données / tri non déterministe, pas de régression produit. Le reste de la suite DB (197 tests) passe en série via `scripts/test-db.sh`.
+  - *Fichiers :* `shareLink` (×5 `getPublicByToken`), `dashboard` (×2 `recentNotes`), `candidate` (pagination), `client` (tri createdAt), `company` (`getMyCompany`), `invitation` (list other company), `offer` (×2 : sort by status, + default sort createdAt **flaky** — timestamps égaux), `prisma/seed` (dépend du seed).
+  - *Pistes :* fiabiliser le setup/teardown par test (données uniques + cleanup) ; pour les tris, espacer les `createdAt` ou ajouter un tiebreaker ; faire dépendre `seed.test.ts` d'un seed exécuté au préalable.
 
 - **Tests composants flaky (React 19 + vitest jsdom)** 
   `pnpm test:unit` fait parfois remonter des `ReferenceError: window is not defined` (tâche du scheduler React qui s'exécute après le teardown jsdom d'un fichier). Non déterministe, risque de faux rouge en CI.
