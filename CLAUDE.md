@@ -21,10 +21,15 @@ pnpm format       # Prettier write
 pnpm format:check # Prettier check
 
 # Database
-pnpm db:generate  # Regenerate Prisma client
-pnpm db:migrate   # Run migrations (dev)
-pnpm db:push      # Push schema without migration
-pnpm db:seed      # Seed test data
+pnpm db:generate    # Regenerate Prisma client
+pnpm db:migrate     # Run migrations (dev)
+pnpm db:push        # Push schema without migration
+
+# Base Supabase locale (dev + tests)
+pnpm db:local:start # Démarre la stack Supabase locale (Docker)
+pnpm db:local:stop  # Arrête la stack (données conservées)
+pnpm db:local:reset # Base locale à neuf (reset + migrations, sans données)
+pnpm db:pull:prod   # Rapatrie les données de prod (public + comptes auth) → local
 ```
 
 Run a single test file: `pnpm vitest run src/__tests__/path/to/file.test.ts`

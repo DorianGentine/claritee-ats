@@ -2,6 +2,7 @@ import { router } from "../trpc"
 import { authRouter } from "./auth"
 import { candidateRouter } from "./candidate"
 import { candidatureRouter } from "./candidature"
+import { cityRouter } from "./city"
 import { companyRouter } from "./company"
 import { dashboardRouter } from "./dashboard"
 import { invitationRouter } from "./invitation"
@@ -16,6 +17,7 @@ export const appRouter = router({
   auth: authRouter,
   candidate: candidateRouter,
   candidature: candidatureRouter,
+  city: cityRouter,
   clientCompany: clientRouter,
   company: companyRouter,
   dashboard: dashboardRouter,

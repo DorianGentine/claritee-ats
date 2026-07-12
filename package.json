@@ -10,14 +10,19 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "vitest run",
-    "test:watch": "vitest",
+    "test": "pnpm test:unit && pnpm test:db",
+    "test:unit": "vitest run src/__tests__/unit",
+    "test:db": "bash scripts/test-db.sh",
+    "test:watch": "vitest src/__tests__/unit",
     "a11y": "pa11y --standard WCAG2AA http://localhost:3000/dashboard http://localhost:3000/settings/team",
     "postinstall": "prisma generate",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
-    "db:seed": "prisma db seed"
+    "db:local:start": "supabase start",
+    "db:local:stop": "supabase stop",
+    "db:local:reset": "supabase db reset --no-seed && prisma migrate deploy",
+    "db:pull:prod": "bash scripts/db-pull-prod.sh"
   },
   "dependencies": {
     "@blocknote/core": "^0.46.2",

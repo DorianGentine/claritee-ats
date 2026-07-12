@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-05-08
-last_updated: 2026-05-08 (story 4.8 → review)
+last_updated: 2026-07-12 (story 5.2 → done, code review)
 project: claritee-ats
 project_key: NOKEY
 tracking_system: file-system
@@ -98,4 +98,5 @@ development_status:
 
   # ─── Epic 5: Villes Structurées ───
   epic-5: in-progress
-  5-1-infrastructure-db-city: review
+  5-1-infrastructure-db-city: done
+  5-2-trpc-city-autocomplete: done
