@@ -352,3 +352,16 @@ model ClientCompanyCity {
 
   @@id([clientCompanyId, cityId])
 }
+
+// ============ KEEP-ALIVE (table système, hors multi-tenant) ============
+// Une seule ligne (id = 1), mise à jour par /api/keep-alive via un cron
+// quotidien pour empêcher la mise en pause hebdomadaire de la DB Supabase
+// (plan gratuit). RLS activé sans policy : seul le rôle postgres (Prisma) y accède.
+
+model KeepAlive {
+  id         Int      @id @default(1)
+  lastPingAt DateTime @default(now()) @updatedAt
+  pingCount  Int      @default(0)
+
+  @@map("_keepalive")
+}

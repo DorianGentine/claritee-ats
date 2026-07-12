@@ -31,6 +31,11 @@ La migration DB (story 5.1) est appliquée en production. Les 7 stories suivante
 
 ## 🏗️ Infrastructure & DevOps
 
+- **Fiabiliser le keep-alive DB (cron GitHub Actions)**
+  Le workflow `.github/workflows/keep-alive.yml` empêche la mise en pause hebdomadaire de la DB Supabase (plan gratuit) en pingant `/api/keep-alive` 1×/jour. **Limite connue :** GitHub désactive automatiquement les workflows planifiés après **60 jours sans activité sur le repo** → le cron s'arrête silencieusement et la DB re-pause. Aussi : les crons planifiés peuvent être retardés/sautés sous charge.
+  - *Pistes :* déplacer le déclencheur vers un planificateur externe sans cette limite (2ᵉ monitor UptimeRobot, cron-job.org) ou **Vercel Cron** (le plan Hobby autorise justement 1 exécution/jour, ce qui suffit ici) ; à défaut, ajouter une 2ᵉ ligne `cron` pour la marge.
+  - *Observabilité :* la colonne `_keepalive.lastPingAt` permet de vérifier en base quand le dernier ping a réellement eu lieu (donc si le cron tourne encore).
+
 - **Base de données de staging dédiée (Supabase)**
   Actuellement, les migrations Prisma sont testées directement contre la DB de production, ce qui a provoqué une coupure de service (migration appliquée avant le déploiement du code). Créer un projet Supabase séparé pour le développement/staging.
   - *Prérequis :* nouveau projet Supabase, variables `DATABASE_URL` / `DIRECT_URL` de staging dans `.env.local`, variable de prod uniquement dans Vercel.
