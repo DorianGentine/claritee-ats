@@ -32,7 +32,7 @@ pnpm db:local:reset # Base locale à neuf (reset + migrations, sans données)
 pnpm db:pull:prod   # Rapatrie les données de prod (public + comptes auth) → local
 ```
 
-Run a single test file: `pnpm vitest run src/__tests__/path/to/file.test.ts`
+Run a single test file: `pnpm vitest run __tests__/path/to/file.test.ts`
 
 ## Architecture
 
