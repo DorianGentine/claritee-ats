@@ -37,4 +37,4 @@ DATABASE_URL="$TEST_URL" DIRECT_DATABASE_URL="$TEST_URL" pnpm exec prisma migrat
 
 echo "→ Tests db (série) sur '${TEST_DB}'…"
 DATABASE_URL="$TEST_URL" DIRECT_DATABASE_URL="$TEST_URL" \
-  pnpm exec vitest run --config vitest.config.db.ts src/__tests__/db "$@"
+  pnpm exec vitest run --config vitest.config.db.ts __tests__/db "$@"
