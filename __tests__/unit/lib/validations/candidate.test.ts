@@ -32,8 +32,7 @@ describe("candidate validations", () => {
       expect(result.tagIds).toEqual([validUuid1, validUuid2]);
     });
 
-    it.todo("accepts city string and trims whitespace — city moved to CandidateCity relation in story 5.4");
-    it.todo("converts empty city to undefined — city moved to CandidateCity relation in story 5.4");
+    it.todo("filters by cities — city filter added to list input in story 5.7");
 
     it("rejects invalid tagIds (non-UUID)", () => {
       expect(() =>
@@ -89,7 +88,7 @@ describe("candidate validations", () => {
     };
 
     it("accepts only required fields", () => {
-      expect(createCandidateSchema.parse(base)).toEqual(base);
+      expect(createCandidateSchema.parse(base)).toEqual({ ...base, cities: [] });
     });
 
     it("accepts all optional fields", () => {
@@ -100,7 +99,7 @@ describe("candidate validations", () => {
         linkedinUrl: "https://linkedin.com/in/jeandupont",
         title: "Développeur",
       };
-      expect(createCandidateSchema.parse(data)).toEqual(data);
+      expect(createCandidateSchema.parse(data)).toEqual({ ...data, cities: [] });
     });
 
     it("rejects invalid email when provided", () => {
@@ -132,7 +131,16 @@ describe("candidate validations", () => {
         ...base,
         linkedinUrl: "https://www.linkedin.com/in/jeandupont",
       };
-      expect(createCandidateSchema.parse(data)).toEqual(data);
+      expect(createCandidateSchema.parse(data)).toEqual({ ...data, cities: [] });
+    });
+
+    it("accepts LinkedIn URL with trailing slash and query params", () => {
+      const data = {
+        ...base,
+        linkedinUrl:
+          "https://www.linkedin.com/in/john-doe/?originalSubdomain=fr",
+      };
+      expect(createCandidateSchema.parse(data)).toEqual({ ...data, cities: [] });
     });
 
     it("accepts flexible French phone formats", () => {
@@ -169,14 +177,95 @@ describe("candidate validations", () => {
       ).toThrow();
     });
 
-    it.todo("trims optional fields and converts whitespace-only to undefined — city moved to story 5.4");
-    it.todo("converts whitespace-only optional fields to undefined — city moved to story 5.4");
+    it("defaults cities to an empty array when omitted", () => {
+      const result = createCandidateSchema.parse(base);
+      expect(result.cities).toEqual([]);
+    });
+
+    it("accepts an ordered cities array", () => {
+      const cities = [
+        { cityId: "550e8400-e29b-41d4-a716-446655440010", order: 0 },
+        { cityId: "550e8400-e29b-41d4-a716-446655440011", order: 1 },
+      ];
+      const result = createCandidateSchema.parse({ ...base, cities });
+      expect(result.cities).toEqual(cities);
+    });
+
+    it("rejects cities with a negative order", () => {
+      expect(() =>
+        createCandidateSchema.parse({
+          ...base,
+          cities: [
+            { cityId: "550e8400-e29b-41d4-a716-446655440010", order: -1 },
+          ],
+        }),
+      ).toThrow();
+    });
+
+    it("rejects cities with a non-UUID cityId", () => {
+      expect(() =>
+        createCandidateSchema.parse({
+          ...base,
+          cities: [{ cityId: "not-a-uuid", order: 0 }],
+        }),
+      ).toThrow();
+    });
+
+    it("rejects duplicate cityId in cities", () => {
+      const duplicatedId = "550e8400-e29b-41d4-a716-446655440010";
+      expect(() =>
+        createCandidateSchema.parse({
+          ...base,
+          cities: [
+            { cityId: duplicatedId, order: 0 },
+            { cityId: duplicatedId, order: 1 },
+          ],
+        }),
+      ).toThrow();
+    });
   });
 
   describe("updateCandidateSchema", () => {
     const validUuid = "550e8400-e29b-41d4-a716-446655440000";
 
-    it.todo("accepts all base fields — city moved to CandidateCity relation in story 5.4");
+    it("accepts all base fields including ordered cities", () => {
+      const cities = [
+        { cityId: "550e8400-e29b-41d4-a716-446655440010", order: 0 },
+        { cityId: "550e8400-e29b-41d4-a716-446655440011", order: 1 },
+      ];
+      const result = updateCandidateSchema.parse({
+        id: validUuid,
+        firstName: "Jean",
+        lastName: "Dupont",
+        email: "jean@example.com",
+        phone: "06 12 34 56 78",
+        linkedinUrl: "https://linkedin.com/in/jeandupont",
+        title: "Développeur",
+        summary: "Bon profil",
+        cities,
+      });
+      expect(result.firstName).toBe("Jean");
+      expect(result.lastName).toBe("Dupont");
+      expect(result.cities).toEqual(cities);
+    });
+
+    it("leaves cities untouched (undefined) when omitted — patch-semantics", () => {
+      const result = updateCandidateSchema.parse({ id: validUuid });
+      expect(result.cities).toBeUndefined();
+    });
+
+    it("rejects duplicate cityId in cities", () => {
+      const duplicatedId = "550e8400-e29b-41d4-a716-446655440010";
+      expect(() =>
+        updateCandidateSchema.parse({
+          id: validUuid,
+          cities: [
+            { cityId: duplicatedId, order: 0 },
+            { cityId: duplicatedId, order: 1 },
+          ],
+        }),
+      ).toThrow();
+    });
 
     it("accepts partial update (only some fields)", () => {
       const result = updateCandidateSchema.parse({

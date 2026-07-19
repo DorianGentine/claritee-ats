@@ -875,6 +875,208 @@ describe.runIf(!!connectionString)("candidate", () => {
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 
+  // ─── cities (CandidateCity, multi ordonné) ───
+
+  it("create: persists ordered cities and getById returns them sorted by order", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const [cityParis, cityLyon] = await Promise.all([
+      db.city.create({
+        data: {
+          name: `Paris-${Date.now()}`,
+          country: "France",
+          latitude: 48.8566,
+          longitude: 2.3522,
+        },
+      }),
+      db.city.create({
+        data: {
+          name: `Lyon-${Date.now()}`,
+          country: "France",
+          latitude: 45.764,
+          longitude: 4.8357,
+        },
+      }),
+    ]);
+
+    const created = await caller.candidate.create({
+      firstName: "Villes",
+      lastName: "Ordonnees",
+      cities: [
+        { cityId: cityParis.id, order: 0 },
+        { cityId: cityLyon.id, order: 1 },
+      ],
+    });
+
+    const inDb = await db.candidateCity.findMany({
+      where: { candidateId: created.id },
+      orderBy: { order: "asc" },
+    });
+    expect(inDb).toHaveLength(2);
+    expect(inDb[0]).toMatchObject({ cityId: cityParis.id, order: 0 });
+    expect(inDb[1]).toMatchObject({ cityId: cityLyon.id, order: 1 });
+
+    const fetched = await caller.candidate.getById({ id: created.id });
+    expect(fetched.cities).toHaveLength(2);
+    expect(fetched.cities[0].order).toBe(0);
+    expect(fetched.cities[0].city.id).toBe(cityParis.id);
+    expect(fetched.cities[1].order).toBe(1);
+    expect(fetched.cities[1].city.id).toBe(cityLyon.id);
+
+    await db.candidate.delete({ where: { id: created.id } });
+    await db.city.deleteMany({
+      where: { id: { in: [cityParis.id, cityLyon.id] } },
+    });
+  });
+
+  it("create: succeeds without cities (empty relation in DB)", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const created = await caller.candidate.create({
+      firstName: "Sans",
+      lastName: "Villes",
+    });
+
+    const count = await db.candidateCity.count({
+      where: { candidateId: created.id },
+    });
+    expect(count).toBe(0);
+
+    await db.candidate.delete({ where: { id: created.id } });
+  });
+
+  it("update: replaces all cities (old removed, new inserted in order)", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const [cityA, cityB, cityC] = await Promise.all([
+      db.city.create({
+        data: {
+          name: `Nantes-${Date.now()}`,
+          country: "France",
+          latitude: 47.2184,
+          longitude: -1.5536,
+        },
+      }),
+      db.city.create({
+        data: {
+          name: `Bordeaux-${Date.now()}`,
+          country: "France",
+          latitude: 44.8378,
+          longitude: -0.5792,
+        },
+      }),
+      db.city.create({
+        data: {
+          name: `Lille-${Date.now()}`,
+          country: "France",
+          latitude: 50.6292,
+          longitude: 3.0573,
+        },
+      }),
+    ]);
+
+    const created = await caller.candidate.create({
+      firstName: "Update",
+      lastName: "Villes",
+      cities: [{ cityId: cityA.id, order: 0 }],
+    });
+
+    await caller.candidate.update({
+      id: created.id,
+      cities: [
+        { cityId: cityB.id, order: 0 },
+        { cityId: cityC.id, order: 1 },
+      ],
+    });
+
+    const inDb = await db.candidateCity.findMany({
+      where: { candidateId: created.id },
+      orderBy: { order: "asc" },
+    });
+    expect(inDb).toHaveLength(2);
+    expect(inDb.map((cc) => cc.cityId)).toEqual([cityB.id, cityC.id]);
+    expect(inDb.some((cc) => cc.cityId === cityA.id)).toBe(false);
+
+    await db.candidate.delete({ where: { id: created.id } });
+    await db.city.deleteMany({
+      where: { id: { in: [cityA.id, cityB.id, cityC.id] } },
+    });
+  });
+
+  it("update: clears all cities when empty array sent", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const city = await db.city.create({
+      data: {
+        name: `Toulouse-${Date.now()}`,
+        country: "France",
+        latitude: 43.6047,
+        longitude: 1.4442,
+      },
+    });
+
+    const created = await caller.candidate.create({
+      firstName: "Clear",
+      lastName: "Villes",
+      cities: [{ cityId: city.id, order: 0 }],
+    });
+
+    await caller.candidate.update({ id: created.id, cities: [] });
+
+    const count = await db.candidateCity.count({
+      where: { candidateId: created.id },
+    });
+    expect(count).toBe(0);
+
+    await db.candidate.delete({ where: { id: created.id } });
+    await db.city.delete({ where: { id: city.id } });
+  });
+
+  it("list: returns primary city name (order=0)", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const primaryCity = await db.city.create({
+      data: {
+        name: `Marseille-${Date.now()}`,
+        country: "France",
+        latitude: 43.2965,
+        longitude: 5.3698,
+      },
+    });
+    const secondaryCity = await db.city.create({
+      data: {
+        name: `Nice-${Date.now()}`,
+        country: "France",
+        latitude: 43.7102,
+        longitude: 7.262,
+      },
+    });
+
+    const created = await caller.candidate.create({
+      firstName: "Liste",
+      lastName: "Villes",
+      cities: [
+        { cityId: secondaryCity.id, order: 1 },
+        { cityId: primaryCity.id, order: 0 },
+      ],
+    });
+
+    const result = await caller.candidate.list({ limit: 100 });
+    const item = result.items.find((c) => c.id === created.id);
+    expect(item).toBeDefined();
+    expect(item!.city).toBe(primaryCity.name);
+
+    await db.candidate.delete({ where: { id: created.id } });
+    await db.city.deleteMany({
+      where: { id: { in: [primaryCity.id, secondaryCity.id] } },
+    });
+  });
+
   // ─── addLanguage / removeLanguage ───
 
   it("addLanguage: adds language to own candidate", async () => {

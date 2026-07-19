@@ -20,6 +20,8 @@ import {
   CandidateBasicFieldsForm,
   type CandidateBasicFields,
 } from "@/components/candidates/CandidateBasicFieldsForm";
+import { type CityOption } from "@/components/shared/CityAutocomplete";
+import { CandidateCitiesField } from "@/components/candidates/CandidateCitiesField";
 import { api } from "@/lib/trpc/client";
 import { Button } from "@/components/ui/button";
 import { CandidateDetailSidebar } from "@/components/candidates/CandidateDetailSidebar";
@@ -29,8 +31,12 @@ import { fileToBase64 } from "@/lib/file-utils";
 
 const isValidUuid = (s: string) => z.uuid().safeParse(s).success;
 
-/** Schéma du formulaire d'édition (base création + résumé) */
-const editFormSchema = createCandidateSchema.extend({
+/**
+ * Schéma du formulaire d'édition (base création + résumé).
+ * `cities` est retiré : les villes sont gérées hors React Hook Form (state local +
+ * CityAutocomplete), pas comme un champ de formulaire.
+ */
+const editFormSchema = createCandidateSchema.omit({ cities: true }).extend({
   summary: z
     .string()
     .max(500, "Le résumé ne peut pas dépasser 500 caractères")
@@ -51,6 +57,10 @@ export default function EditCandidatePage() {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
+  const [cities, setCities] = useState<CityOption[]>([]);
+  const [citiesLoadedForId, setCitiesLoadedForId] = useState<string | null>(
+    null
+  );
 
   const handlePhotoChange = createPhotoChangeHandler(
     setPhotoFile,
@@ -75,6 +85,7 @@ export default function EditCandidatePage() {
   const updateMutation = api.candidate.update.useMutation({
     onSuccess: () => {
       void utils.candidate.getById.invalidate({ id: candidateId });
+      void utils.candidate.list.invalidate();
     },
   });
   const uploadPhotoMutation = api.candidate.uploadPhoto.useMutation({
@@ -112,6 +123,21 @@ export default function EditCandidatePage() {
     },
   });
 
+  // Préchargement des villes dans l'ordre, une seule fois par candidat (pattern
+  // « ajuster l'état pendant le rendu » recommandé par React — pas d'effet).
+  // Un refetch ultérieur n'écrase pas les modifications de l'utilisateur.
+  if (getByIdQuery.data && citiesLoadedForId !== getByIdQuery.data.id) {
+    setCitiesLoadedForId(getByIdQuery.data.id);
+    setCities(
+      getByIdQuery.data.cities.map((candidateCity) => ({
+        id: candidateCity.city.id,
+        name: candidateCity.city.name,
+        region: candidateCity.city.region,
+        country: candidateCity.city.country,
+      }))
+    );
+  }
+
   const firstName = useWatch({ control, name: "firstName" });
   const lastName = useWatch({ control, name: "lastName" });
   const displayInitials = getCandidateInitials(firstName ?? "?", lastName ?? "?");
@@ -129,6 +155,10 @@ export default function EditCandidatePage() {
         linkedinUrl: data.linkedinUrl?.trim() || undefined,
         title: data.title?.trim() || undefined,
         summary: data.summary,
+        cities: cities.map((city, index) => ({
+          cityId: city.id,
+          order: index,
+        })),
       });
 
       if (photoFile) {
@@ -238,6 +268,8 @@ export default function EditCandidatePage() {
                 errors={errors as FieldErrors<CandidateBasicFields>}
                 showSummary
               />
+
+              <CandidateCitiesField value={cities} onChange={setCities} />
 
               <div className="flex flex-wrap gap-3">
                 <Button

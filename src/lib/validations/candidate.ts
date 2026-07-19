@@ -47,9 +47,40 @@ const optionalLinkedInUrl = z
   .refine(
     (v) =>
       !v ||
-      /^https?:\/\/(www\.)?linkedin\.com\/in\/[a-zA-Z0-9_-]+\/?$/i.test(v),
+      /^https?:\/\/(www\.)?linkedin\.com\/in\/[a-zA-Z0-9_-]+\/?(\?[^\s]*)?$/i.test(
+        v
+      ),
     { message: "URL LinkedIn invalide (linkedin.com/in/...)" }
   );
+
+/** Un couple ville + position (0-based) tel qu'envoyé par le formulaire. */
+const cityInputSchema = z.object({
+  cityId: z.uuid(),
+  order: z.number().int().min(0),
+});
+
+/** Rejette les listes contenant deux fois la même ville (contrainte @@unique). */
+const hasUniqueCityIds = (cities: Array<{ cityId: string }>) =>
+  new Set(cities.map((city) => city.cityId)).size === cities.length;
+
+const orderedCitiesArray = z
+  .array(cityInputSchema)
+  .refine(hasUniqueCityIds, {
+    message: "Une ville ne peut pas être ajoutée deux fois",
+  });
+
+/**
+ * Villes ordonnées d'un candidat (relation CandidateCity), pour la création.
+ * `order` est 0-based, dérivé de la position du chip dans le composant CityAutocomplete.
+ * Absente → tableau vide.
+ */
+export const candidateCitiesSchema = orderedCitiesArray.default([]);
+
+/**
+ * Villes ordonnées pour la mise à jour (patch-semantics) : absente → non touchée.
+ * Le router ne remplace les villes que si le champ est explicitement fourni.
+ */
+export const candidateCitiesUpdateSchema = orderedCitiesArray.optional();
 
 /** Optionnel : format flexible français (chiffres, espaces, tirets, points, +33) */
 const optionalPhone = z
@@ -73,6 +104,7 @@ export const createCandidateSchema = z.object({
   phone: optionalPhone,
   linkedinUrl: optionalLinkedInUrl,
   title: z.string().optional().transform(trimToUndefined),
+  cities: candidateCitiesSchema,
 });
 
 export type CreateCandidateInput = z.infer<typeof createCandidateSchema>;
@@ -99,6 +131,7 @@ export const updateCandidateSchema = z.object({
     .max(500, "Le résumé ne peut pas dépasser 500 caractères")
     .optional()
     .transform((v) => (v?.trim() === "" ? null : v?.trim() ?? null)),
+  cities: candidateCitiesUpdateSchema,
 });
 
 export type UpdateCandidateInput = z.infer<typeof updateCandidateSchema>;
