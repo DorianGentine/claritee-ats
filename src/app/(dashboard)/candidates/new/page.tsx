@@ -21,6 +21,8 @@ import {
   CandidateBasicFieldsForm,
   type CandidateBasicFields,
 } from "@/components/candidates/CandidateBasicFieldsForm";
+import { type CityOption } from "@/components/shared/CityAutocomplete";
+import { CandidateCitiesField } from "@/components/candidates/CandidateCitiesField";
 import { fileToBase64 } from "@/lib/file-utils";
 
 /** Type du formulaire : champs optionnels pour compatibilité avec useForm + zodResolver */
@@ -31,7 +33,6 @@ type NewCandidateFormValues = {
   phone?: string;
   linkedinUrl?: string;
   title?: string;
-  city?: string;
 };
 
 const GENERIC_ERROR_MESSAGE = "Une erreur est survenue. Réessayez.";
@@ -43,6 +44,7 @@ export default function NewCandidatePage() {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
+  const [cities, setCities] = useState<CityOption[]>([]);
   const [createdCandidateId, setCreatedCandidateId] = useState<string | null>(
     null,
   );
@@ -70,7 +72,8 @@ export default function NewCandidatePage() {
     control,
     formState: { errors, isSubmitting },
   } = useForm<NewCandidateFormValues>({
-    resolver: zodResolver(createCandidateSchema),
+    // `cities` est géré hors RHF (state local + CityAutocomplete) → retiré du schéma du formulaire.
+    resolver: zodResolver(createCandidateSchema.omit({ cities: true })),
     defaultValues: {
       firstName: "",
       lastName: "",
@@ -98,6 +101,10 @@ export default function NewCandidatePage() {
           phone: data.phone?.trim() || undefined,
           linkedinUrl: data.linkedinUrl?.trim() || undefined,
           title: data.title?.trim() || undefined,
+          cities: cities.map((city, index) => ({
+            cityId: city.id,
+            order: index,
+          })),
         });
         candidateId = candidate.id;
         setCreatedCandidateId(candidate.id);
@@ -160,6 +167,8 @@ export default function NewCandidatePage() {
             register={register as UseFormRegister<CandidateBasicFields>}
             errors={errors as FieldErrors<CandidateBasicFields>}
           />
+
+          <CandidateCitiesField value={cities} onChange={setCities} />
 
           <div className="mt-4 flex flex-wrap gap-3">
             <Button

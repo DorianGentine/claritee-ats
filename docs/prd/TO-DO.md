@@ -57,6 +57,15 @@ La migration DB (story 5.1) est appliquée en production. Les 7 stories suivante
 
 ---
 
+## 🧹 Dette technique — code & architecture
+
+- **Questionner l'intérêt de React Hook Form sur les formulaires candidat** _(soulevé 2026-07-19, story 5.4)_
+  Les formulaires `candidates/new` et `candidates/[id]/edit` mélangent deux paradigmes de state : RHF (via `zodResolver` + `CandidateBasicFieldsForm`) pour les champs scalaires, et du **state local contrôlé** (`useState`) pour les villes (`CandidateCitiesField`), la photo et le préchargement en édition. RHF n'apporte de la valeur que sur la partie scalaire, et une bonne part de la logique vit déjà hors de lui.
+  - *À évaluer :* est-ce que RHF gagne encore sa place, ou est-ce qu'un simple `useState` + `safeParse(candidateSchema)` au submit serait plus lisible et homogène (un seul paradigme de state) ? Peser le coût (revalidation par champ, gestion des erreurs inline) vs le bénéfice.
+  - *Périmètre :* formulaires candidat d'abord ; regarder si offre/client ont le même écartèlement avant de généraliser.
+
+---
+
 ## 📦 Post-MVP — Fonctionnalités différées
 
 Ces fonctionnalités sont hors périmètre du MVP mais documentées pour les évolutions futures.

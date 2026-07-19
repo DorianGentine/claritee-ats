@@ -155,6 +155,13 @@ export const candidateRouter = router({
               },
             },
           },
+          cities: {
+            orderBy: { order: "asc" },
+            take: 1,
+            select: {
+              city: { select: { id: true, name: true } },
+            },
+          },
         },
       });
 
@@ -169,7 +176,7 @@ export const candidateRouter = router({
           firstName: c.firstName,
           lastName: c.lastName,
           title: c.title,
-          city: null as string | null,
+          city: c.cities[0]?.city.name ?? null,
           photoUrl: c.photoUrl,
           tags: c.tags.map((ct) => ct.tag),
         })),
@@ -207,6 +214,10 @@ export const candidateRouter = router({
           formations: { orderBy: [{ endDate: "desc" }, { startDate: "desc" }] },
           languages: true,
           tags: { include: { tag: true } },
+          cities: {
+            orderBy: { order: "asc" },
+            include: { city: true },
+          },
           candidatures: {
             orderBy: { createdAt: "desc" },
             include: {
@@ -251,7 +262,7 @@ export const candidateRouter = router({
     .input(updateCandidateSchema)
     .mutation(async ({ ctx, input }) => {
       await checkMutationRateLimit(ctx.user!.id);
-      const { id, ...rest } = input;
+      const { id, cities, ...rest } = input;
       const existing = await ctx.db.candidate.findFirst({
         where: { id, companyId: ctx.companyId },
       });
@@ -261,7 +272,30 @@ export const candidateRouter = router({
       const data = Object.fromEntries(
         Object.entries(rest).filter(([, v]) => v !== undefined)
       );
-      return ctx.db.candidate.update({ where: { id }, data });
+
+      // Champs scalaires + remplacement des villes dans une seule transaction :
+      // sur échec du createMany, le deleteMany est annulé (pas de perte de villes).
+      return ctx.db.$transaction(async (tx) => {
+        const updated = await tx.candidate.update({ where: { id }, data });
+
+        // Patch-semantics : les villes ne sont touchées que si explicitement fournies.
+        // Prisma ne gère pas nativement la mise à jour d'une liste N-N ordonnée →
+        // remplacement complet (delete + createMany).
+        if (cities !== undefined) {
+          await tx.candidateCity.deleteMany({ where: { candidateId: id } });
+          if (cities.length > 0) {
+            await tx.candidateCity.createMany({
+              data: cities.map((cityInput) => ({
+                candidateId: id,
+                cityId: cityInput.cityId,
+                order: cityInput.order,
+              })),
+            });
+          }
+        }
+
+        return updated;
+      });
     }),
 
   /**
@@ -272,18 +306,31 @@ export const candidateRouter = router({
     .input(createCandidateSchema)
     .mutation(async ({ ctx, input }) => {
       await checkMutationRateLimit(ctx.user!.id);
-      const candidate = await ctx.db.candidate.create({
-        data: {
-          firstName: input.firstName,
-          lastName: input.lastName,
-          email: input.email || null,
-          phone: input.phone || null,
-          linkedinUrl: input.linkedinUrl || null,
-          title: input.title || null,
-          companyId: ctx.companyId,
-        },
+      // Candidat + villes ordonnées dans une seule transaction : un échec du
+      // createMany annule la création du candidat (pas de candidat orphelin).
+      return ctx.db.$transaction(async (tx) => {
+        const candidate = await tx.candidate.create({
+          data: {
+            firstName: input.firstName,
+            lastName: input.lastName,
+            email: input.email || null,
+            phone: input.phone || null,
+            linkedinUrl: input.linkedinUrl || null,
+            title: input.title || null,
+            companyId: ctx.companyId,
+          },
+        });
+        if (input.cities.length > 0) {
+          await tx.candidateCity.createMany({
+            data: input.cities.map((cityInput) => ({
+              candidateId: candidate.id,
+              cityId: cityInput.cityId,
+              order: cityInput.order,
+            })),
+          });
+        }
+        return candidate;
       });
-      return candidate;
     }),
 
   /**

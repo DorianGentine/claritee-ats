@@ -59,6 +59,10 @@ export const CandidateDetailView = ({ candidateId }: Props) => {
   }
 
   const candidate = getByIdQuery.data;
+  const citiesLabel =
+    candidate.cities.length > 0
+      ? candidate.cities.map((candidateCity) => candidateCity.city.name).join(" · ")
+      : null;
 
   return (
     <main className="min-h-[calc(100vh-3.5rem)] bg-background p-6 print:bg-white">
@@ -93,7 +97,7 @@ export const CandidateDetailView = ({ candidateId }: Props) => {
           firstName={candidate.firstName}
           lastName={candidate.lastName}
           title={candidate.title}
-          city={null}
+          city={citiesLabel}
           email={candidate.email}
           phone={candidate.phone}
           linkedinUrl={candidate.linkedinUrl}
