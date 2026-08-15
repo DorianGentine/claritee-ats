@@ -224,7 +224,7 @@ export default function OffersPage() {
                     offer={{
                       id: offer.id,
                       title: offer.title,
-                      location: offer.location,
+                      cityName: offer.cityName,
                       salaryMin: offer.salaryMin,
                       salaryMax: offer.salaryMax,
                       status: offer.status,

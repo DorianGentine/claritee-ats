@@ -635,6 +635,164 @@ describe.runIf(!!connectionString)("offer router", () => {
     }
   })
 
+  describe("offer city (story 5.5)", () => {
+    let cityId: string
+
+    beforeAll(async () => {
+      const city = await db.city.create({
+        data: {
+          name: `Testville-${Date.now()}`,
+          region: "Test Region",
+          country: "Testland",
+          latitude: 48.0,
+          longitude: 2.0,
+        },
+      })
+      cityId = city.id
+    })
+
+    afterAll(async () => {
+      await db.city.delete({ where: { id: cityId } })
+    })
+
+    it("creates an offer with cityId associated in the database", async () => {
+      const ctx = createContext(companyAId)
+      const caller = appRouter.createCaller(ctx)
+
+      const created = await caller.offer.create({
+        title: "Offer with city",
+        status: "TODO",
+        cityId,
+      })
+
+      expect(created.cityId).toBe(cityId)
+
+      const inDb = await db.jobOffer.findUniqueOrThrow({
+        where: { id: created.id },
+      })
+      expect(inDb.cityId).toBe(cityId)
+
+      await db.jobOffer.delete({ where: { id: created.id } })
+    })
+
+    it("creates an offer without cityId when omitted (no error, cityId null)", async () => {
+      const ctx = createContext(companyAId)
+      const caller = appRouter.createCaller(ctx)
+
+      const created = await caller.offer.create({
+        title: "Offer without city",
+        status: "TODO",
+      })
+
+      expect(created.cityId).toBeNull()
+
+      const inDb = await db.jobOffer.findUniqueOrThrow({
+        where: { id: created.id },
+      })
+      expect(inDb.cityId).toBeNull()
+
+      await db.jobOffer.delete({ where: { id: created.id } })
+    })
+
+    it("offer.update sets cityId to null when sent null, clearing the city", async () => {
+      const offer = await db.jobOffer.create({
+        data: {
+          title: "Offer with city to clear",
+          companyId: companyAId,
+          status: "TODO",
+          cityId,
+        },
+      })
+
+      const ctx = createContext(companyAId)
+      const caller = appRouter.createCaller(ctx)
+
+      const updated = await caller.offer.update({
+        id: offer.id,
+        cityId: null,
+      })
+
+      expect(updated.cityId).toBeNull()
+
+      const fromDb = await db.jobOffer.findUniqueOrThrow({
+        where: { id: offer.id },
+      })
+      expect(fromDb.cityId).toBeNull()
+
+      await db.jobOffer.delete({ where: { id: offer.id } })
+    })
+
+    it("offer.update leaves cityId untouched when not provided", async () => {
+      const offer = await db.jobOffer.create({
+        data: {
+          title: "Offer with city untouched",
+          companyId: companyAId,
+          status: "TODO",
+          cityId,
+        },
+      })
+
+      const ctx = createContext(companyAId)
+      const caller = appRouter.createCaller(ctx)
+
+      const updated = await caller.offer.update({
+        id: offer.id,
+        title: "Offer with city untouched (renamed)",
+      })
+
+      expect(updated.cityId).toBe(cityId)
+
+      const fromDb = await db.jobOffer.findUniqueOrThrow({
+        where: { id: offer.id },
+      })
+      expect(fromDb.cityId).toBe(cityId)
+
+      await db.jobOffer.delete({ where: { id: offer.id } })
+    })
+
+    it("offer.list includes cityName when the offer has a city", async () => {
+      const offer = await db.jobOffer.create({
+        data: {
+          title: "Offer for list cityName",
+          companyId: companyAId,
+          status: "TODO",
+          cityId,
+        },
+      })
+
+      const ctx = createContext(companyAId)
+      const caller = appRouter.createCaller(ctx)
+
+      const result = await caller.offer.list({})
+      const found = result.items.find((o) => o.id === offer.id)
+
+      expect(found?.cityName).toBe((await db.city.findUniqueOrThrow({ where: { id: cityId } })).name)
+
+      await db.jobOffer.delete({ where: { id: offer.id } })
+    })
+
+    it("offer.getById includes the full city relation", async () => {
+      const offer = await db.jobOffer.create({
+        data: {
+          title: "Offer for getById city",
+          companyId: companyAId,
+          status: "TODO",
+          cityId,
+        },
+      })
+
+      const ctx = createContext(companyAId)
+      const caller = appRouter.createCaller(ctx)
+
+      const result = await caller.offer.getById({ id: offer.id })
+
+      expect(result.city?.id).toBe(cityId)
+      expect(result.city?.name).toContain("Testville-")
+
+      await db.jobOffer.delete({ where: { id: offer.id } })
+    })
+  })
+
   describe("offer.list filters", () => {
     let filterOfferTodo: string
     let filterOfferDone: string

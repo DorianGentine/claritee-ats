@@ -19,6 +19,13 @@ type CityRow = {
 
 const PHOTON_TIMEOUT_MS = 3000
 const EUROPE_BBOX = "-10,35,40,72"
+// DROM-COM hors bbox Europe : façades Atlantique (Antilles/Guyane) et Océan
+// Indien (Réunion/Mayotte) trop excentrées pour être incluses dans une seule
+// bbox sans engloutir des continents entiers (Afrique, Atlantique...).
+// Interrogées séparément, seulement si la bbox Europe ne renvoie rien.
+const ANTILLES_GUYANE_BBOX = "-62,2,-51,17" // Guadeloupe, Martinique, Guyane
+const OCEAN_INDIEN_BBOX = "44.5,-22,56,-12" // Réunion, Mayotte
+const FALLBACK_BBOXES = [EUROPE_BBOX, ANTILLES_GUYANE_BBOX, OCEAN_INDIEN_BBOX]
 
 /**
  * Échappe les métacaractères LIKE (`%`, `_`, `\`) pour qu'ils soient traités
@@ -35,6 +42,31 @@ type PhotonFeature = {
 }
 type PhotonResponse = {
   features?: PhotonFeature[]
+}
+
+type PhotonFetchResult =
+  | { ok: true; features: PhotonFeature[] }
+  | { ok: false; status: number }
+
+/** Un seul appel Photon, restreint à la bbox donnée. */
+const fetchPhotonFeatures = async (
+  query: string,
+  bbox: string
+): Promise<PhotonFetchResult> => {
+  const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(
+    query
+  )}&lang=fr&limit=5&layer=city&bbox=${bbox}`
+
+  const response = await fetch(url, {
+    signal: AbortSignal.timeout(PHOTON_TIMEOUT_MS),
+  })
+
+  if (!response.ok) {
+    return { ok: false, status: response.status }
+  }
+
+  const data = (await response.json()) as PhotonResponse
+  return { ok: true, features: data.features ?? [] }
 }
 
 export const cityRouter = router({
@@ -66,26 +98,42 @@ export const cityRouter = router({
 
       // AC 6-8 — fallback Photon, tolérant aux pannes réseau
       try {
-        const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(
-          q
-        )}&lang=fr&limit=5&layer=city&bbox=${EUROPE_BBOX}`
+        // Les 3 bbox sont interrogées en parallèle et fusionnées : on ne peut
+        // pas s'arrêter à la première non-vide, l'Europe contenant tellement
+        // de villes qu'une simple correspondance de préfixe y trouve presque
+        // toujours quelque chose, même quand la ville visée est un DROM-COM.
+        const settled = await Promise.allSettled(
+          FALLBACK_BBOXES.map((bbox) => fetchPhotonFeatures(q, bbox))
+        )
 
-        const response = await fetch(url, {
-          signal: AbortSignal.timeout(PHOTON_TIMEOUT_MS),
-        })
-
-        // Une réponse non-2xx (429, 500…) n'est pas un résultat vide légitime :
-        // on log et on abandonne le fallback pour ne pas masquer une panne Photon.
-        if (!response.ok) {
-          console.error(
-            `Photon autocomplete returned HTTP ${response.status}`
-          )
-          return []
+        // Un échec réseau sur n'importe quelle bbox fait échouer tout le
+        // fallback (cohérent avec le comportement existant, catché plus bas).
+        for (const result of settled) {
+          if (result.status === "rejected") {
+            throw result.reason
+          }
         }
 
-        const data = (await response.json()) as PhotonResponse
+        // Une réponse non-2xx (429, 500…) n'est pas un résultat vide légitime :
+        // on log et on abandonne tout le fallback pour ne pas masquer une
+        // panne Photon.
+        for (const result of settled) {
+          if (result.status === "fulfilled" && !result.value.ok) {
+            console.error(
+              `Photon autocomplete returned HTTP ${result.value.status}`
+            )
+            return []
+          }
+        }
 
-        const features = data.features ?? []
+        // Fusion Europe → Antilles/Guyane → Océan Indien (ordre de priorité
+        // en cas de dépassement des 5 résultats affichés, cf. slice plus bas).
+        const features = settled.flatMap((result) =>
+          result.status === "fulfilled" && result.value.ok
+            ? result.value.features
+            : []
+        )
+
         const results: CityResult[] = []
 
         for (const feature of features) {
@@ -142,7 +190,9 @@ export const cityRouter = router({
           }
         }
 
-        return results
+        // Fusion de jusqu'à 3×5 résultats bruts : on cap l'affichage final à 5,
+        // en gardant la priorité Europe en cas de dépassement.
+        return results.slice(0, 5)
       } catch (error) {
         // AC 8 — Photon inaccessible : on log et on retourne [] sans lever d'exception
         console.error("Photon autocomplete failed:", error)

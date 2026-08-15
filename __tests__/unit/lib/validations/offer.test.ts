@@ -229,6 +229,38 @@ describe("createJobOfferSchema", () => {
       )
     }
   })
+
+  it("accepts a valid cityId", () => {
+    const result = createJobOfferSchema.safeParse({
+      title: "Offre avec ville",
+      cityId: "7c3ec936-4a1d-4f2f-9f3e-4a1d4f2f9f3e",
+    })
+
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.cityId).toBe("7c3ec936-4a1d-4f2f-9f3e-4a1d4f2f9f3e")
+    }
+  })
+
+  it("cityId is undefined when omitted", () => {
+    const result = createJobOfferSchema.safeParse({
+      title: "Offre sans ville",
+    })
+
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.cityId).toBeUndefined()
+    }
+  })
+
+  it("rejects invalid cityId", () => {
+    const result = createJobOfferSchema.safeParse({
+      title: "Offre avec ville invalide",
+      cityId: "not-a-uuid",
+    })
+
+    expect(result.success).toBe(false)
+  })
 })
 
 describe("updateJobOfferSchema", () => {
@@ -263,6 +295,7 @@ describe("updateJobOfferSchema", () => {
       salaryMax: null,
       clientCompanyId: null,
       clientContactId: null,
+      cityId: null,
     })
 
     expect(result.success).toBe(true)
@@ -272,6 +305,28 @@ describe("updateJobOfferSchema", () => {
       expect(result.data.salaryMax).toBeNull()
       expect(result.data.clientCompanyId).toBeNull()
       expect(result.data.clientContactId).toBeNull()
+      expect(result.data.cityId).toBeNull()
     }
+  })
+
+  it("accepts a valid cityId", () => {
+    const result = updateJobOfferSchema.safeParse({
+      id: "7c3ec936-4a1d-4f2f-9f3e-4a1d4f2f9f3e",
+      cityId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+    })
+
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.cityId).toBe("a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11")
+    }
+  })
+
+  it("rejects invalid cityId", () => {
+    const result = updateJobOfferSchema.safeParse({
+      id: "7c3ec936-4a1d-4f2f-9f3e-4a1d4f2f9f3e",
+      cityId: "not-a-uuid",
+    })
+
+    expect(result.success).toBe(false)
   })
 })

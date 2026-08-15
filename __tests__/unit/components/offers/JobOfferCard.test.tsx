@@ -8,7 +8,7 @@ import { JobOfferCard, type JobOfferCardItem } from "@/components/offers/JobOffe
 const mockOffer: JobOfferCardItem = {
   id: "offer-1",
   title: "Développeur Full Stack",
-  location: "Paris",
+  cityName: "Paris",
   salaryMin: 45000,
   salaryMax: 55000,
   status: "IN_PROGRESS" as const,
@@ -16,7 +16,7 @@ const mockOffer: JobOfferCardItem = {
 }
 
 describe("JobOfferCard", () => {
-  it("renders title, client name, location and salary range", () => {
+  it("renders title, client name, city name and salary range", () => {
     const { container } = render(<JobOfferCard offer={mockOffer} />)
     const card = within(container)
 
@@ -47,6 +47,16 @@ describe("JobOfferCard", () => {
     const { container } = render(<JobOfferCard offer={offerWithoutClient} />)
     const card = within(container)
     expect(card.getByText("Client non défini")).toBeDefined()
+  })
+
+  it("does not render a city line when cityName is null", () => {
+    const offerWithoutCity: JobOfferCardItem = {
+      ...mockOffer,
+      cityName: null,
+    }
+    const { container } = render(<JobOfferCard offer={offerWithoutCity} />)
+    const card = within(container)
+    expect(card.queryByText("Paris")).toBeNull()
   })
 
   it("shows Salaire non précisé when salary is null", () => {

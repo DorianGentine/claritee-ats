@@ -11,7 +11,7 @@ import type { TagItem } from "@/components/shared/TagsSection"
 export type JobOfferCardItem = {
   id: string
   title: string
-  location: string | null
+  cityName: string | null
   salaryMin: number | null
   salaryMax: number | null
   status: JobOfferStatus
@@ -59,8 +59,8 @@ export const JobOfferCard = ({ offer }: { offer: JobOfferCardItem }) => {
           </Badge>
         </div>
         <p className="text-sm text-muted-foreground">{clientName}</p>
-        {offer.location ? (
-          <p className="text-sm text-muted-foreground">{offer.location}</p>
+        {offer.cityName ? (
+          <p className="text-sm text-muted-foreground">{offer.cityName}</p>
         ) : null}
         <p className="text-sm text-muted-foreground">{salaryText}</p>
         {visibleTags.length > 0 && (
