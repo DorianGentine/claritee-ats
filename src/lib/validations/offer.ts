@@ -58,6 +58,7 @@ const jobOfferBaseFieldsSchema = z.object({
   status: jobOfferStatusSchema.default("TODO"),
   clientCompanyId: z.uuid().optional(),
   clientContactId: z.uuid().optional(),
+  cityId: z.uuid().optional(),
 })
 
 const salaryAndContactRefine = (
@@ -123,6 +124,7 @@ export const updateJobOfferSchema = jobOfferBaseFieldsSchema
       .nullable(),
     clientCompanyId: z.uuid().optional().nullable(),
     clientContactId: z.uuid().optional().nullable(),
+    cityId: z.uuid().optional().nullable(),
   })
   .superRefine(salaryAndContactRefine)
 

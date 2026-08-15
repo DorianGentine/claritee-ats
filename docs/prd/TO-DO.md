@@ -6,20 +6,20 @@ Source de vérité pour les prochaines actions de développement. Organisé par 
 
 ## 🚧 Epic 5 : Villes Structurées (en cours)
 
-La migration DB (story 5.1) est appliquée en production. Les 7 stories suivantes restent à implémenter dans l'ordre indiqué ci-dessous.
+La migration DB (story 5.1) est appliquée en production. Les 3 stories suivantes restent à implémenter dans l'ordre indiqué ci-dessous.
 
 | Story | Titre | Statut | Dépendances |
 |-------|-------|--------|-------------|
 | **5.1** | Infrastructure DB — Table City & Migration | ✅ DONE | — |
-| **5.2** | Procédure tRPC `city.autocomplete` | TODO | 5.1 |
-| **5.3** | Composant `CityAutocomplete` | TODO | 5.2 |
-| **5.4** | Formulaire candidat — Villes (multi, ordonné) | TODO | 5.3 |
-| **5.5** | Formulaire offre d'emploi — Ville | TODO | 5.3 |
+| **5.2** | Procédure tRPC `city.autocomplete` | ✅ DONE | 5.1 |
+| **5.3** | Composant `CityAutocomplete` | ✅ DONE | 5.2 |
+| **5.4** | Formulaire candidat — Villes (multi, ordonné) | ✅ DONE | 5.3 |
+| **5.5** | Formulaire offre d'emploi — Ville | ✅ DONE | 5.3 |
 | **5.6** | Formulaire entreprise cliente — Villes | TODO | 5.3 |
 | **5.7** | Filtres par ville — Candidats & Offres | TODO | 5.4, 5.5 |
 | **5.8** | Drag & drop villes candidat | TODO | 5.4 |
 
-**Prochaine étape :** démarrer la story 5.2 (`city.autocomplete`).
+**Prochaine étape :** démarrer la story 5.6 (formulaire entreprise cliente — villes).
 
 ---
 
@@ -89,4 +89,4 @@ Le champ email est actuellement affiché en lecture seule dans le profil. Implé
 ## ✅ Référence — Stories terminées
 
 Épics 1–4 : **36 stories DONE** (1.1 → 4.9).
-Épic 5 : 1 story en review (5.1), 7 stories TODO (5.2 → 5.8).
+Épic 5 : 5 stories DONE (5.1 → 5.5), 3 stories TODO (5.6 → 5.8).

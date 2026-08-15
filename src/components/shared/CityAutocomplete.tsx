@@ -86,9 +86,13 @@ export const CityAutocomplete = (props: Props) => {
       ? new Set(props.value.map((city) => city.id))
       : new Set(props.value ? [props.value.id] : []);
 
-  const filteredSuggestions = (suggestions ?? []).filter(
-    (city) => !selectedIds.has(city.id)
-  );
+  // `keepPreviousData` peut renvoyer les résultats de la recherche précédente
+  // même quand la query est désactivée (recherche repassée sous le seuil) —
+  // on les ignore explicitement dans ce cas pour ne pas afficher de résultats
+  // obsolètes.
+  const filteredSuggestions = hasMinQuery
+    ? (suggestions ?? []).filter((city) => !selectedIds.has(city.id))
+    : [];
 
   // Le serveur a bien renvoyé des villes, mais toutes sont déjà sélectionnées :
   // à distinguer de « aucun résultat » pour ne pas afficher un message trompeur.

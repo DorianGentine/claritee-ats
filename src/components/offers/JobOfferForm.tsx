@@ -26,6 +26,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  CityAutocomplete,
+  type CityOption,
+} from "@/components/shared/CityAutocomplete"
 
 type JobOfferStatus = z.infer<typeof jobOfferStatusSchema>
 
@@ -42,7 +46,10 @@ type JobOfferFormProps = {
    * Données initiales pour le formulaire en mode édition.
    * `id` est requis en mode "edit" pour déclencher offer.update.
    */
-  initialOffer?: Partial<JobOfferFormValues> & { id?: string }
+  initialOffer?: Partial<JobOfferFormValues> & {
+    id?: string
+    city?: CityOption | null
+  }
   /**
    * Callback appelé après succès de la mutation.
    */
@@ -66,6 +73,9 @@ export const JobOfferForm = ({
   const router = useRouter()
   const utils = api.useUtils()
   const [serverError, setServerError] = useState<string | null>(null)
+  const [selectedCity, setSelectedCity] = useState<CityOption | null>(
+    initialOffer?.city ?? null,
+  )
 
   const {
     register,
@@ -143,6 +153,7 @@ export const JobOfferForm = ({
       status: values.status,
       clientCompanyId: values.clientCompanyId,
       clientContactId: values.clientContactId,
+      cityId: selectedCity?.id,
     }
 
     try {
@@ -167,6 +178,7 @@ export const JobOfferForm = ({
         status: values.status,
         clientCompanyId: values.clientCompanyId ?? null,
         clientContactId: values.clientContactId ?? null,
+        cityId: selectedCity?.id ?? null,
       }
 
       const updated = await updateMutation.mutateAsync(updatePayload)
@@ -235,6 +247,16 @@ export const JobOfferForm = ({
               {errors.description.message}
             </p>
           )}
+        </div>
+
+        <div className="sm:col-span-2">
+          <Label>Ville</Label>
+          <CityAutocomplete
+            mode="single"
+            value={selectedCity}
+            onChange={setSelectedCity}
+            placeholder="Sélectionner une ville"
+          />
         </div>
 
         <div className="grid grid-cols-2 gap-3">

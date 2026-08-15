@@ -52,7 +52,7 @@ const mockOffer = {
   id: "offer-1",
   title: "Développeur Full Stack",
   description: "Description du poste",
-  location: "Paris",
+  city: { id: "city-1", name: "Paris", region: "Île-de-France", country: "France" },
   salaryMin: 45000,
   salaryMax: 55000,
   status: "IN_PROGRESS" as const,
@@ -132,5 +132,33 @@ describe("OfferDetailView", () => {
     const card = within(container)
 
     expect(card.getByText("Aucun candidat associé")).toBeDefined()
+  })
+
+  it("shows city name and region when city is defined", () => {
+    vi.mocked(api.offer.getById.useQuery).mockReturnValue({
+      isLoading: false,
+      data: mockOffer,
+      error: null,
+    } as ReturnType<typeof api.offer.getById.useQuery>)
+
+    const { container } = render(<OfferDetailView offerId="offer-1" />)
+    const card = within(container)
+
+    expect(card.getByText("Localisation")).toBeDefined()
+    expect(card.getByText("Paris, Île-de-France")).toBeDefined()
+  })
+
+  it("shows 'Localisation non précisée' when city is null", () => {
+    vi.mocked(api.offer.getById.useQuery).mockReturnValue({
+      isLoading: false,
+      data: { ...mockOffer, city: null },
+      error: null,
+    } as ReturnType<typeof api.offer.getById.useQuery>)
+
+    const { container } = render(<OfferDetailView offerId="offer-1" />)
+    const card = within(container)
+
+    expect(card.getByText("Localisation")).toBeDefined()
+    expect(card.getByText("Localisation non précisée")).toBeDefined()
   })
 })

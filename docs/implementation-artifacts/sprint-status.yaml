@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-05-08
-last_updated: 2026-07-19 (story 5.4 → done, code review)
+last_updated: 2026-08-15 (story 5.5 → done)
 project: claritee-ats
 project_key: NOKEY
 tracking_system: file-system
@@ -102,3 +102,4 @@ development_status:
   5-2-trpc-city-autocomplete: done
   5-3-composant-city-autocomplete: done
   5-4-candidat-villes: done
+  5-5-offre-emploi-ville: done

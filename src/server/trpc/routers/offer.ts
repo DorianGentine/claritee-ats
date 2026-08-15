@@ -85,6 +85,9 @@ export const offerRouter = router({
             id: true,
             title: true,
             cityId: true,
+            city: {
+              select: { name: true },
+            },
             salaryMin: true,
             salaryMax: true,
             status: true,
@@ -109,7 +112,7 @@ export const offerRouter = router({
         items: items.map((o) => ({
           id: o.id,
           title: o.title,
-          location: null as string | null,
+          cityName: o.city?.name ?? null,
           salaryMin: o.salaryMin,
           salaryMax: o.salaryMax,
           status: o.status,
@@ -134,6 +137,9 @@ export const offerRouter = router({
       const offer = await ctx.db.jobOffer.findFirst({
         where: { id: input.id, companyId: ctx.companyId },
         include: {
+          city: {
+            select: { id: true, name: true, region: true, country: true },
+          },
           clientCompany: {
             select: { id: true, name: true },
           },
@@ -199,7 +205,7 @@ export const offerRouter = router({
     .input(createJobOfferSchema)
     .mutation(async ({ ctx, input }) => {
       await checkMutationRateLimit(ctx.user!.id)
-      const { clientCompanyId, clientContactId, ...rest } = input
+      const { clientCompanyId, clientContactId, cityId, ...rest } = input
       let resolvedClientCompanyId: string | null | undefined = clientCompanyId
       let resolvedClientContactId: string | null | undefined = clientContactId
       if (clientCompanyId) {
@@ -250,6 +256,9 @@ export const offerRouter = router({
         data: {
           ...rest,
           company: { connect: { id: ctx.companyId } },
+          ...(cityId != null && {
+            city: { connect: { id: cityId } },
+          }),
           ...(resolvedClientCompanyId != null && {
             clientCompany: { connect: { id: resolvedClientCompanyId } },
           }),
@@ -282,7 +291,7 @@ export const offerRouter = router({
     .input(updateJobOfferSchema)
     .mutation(async ({ ctx, input }) => {
       await checkMutationRateLimit(ctx.user!.id)
-      const { id, clientCompanyId, clientContactId, ...rest } = input
+      const { id, clientCompanyId, clientContactId, cityId, ...rest } = input
       const existing = await ctx.db.jobOffer.findFirst({
         where: { id, companyId: ctx.companyId },
       })
@@ -354,9 +363,14 @@ export const offerRouter = router({
         salaryMin?: number | null
         salaryMax?: number | null
         status?: JobOfferStatus
+        city?: { connect: { id: string } } | { disconnect: true }
         clientCompany?: { connect: { id: string } } | { disconnect: true }
         clientContact?: { connect: { id: string } } | { disconnect: true }
       } = { ...rest }
+
+      if (cityId !== undefined) {
+        data.city = cityId != null ? { connect: { id: cityId } } : { disconnect: true }
+      }
 
       if (resolvedClientCompanyId !== undefined) {
         data.clientCompany =

@@ -87,6 +87,7 @@ const EditOfferPage = () => {
             status: offer.status,
             clientCompanyId: offer.clientCompanyId ?? undefined,
             clientContactId: offer.clientContactId ?? undefined,
+            city: offer.city,
           }}
         />
         <section className="mt-8 border-t border-border pt-4">

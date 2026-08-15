@@ -68,6 +68,15 @@ const openPopover = (name: RegExp) => {
   fireEvent.click(screen.getByRole("button", { name }));
 };
 
+/** Saisit une recherche et attend le debounce (300ms) pour activer la query. */
+const typeQuery = async (value: string) => {
+  const input = screen.getByPlaceholderText("Rechercher une ville...");
+  fireEvent.change(input, { target: { value } });
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 350));
+  });
+};
+
 describe("CityAutocomplete", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -85,7 +94,11 @@ describe("CityAutocomplete", () => {
   });
 
   describe("mode single", () => {
-    it("appelle onChange avec la ville sélectionnée", () => {
+    it("efface les suggestions quand la recherche repasse sous le seuil minimal", async () => {
+      // TanStack Query (`keepPreviousData`) peut renvoyer les données de la
+      // recherche précédente même quand la query est désactivée (< 3 car.) —
+      // ce mock renvoie volontairement les mêmes suggestions à chaque appel,
+      // peu importe la query, pour reproduire ce cas réel.
       mockSuggestions([paris, lyon]);
       const onChange = vi.fn();
 
@@ -93,6 +106,26 @@ describe("CityAutocomplete", () => {
         <CityAutocomplete mode="single" value={null} onChange={onChange} />
       );
       openPopover(/Sélectionner une ville/);
+
+      await typeQuery("Par");
+      expect(screen.getByText("Paris")).toBeDefined();
+
+      await typeQuery("");
+
+      expect(screen.queryByText("Paris")).toBeNull();
+      expect(screen.queryByText("Lyon")).toBeNull();
+      expect(screen.getByText("Saisir au moins 3 caractères")).toBeDefined();
+    });
+
+    it("appelle onChange avec la ville sélectionnée", async () => {
+      mockSuggestions([paris, lyon]);
+      const onChange = vi.fn();
+
+      render(
+        <CityAutocomplete mode="single" value={null} onChange={onChange} />
+      );
+      openPopover(/Sélectionner une ville/);
+      await typeQuery("Par");
 
       fireEvent.click(screen.getByText("Paris"));
 
@@ -114,7 +147,7 @@ describe("CityAutocomplete", () => {
       expect(onChange).toHaveBeenCalledWith(null);
     });
 
-    it("exclut la ville déjà sélectionnée des suggestions", () => {
+    it("exclut la ville déjà sélectionnée des suggestions", async () => {
       mockSuggestions([paris, lyon]);
       const onChange = vi.fn();
 
@@ -124,6 +157,7 @@ describe("CityAutocomplete", () => {
       // Ouvre le popover via le badge (son libellé exact est le nom de la ville,
       // à ne pas confondre avec le bouton « Effacer Paris »).
       fireEvent.click(screen.getByRole("button", { name: "Paris" }));
+      await typeQuery("Lyo");
 
       // Lyon reste proposé, Paris (déjà sélectionnée) est absente des options.
       expect(screen.getByRole("option", { name: /Lyon/ })).toBeDefined();
@@ -132,12 +166,13 @@ describe("CityAutocomplete", () => {
   });
 
   describe("mode multi", () => {
-    it("ajoute une ville sélectionnée au tableau", () => {
+    it("ajoute une ville sélectionnée au tableau", async () => {
       mockSuggestions([paris, lyon]);
       const onChange = vi.fn();
 
       render(<CityAutocomplete mode="multi" value={[]} onChange={onChange} />);
       openPopover(/Ajouter une ville/);
+      await typeQuery("Lyo");
 
       fireEvent.click(screen.getByText("Lyon"));
 
