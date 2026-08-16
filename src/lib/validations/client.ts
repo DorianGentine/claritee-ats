@@ -1,15 +1,27 @@
 import { z } from "zod";
 import { sirenSchema } from "./auth";
 
-/** Schéma de création d'une société cliente (ClientCompany) */
-export const createClientCompanySchema = z.object({
+/** Champs de base d'une société cliente (ClientCompany), partagés création/édition */
+const clientCompanyFieldsSchema = z.object({
   name: z
     .string()
     .min(1, "Le nom de l'entreprise est requis."),
   siren: z.union([z.literal(""), sirenSchema]).optional(),
+  /** Villes associées (ClientCompanyCity), sans ordre. Absent → tableau vide. */
+  cityIds: z.array(z.uuid()).default([]),
 });
 
+/** Schéma de création d'une société cliente (ClientCompany) */
+export const createClientCompanySchema = clientCompanyFieldsSchema;
+
 export type CreateClientCompanyInput = z.infer<typeof createClientCompanySchema>;
+
+/** Schéma de mise à jour d'une société cliente (ClientCompany) */
+export const updateClientCompanySchema = clientCompanyFieldsSchema.extend({
+  id: z.uuid(),
+});
+
+export type UpdateClientCompanyInput = z.infer<typeof updateClientCompanySchema>;
 
 /** Trim et vide → undefined pour les champs optionnels */
 const trimToUndefined = (s: string | undefined) =>

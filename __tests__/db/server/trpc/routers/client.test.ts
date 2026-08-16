@@ -449,5 +449,139 @@ describe.runIf(!!connectionString)("client", () => {
       ).rejects.toMatchObject({ code: "NOT_FOUND" });
     });
   });
+
+  describe("cities (ClientCompanyCity)", () => {
+    it("create: persists cities and getById returns them", async () => {
+      const ctx = createContext(companyAId);
+      const caller = appRouter.createCaller(ctx);
+
+      const [cityParis, cityLyon] = await Promise.all([
+        db.city.create({
+          data: {
+            name: `Paris-${Date.now()}`,
+            country: "France",
+            latitude: 48.8566,
+            longitude: 2.3522,
+          },
+        }),
+        db.city.create({
+          data: {
+            name: `Lyon-${Date.now()}`,
+            country: "France",
+            latitude: 45.764,
+            longitude: 4.8357,
+          },
+        }),
+      ]);
+
+      const created = await caller.clientCompany.create({
+        name: "Client Avec Villes",
+        cityIds: [cityParis.id, cityLyon.id],
+      });
+
+      const inDb = await db.clientCompanyCity.findMany({
+        where: { clientCompanyId: created.id },
+      });
+      expect(inDb).toHaveLength(2);
+      expect(inDb.map((c) => c.cityId).sort()).toEqual(
+        [cityParis.id, cityLyon.id].sort(),
+      );
+
+      const fetched = await caller.clientCompany.getById({ id: created.id });
+      expect(fetched.cities).toHaveLength(2);
+      const fetchedCityIds = fetched.cities.map((c) => c.city.id).sort();
+      expect(fetchedCityIds).toEqual([cityParis.id, cityLyon.id].sort());
+
+      await db.clientCompany.delete({ where: { id: created.id } });
+      await db.city.deleteMany({
+        where: { id: { in: [cityParis.id, cityLyon.id] } },
+      });
+    });
+
+    it("create: succeeds without cityIds (empty relation in DB)", async () => {
+      const ctx = createContext(companyAId);
+      const caller = appRouter.createCaller(ctx);
+
+      const created = await caller.clientCompany.create({
+        name: "Client Sans Villes",
+      });
+
+      const count = await db.clientCompanyCity.count({
+        where: { clientCompanyId: created.id },
+      });
+      expect(count).toBe(0);
+
+      const fetched = await caller.clientCompany.getById({ id: created.id });
+      expect(fetched.cities).toEqual([]);
+
+      await db.clientCompany.delete({ where: { id: created.id } });
+    });
+
+    it("update: replaces cities entirely (deleteMany puis createMany)", async () => {
+      const ctx = createContext(companyAId);
+      const caller = appRouter.createCaller(ctx);
+
+      const [cityParis, cityLyon, cityNantes] = await Promise.all([
+        db.city.create({
+          data: {
+            name: `Paris-${Date.now()}`,
+            country: "France",
+            latitude: 48.8566,
+            longitude: 2.3522,
+          },
+        }),
+        db.city.create({
+          data: {
+            name: `Lyon-${Date.now()}`,
+            country: "France",
+            latitude: 45.764,
+            longitude: 4.8357,
+          },
+        }),
+        db.city.create({
+          data: {
+            name: `Nantes-${Date.now()}`,
+            country: "France",
+            latitude: 47.2184,
+            longitude: -1.5536,
+          },
+        }),
+      ]);
+
+      const created = await caller.clientCompany.create({
+        name: "Client Update Villes",
+        cityIds: [cityParis.id, cityLyon.id],
+      });
+
+      await caller.clientCompany.update({
+        id: created.id,
+        name: "Client Update Villes",
+        cityIds: [cityNantes.id],
+      });
+
+      const inDb = await db.clientCompanyCity.findMany({
+        where: { clientCompanyId: created.id },
+      });
+      expect(inDb).toHaveLength(1);
+      expect(inDb[0].cityId).toBe(cityNantes.id);
+
+      await db.clientCompany.delete({ where: { id: created.id } });
+      await db.city.deleteMany({
+        where: { id: { in: [cityParis.id, cityLyon.id, cityNantes.id] } },
+      });
+    });
+
+    it("update: throws NOT_FOUND when client belongs to another company", async () => {
+      const ctxA = createContext(companyAId);
+      const callerA = appRouter.createCaller(ctxA);
+
+      await expect(
+        callerA.clientCompany.update({
+          id: clientB1Id,
+          name: "Hacked",
+        }),
+      ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    });
+  });
 });
 

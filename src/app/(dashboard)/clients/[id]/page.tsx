@@ -1,10 +1,12 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { useParams } from "next/navigation"
 import { api } from "@/lib/trpc/client"
 import { formatSiren } from "@/lib/format"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { ClientContactCard } from "@/components/clients/ClientContactCard"
 import { ClientContactFormModal } from "@/components/clients/ClientContactFormModal"
 import { toast } from "sonner"
@@ -97,6 +99,15 @@ export default function ClientDetailPage() {
   return (
     <main className="min-h-[calc(100vh-3.5rem)] bg-background p-6">
       <div className="mx-auto max-w-4xl space-y-8">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/clients">Retour</Link>
+          </Button>
+          <Button variant="outline" size="sm" asChild>
+            <Link href={`/clients/${data.id}/edit`}>Modifier</Link>
+          </Button>
+        </div>
+
         <header className="space-y-2">
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">
             {data.name}
@@ -145,6 +156,23 @@ export default function ClientDetailPage() {
           contact={editingContact}
           onSuccess={() => handleModalClose(false)}
         />
+
+        <section className="rounded-lg border border-border bg-card p-4">
+          <h2 className="text-sm font-semibold text-foreground">Villes</h2>
+          {data.cities.length === 0 ? (
+            <p className="mt-4 text-sm text-muted-foreground">
+              Aucune ville associée
+            </p>
+          ) : (
+            <ul className="mt-4 flex flex-wrap gap-2">
+              {data.cities.map(({ city }) => (
+                <li key={city.id}>
+                  <Badge variant="secondary">{city.name}</Badge>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
 
         <section className="rounded-lg border border-border bg-card p-4">
           <h2 className="text-sm font-semibold text-foreground">Offres</h2>

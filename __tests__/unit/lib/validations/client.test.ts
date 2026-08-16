@@ -1,8 +1,72 @@
 import { describe, it, expect } from "vitest";
 import {
+  createClientCompanySchema,
+  updateClientCompanySchema,
   createClientContactSchema,
   updateClientContactSchema,
 } from "@/lib/validations/client";
+
+describe("createClientCompanySchema", () => {
+  it("defaults cityIds to an empty array when absent", () => {
+    const result = createClientCompanySchema.parse({ name: "ACME SA" });
+    expect(result.cityIds).toEqual([]);
+  });
+
+  it("accepts a list of city uuids", () => {
+    const cityId1 = "550e8400-e29b-41d4-a716-446655440010";
+    const cityId2 = "550e8400-e29b-41d4-a716-446655440011";
+    const result = createClientCompanySchema.parse({
+      name: "ACME SA",
+      cityIds: [cityId1, cityId2],
+    });
+    expect(result.cityIds).toEqual([cityId1, cityId2]);
+  });
+
+  it("rejects a non-uuid cityId", () => {
+    expect(() =>
+      createClientCompanySchema.parse({
+        name: "ACME SA",
+        cityIds: ["not-a-uuid"],
+      }),
+    ).toThrow();
+  });
+});
+
+describe("updateClientCompanySchema", () => {
+  const validId = "550e8400-e29b-41d4-a716-446655440001";
+  const cityId1 = "550e8400-e29b-41d4-a716-446655440010";
+
+  it("requires id, name and defaults cityIds to an empty array", () => {
+    const result = updateClientCompanySchema.parse({
+      id: validId,
+      name: "ACME SA",
+    });
+    expect(result.id).toBe(validId);
+    expect(result.name).toBe("ACME SA");
+    expect(result.cityIds).toEqual([]);
+  });
+
+  it("accepts a list of city uuids", () => {
+    const result = updateClientCompanySchema.parse({
+      id: validId,
+      name: "ACME SA",
+      cityIds: [cityId1],
+    });
+    expect(result.cityIds).toEqual([cityId1]);
+  });
+
+  it("rejects an invalid id", () => {
+    expect(() =>
+      updateClientCompanySchema.parse({ id: "not-a-uuid", name: "ACME SA" }),
+    ).toThrow();
+  });
+
+  it("rejects a missing name", () => {
+    expect(() =>
+      updateClientCompanySchema.parse({ id: validId }),
+    ).toThrow();
+  });
+});
 
 describe("client contact validations", () => {
   describe("createClientContactSchema", () => {

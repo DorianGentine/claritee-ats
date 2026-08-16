@@ -253,5 +253,41 @@ describe("CityAutocomplete", () => {
         screen.getByRole("button", { name: /Monter Lyon/ })
       ).toHaveProperty("disabled", false);
     });
+
+    it("masque les boutons ↑↓ quand ordered=false, garde le bouton de suppression", () => {
+      const onChange = vi.fn();
+
+      render(
+        <CityAutocomplete
+          mode="multi"
+          value={[paris, lyon]}
+          onChange={onChange}
+          ordered={false}
+        />
+      );
+
+      expect(screen.queryByRole("button", { name: /Monter/ })).toBeNull();
+      expect(screen.queryByRole("button", { name: /Descendre/ })).toBeNull();
+      expect(
+        screen.getByRole("button", { name: /Retirer Paris/ })
+      ).toBeDefined();
+    });
+
+    it("affiche les boutons ↑↓ par défaut (ordered omis)", () => {
+      const onChange = vi.fn();
+
+      render(
+        <CityAutocomplete
+          mode="multi"
+          value={[paris, lyon]}
+          onChange={onChange}
+        />
+      );
+
+      expect(screen.getByRole("button", { name: /Monter Lyon/ })).toBeDefined();
+      expect(
+        screen.getByRole("button", { name: /Descendre Paris/ })
+      ).toBeDefined();
+    });
   });
 });
