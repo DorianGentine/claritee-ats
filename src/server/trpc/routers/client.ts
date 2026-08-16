@@ -3,6 +3,7 @@ import { z } from "zod";
 import { router, protectedProcedure } from "../trpc";
 import {
   createClientCompanySchema,
+  updateClientCompanySchema,
   createClientContactSchema,
   updateClientContactSchema,
 } from "@/lib/validations/client";
@@ -61,6 +62,10 @@ export const clientRouter = router({
               createdAt: true,
             },
           },
+          cities: {
+            orderBy: { city: { name: "asc" } },
+            include: { city: true },
+          },
           _count: {
             select: {
               contacts: true,
@@ -79,6 +84,7 @@ export const clientRouter = router({
         name: client.name,
         siren: client.siren,
         contacts: client.contacts,
+        cities: client.cities,
         contactsCount: client._count.contacts,
         offersCount: client._count.jobOffers,
         createdAt: client.createdAt,
@@ -94,15 +100,68 @@ export const clientRouter = router({
     .input(createClientCompanySchema)
     .mutation(async ({ ctx, input }) => {
       await checkMutationRateLimit(ctx.user!.id);
-      const client = await ctx.db.clientCompany.create({
-        data: {
-          name: input.name,
-          siren: input.siren && input.siren.length > 0 ? input.siren : null,
-          companyId: ctx.companyId,
-        },
-      });
+      // Client + villes dans une seule transaction : un échec du createMany
+      // annule la création du client (pas de client orphelin sans ses villes).
+      return ctx.db.$transaction(async (tx) => {
+        const client = await tx.clientCompany.create({
+          data: {
+            name: input.name,
+            siren: input.siren && input.siren.length > 0 ? input.siren : null,
+            companyId: ctx.companyId,
+          },
+        });
 
-      return client;
+        if (input.cityIds.length > 0) {
+          await tx.clientCompanyCity.createMany({
+            data: input.cityIds.map((cityId) => ({
+              clientCompanyId: client.id,
+              cityId,
+            })),
+          });
+        }
+
+        return client;
+      });
+    }),
+
+  /**
+   * Mise à jour d'une société cliente du cabinet courant.
+   * Remplace entièrement les villes associées (deleteMany puis createMany).
+   */
+  update: protectedProcedure
+    .input(updateClientCompanySchema)
+    .mutation(async ({ ctx, input }) => {
+      await checkMutationRateLimit(ctx.user!.id);
+      const existing = await ctx.db.clientCompany.findFirst({
+        where: { id: input.id, companyId: ctx.companyId },
+      });
+      if (!existing) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+
+      return ctx.db.$transaction(async (tx) => {
+        const client = await tx.clientCompany.update({
+          where: { id: input.id },
+          data: {
+            name: input.name,
+            siren: input.siren && input.siren.length > 0 ? input.siren : null,
+          },
+        });
+
+        await tx.clientCompanyCity.deleteMany({
+          where: { clientCompanyId: input.id },
+        });
+        if (input.cityIds.length > 0) {
+          await tx.clientCompanyCity.createMany({
+            data: input.cityIds.map((cityId) => ({
+              clientCompanyId: input.id,
+              cityId,
+            })),
+          });
+        }
+
+        return client;
+      });
     }),
 
   /**

@@ -36,6 +36,8 @@ type SingleProps = {
   onChange: (city: CityOption | null) => void;
   placeholder?: string;
   disabled?: boolean;
+  /** Id posé sur le déclencheur, pour l'associer à un `<Label htmlFor>`. */
+  id?: string;
 };
 
 type MultiProps = {
@@ -44,6 +46,10 @@ type MultiProps = {
   onChange: (cities: CityOption[]) => void;
   placeholder?: string;
   disabled?: boolean;
+  /** Affiche les boutons ↑↓ de réordonnancement des chips (défaut : true). */
+  ordered?: boolean;
+  /** Id posé sur le déclencheur, pour l'associer à un `<Label htmlFor>`. */
+  id?: string;
 };
 
 type Props = SingleProps | MultiProps;
@@ -58,7 +64,8 @@ const formatCitySubtitle = (city: CityOption) =>
   [city.region, city.country].filter(Boolean).join(" · ");
 
 export const CityAutocomplete = (props: Props) => {
-  const { mode, placeholder, disabled } = props;
+  const { mode, placeholder, disabled, id } = props;
+  const ordered = mode === "multi" ? (props.ordered ?? true) : true;
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
 
@@ -145,28 +152,32 @@ export const CityAutocomplete = (props: Props) => {
             <li key={city.id}>
               <span className="inline-flex items-center gap-1 rounded-full bg-secondary py-0.5 pl-3 pr-1 text-xs font-medium text-secondary-foreground">
                 <span className="truncate">{city.name}</span>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="size-5 text-secondary-foreground hover:bg-secondary-foreground/10"
-                  disabled={disabled || index === 0}
-                  aria-label={`Monter ${city.name}`}
-                  onClick={() => handleMove(index, -1)}
-                >
-                  <ChevronUp className="size-3" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="size-5 text-secondary-foreground hover:bg-secondary-foreground/10"
-                  disabled={disabled || index === props.value.length - 1}
-                  aria-label={`Descendre ${city.name}`}
-                  onClick={() => handleMove(index, 1)}
-                >
-                  <ChevronDown className="size-3" />
-                </Button>
+                {ordered && (
+                  <>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-5 text-secondary-foreground hover:bg-secondary-foreground/10"
+                      disabled={disabled || index === 0}
+                      aria-label={`Monter ${city.name}`}
+                      onClick={() => handleMove(index, -1)}
+                    >
+                      <ChevronUp className="size-3" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-5 text-secondary-foreground hover:bg-secondary-foreground/10"
+                      disabled={disabled || index === props.value.length - 1}
+                      aria-label={`Descendre ${city.name}`}
+                      onClick={() => handleMove(index, 1)}
+                    >
+                      <ChevronDown className="size-3" />
+                    </Button>
+                  </>
+                )}
                 <Button
                   type="button"
                   variant="ghost"
@@ -192,6 +203,7 @@ export const CityAutocomplete = (props: Props) => {
           >
             <PopoverTrigger asChild>
               <button
+                id={id}
                 type="button"
                 disabled={disabled}
                 aria-expanded={open}
@@ -215,6 +227,7 @@ export const CityAutocomplete = (props: Props) => {
         ) : (
           <PopoverTrigger asChild>
             <Button
+              id={id}
               type="button"
               variant="outline"
               disabled={disabled}
