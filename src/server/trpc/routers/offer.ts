@@ -47,6 +47,7 @@ export const offerRouter = router({
         salaryMin,
         salaryMax,
         clientCompanyId,
+        cityId,
       } = input
       const skip = (page - 1) * pageSize
 
@@ -73,6 +74,10 @@ export const offerRouter = router({
 
       if (clientCompanyId) {
         where.clientCompanyId = clientCompanyId
+      }
+
+      if (cityId) {
+        where.cityId = cityId
       }
 
       const [items, totalCount] = await Promise.all([

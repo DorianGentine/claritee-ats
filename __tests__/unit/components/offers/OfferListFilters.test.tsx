@@ -27,6 +27,11 @@ vi.mock("@/lib/trpc/client", () => ({
         }),
       },
     },
+    city: {
+      autocomplete: {
+        useQuery: () => ({ data: [], isLoading: false, isError: false }),
+      },
+    },
   },
 }))
 

@@ -800,12 +800,23 @@ describe.runIf(!!connectionString)("offer router", () => {
     let filterTagAlpha: string
     let filterTagBeta: string
     let filterClientId: string
+    let filterCityId: string
 
     beforeAll(async () => {
       const client = await db.clientCompany.create({
         data: { name: "Filter Client", companyId: companyAId },
       })
       filterClientId = client.id
+
+      const city = await db.city.create({
+        data: {
+          name: `FilterParis-${Date.now()}`,
+          country: "France",
+          latitude: 48.8566,
+          longitude: 2.3522,
+        },
+      })
+      filterCityId = city.id
 
       const [oTodo, oDone, oParis] = await Promise.all([
         db.jobOffer.create({
@@ -834,6 +845,7 @@ describe.runIf(!!connectionString)("offer router", () => {
             status: "IN_PROGRESS",
             salaryMin: 40000,
             salaryMax: 55000,
+            cityId: filterCityId,
           },
         }),
       ])
@@ -877,6 +889,7 @@ describe.runIf(!!connectionString)("offer router", () => {
         },
       })
       await db.clientCompany.delete({ where: { id: filterClientId } })
+      await db.city.delete({ where: { id: filterCityId } })
     })
 
     it("filters by single status", async () => {
@@ -958,7 +971,15 @@ describe.runIf(!!connectionString)("offer router", () => {
       expect(filterIds).not.toContain(filterOfferDone)
     })
 
-    it.todo("filters by location (case-insensitive) — replaced by City relation in story 5.7")
+    it("filters by cityId", async () => {
+      const caller = appRouter.createCaller(createContext(companyAId))
+      const result = await caller.offer.list({ cityId: filterCityId })
+
+      const filterIds = result.items.map((o) => o.id)
+      expect(filterIds).toContain(filterOfferParis)
+      expect(filterIds).not.toContain(filterOfferTodo)
+      expect(filterIds).not.toContain(filterOfferDone)
+    })
 
     it("filters by clientCompanyId", async () => {
       const caller = appRouter.createCaller(createContext(companyAId))

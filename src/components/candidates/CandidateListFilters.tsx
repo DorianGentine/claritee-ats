@@ -5,18 +5,22 @@ import { Filter } from "lucide-react"
 import { api } from "@/lib/trpc/client"
 import { Button } from "@/components/ui/button"
 import { MultiSelectPopover } from "@/components/shared/MultiSelectPopover"
+import { CityAutocomplete, type CityOption } from "@/components/shared/CityAutocomplete"
 
 export type CandidateFilters = {
   tagIds: string[]
+  cityIds: string[]
   languageNames: string[]
 }
 
 export const hasActiveCandidateFilters = (filters: CandidateFilters): boolean =>
   filters.tagIds.length > 0 ||
+  filters.cityIds.length > 0 ||
   filters.languageNames.length > 0
 
 export const EMPTY_CANDIDATE_FILTERS: CandidateFilters = {
   tagIds: [],
+  cityIds: [],
   languageNames: [],
 }
 
@@ -24,12 +28,17 @@ type CandidateListFiltersProps = {
   filters: CandidateFilters
   onFiltersChange: (filters: CandidateFilters) => void
   onClear: () => void
+  /** Villes sélectionnées (objets complets) — permet d'afficher les chips par nom sans appel supplémentaire. */
+  selectedCities: CityOption[]
+  onSelectedCitiesChange: (cities: CityOption[]) => void
 }
 
 export const CandidateListFilters = ({
   filters,
   onFiltersChange,
   onClear,
+  selectedCities,
+  onSelectedCitiesChange,
 }: CandidateListFiltersProps) => {
   const [tagPopoverOpen, setTagPopoverOpen] = useState(false)
   const [languagePopoverOpen, setLanguagePopoverOpen] = useState(false)
@@ -86,6 +95,21 @@ export const CandidateListFilters = ({
             placeholder="Sélectionner des tags"
             selectedLabel={(n) => `${n} tag(s) sélectionné(s)`}
             emptyMessage="Aucun tag disponible"
+          />
+        </div>
+
+        {/* Villes */}
+        <div className="flex min-w-0 flex-col gap-2">
+          <label htmlFor="filter-cities" className="text-xs text-muted-foreground">
+            Ville
+          </label>
+          <CityAutocomplete
+            id="filter-cities"
+            mode="multi"
+            showChips={false}
+            value={selectedCities}
+            onChange={onSelectedCitiesChange}
+            placeholder="Sélectionner des villes"
           />
         </div>
 

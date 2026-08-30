@@ -30,6 +30,9 @@ vi.mock("@/lib/trpc/client", () => ({
   },
 }))
 
+const paris = { id: "city-1", name: "Paris", region: null, country: "France" }
+const lyon = { id: "city-2", name: "Lyon", region: null, country: "France" }
+
 afterEach(() => {
   cleanup()
 })
@@ -42,7 +45,7 @@ const baseProps = {
   onRemoveTag: vi.fn(),
   onRemoveSalaryMin: vi.fn(),
   onRemoveSalaryMax: vi.fn(),
-  onRemoveLocation: vi.fn(),
+  onRemoveCity: vi.fn(),
   onRemoveClientCompany: vi.fn(),
 }
 
@@ -93,10 +96,10 @@ describe("ActiveOfferFilterChips", () => {
     expect(el.getByText("Salaire max: 60000")).toBeDefined()
   })
 
-  it("renders location chip", () => {
+  it("renders city chip", () => {
     const filters: OfferFilters = {
       ...EMPTY_OFFER_FILTERS,
-      location: "Paris",
+      city: paris,
     }
     const { container } = render(
       <ActiveOfferFilterChips {...baseProps} filters={filters} totalCount={4} />
@@ -195,18 +198,18 @@ describe("ActiveOfferFilterChips", () => {
     expect(onRemoveTag).toHaveBeenCalledWith("tag-1")
   })
 
-  it("calls onRemoveLocation when clicking location chip X button", () => {
-    const onRemoveLocation = vi.fn()
+  it("calls onRemoveCity when clicking city chip X button", () => {
+    const onRemoveCity = vi.fn()
     const filters: OfferFilters = {
       ...EMPTY_OFFER_FILTERS,
-      location: "Lyon",
+      city: lyon,
     }
     const { container } = render(
       <ActiveOfferFilterChips
         {...baseProps}
         filters={filters}
         totalCount={1}
-        onRemoveLocation={onRemoveLocation}
+        onRemoveCity={onRemoveCity}
       />
     )
 
@@ -214,6 +217,6 @@ describe("ActiveOfferFilterChips", () => {
       "Retirer le filtre ville Lyon"
     )
     fireEvent.click(removeBtn)
-    expect(onRemoveLocation).toHaveBeenCalledOnce()
+    expect(onRemoveCity).toHaveBeenCalledOnce()
   })
 })

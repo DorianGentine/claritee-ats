@@ -1,9 +1,8 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Filter } from "lucide-react"
 import { api } from "@/lib/trpc/client"
-import { useDebounce } from "@/hooks/useDebounce"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -14,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { MultiSelectPopover } from "@/components/shared/MultiSelectPopover"
+import { CityAutocomplete, type CityOption } from "@/components/shared/CityAutocomplete"
 import type { JobOfferStatus } from "@/lib/validations/offer"
 
 const STATUS_OPTIONS: { value: JobOfferStatus; label: string }[] = [
@@ -27,7 +27,7 @@ export type OfferFilters = {
   tagIds: string[]
   salaryMin?: number
   salaryMax?: number
-  location?: string
+  city: CityOption | null
   clientCompanyId?: string
 }
 
@@ -36,7 +36,7 @@ export const hasActiveOfferFilters = (filters: OfferFilters): boolean =>
   filters.tagIds.length > 0 ||
   filters.salaryMin !== undefined ||
   filters.salaryMax !== undefined ||
-  (filters.location?.trim() ?? "").length > 0 ||
+  filters.city !== null ||
   filters.clientCompanyId !== undefined
 
 export const EMPTY_OFFER_FILTERS: OfferFilters = {
@@ -44,7 +44,7 @@ export const EMPTY_OFFER_FILTERS: OfferFilters = {
   tagIds: [],
   salaryMin: undefined,
   salaryMax: undefined,
-  location: undefined,
+  city: null,
   clientCompanyId: undefined,
 }
 
@@ -71,21 +71,12 @@ export const OfferListFilters = ({
     () => tags.map((t) => ({ value: t.id, label: t.name, color: t.color })),
     [tags]
   )
-  const [locationInput, setLocationInput] = useState(filters.location ?? "")
   const [salaryMinInput, setSalaryMinInput] = useState(
     filters.salaryMin?.toString() ?? ""
   )
   const [salaryMaxInput, setSalaryMaxInput] = useState(
     filters.salaryMax?.toString() ?? ""
   )
-
-  const debouncedLocation = useDebounce(locationInput.trim(), 300)
-  const prevDebouncedLocationRef = useRef(debouncedLocation)
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync props → state
-    setLocationInput(filters.location ?? "")
-  }, [filters.location])
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- sync props → state
@@ -96,16 +87,6 @@ export const OfferListFilters = ({
     // eslint-disable-next-line react-hooks/set-state-in-effect -- sync props → state
     setSalaryMaxInput(filters.salaryMax?.toString() ?? "")
   }, [filters.salaryMax])
-
-  useEffect(() => {
-    if (debouncedLocation === prevDebouncedLocationRef.current) return
-    prevDebouncedLocationRef.current = debouncedLocation
-    const nextLocation = debouncedLocation || undefined
-    const currentLocation = filters.location ?? undefined
-    if (nextLocation !== currentLocation) {
-      onFiltersChange({ ...filters, location: nextLocation })
-    }
-  }, [debouncedLocation, filters, onFiltersChange])
 
   const { data: clients = [] } = api.clientCompany.list.useQuery()
 
@@ -239,21 +220,21 @@ export const OfferListFilters = ({
           </div>
         </div>
 
-        {/* Location */}
+        {/* Ville */}
         <div className="flex min-w-0 flex-col gap-2">
           <label
-            htmlFor="filter-offer-location"
+            htmlFor="filter-offer-city"
             className="text-xs text-muted-foreground"
           >
             Ville
           </label>
-          <Input
-            id="filter-offer-location"
-            type="text"
-            placeholder="Ex: Paris"
-            value={locationInput}
-            onChange={(e) => setLocationInput(e.target.value)}
-            className="w-full sm:w-40"
+          <CityAutocomplete
+            id="filter-offer-city"
+            mode="single"
+            showChips={false}
+            value={filters.city}
+            onChange={(city) => onFiltersChange({ ...filters, city })}
+            placeholder="Toutes les villes"
           />
         </div>
 

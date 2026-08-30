@@ -1,5 +1,8 @@
 import { router, publicProcedure } from "../trpc"
-import { cityAutocompleteInputSchema } from "@/lib/validations/city"
+import {
+  cityAutocompleteInputSchema,
+  cityGetByIdsInputSchema,
+} from "@/lib/validations/city"
 
 /** Résultat exposé au client (les coordonnées ne sont jamais renvoyées). */
 type CityResult = {
@@ -198,5 +201,22 @@ export const cityRouter = router({
         console.error("Photon autocomplete failed:", error)
         return []
       }
+    }),
+
+  /**
+   * Résout un lot d'ids en villes complètes (pour afficher un nom depuis un
+   * simple UUID, ex. filtres persistés dans l'URL). Pas d'ordre garanti.
+   */
+  getByIds: publicProcedure
+    .input(cityGetByIdsInputSchema)
+    .query(async ({ ctx, input }): Promise<CityResult[]> => {
+      if (input.ids.length === 0) {
+        return []
+      }
+
+      return ctx.db.city.findMany({
+        where: { id: { in: input.ids } },
+        select: { id: true, name: true, region: true, country: true },
+      })
     }),
 })

@@ -147,6 +147,44 @@ describe("CityAutocomplete", () => {
       expect(onChange).toHaveBeenCalledWith(null);
     });
 
+    it("avec showChips=false, affiche le nom de la ville dans le déclencheur au lieu du badge", () => {
+      const onChange = vi.fn();
+
+      render(
+        <CityAutocomplete
+          mode="single"
+          value={paris}
+          onChange={onChange}
+          showChips={false}
+        />
+      );
+
+      expect(
+        screen.getByRole("button", { name: "Paris" })
+      ).toBeDefined();
+      // Pas de badge interne avec bouton "Effacer"
+      expect(
+        screen.queryByRole("button", { name: /Effacer Paris/ })
+      ).toBeNull();
+    });
+
+    it("avec showChips=false et aucune valeur, affiche le placeholder", () => {
+      const onChange = vi.fn();
+
+      render(
+        <CityAutocomplete
+          mode="single"
+          value={null}
+          onChange={onChange}
+          showChips={false}
+        />
+      );
+
+      expect(
+        screen.getByRole("button", { name: "Sélectionner une ville" })
+      ).toBeDefined();
+    });
+
     it("exclut la ville déjà sélectionnée des suggestions", async () => {
       mockSuggestions([paris, lyon]);
       const onChange = vi.fn();
@@ -287,6 +325,59 @@ describe("CityAutocomplete", () => {
       expect(screen.getByRole("button", { name: /Monter Lyon/ })).toBeDefined();
       expect(
         screen.getByRole("button", { name: /Descendre Paris/ })
+      ).toBeDefined();
+    });
+
+    it("avec showChips=false, n'affiche pas la liste de chips interne et montre le décompte dans le déclencheur", () => {
+      const onChange = vi.fn();
+
+      render(
+        <CityAutocomplete
+          mode="multi"
+          value={[paris, lyon]}
+          onChange={onChange}
+          showChips={false}
+        />
+      );
+
+      expect(screen.queryByRole("button", { name: /Retirer/ })).toBeNull();
+      expect(screen.queryByRole("button", { name: /Monter/ })).toBeNull();
+      expect(
+        screen.getByRole("button", { name: "2 villes sélectionnées" })
+      ).toBeDefined();
+    });
+
+    it("avec showChips=false et une seule ville, accorde le décompte au singulier", () => {
+      const onChange = vi.fn();
+
+      render(
+        <CityAutocomplete
+          mode="multi"
+          value={[paris]}
+          onChange={onChange}
+          showChips={false}
+        />
+      );
+
+      expect(
+        screen.getByRole("button", { name: "1 ville sélectionnée" })
+      ).toBeDefined();
+    });
+
+    it("avec showChips=false et aucune sélection, affiche le placeholder", () => {
+      const onChange = vi.fn();
+
+      render(
+        <CityAutocomplete
+          mode="multi"
+          value={[]}
+          onChange={onChange}
+          showChips={false}
+        />
+      );
+
+      expect(
+        screen.getByRole("button", { name: "Ajouter une ville" })
       ).toBeDefined();
     });
   });

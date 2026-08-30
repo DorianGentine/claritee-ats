@@ -15,11 +15,11 @@ La migration DB (story 5.1) est appliquée en production. Les 3 stories suivante
 | **5.3** | Composant `CityAutocomplete` | ✅ DONE | 5.2 |
 | **5.4** | Formulaire candidat — Villes (multi, ordonné) | ✅ DONE | 5.3 |
 | **5.5** | Formulaire offre d'emploi — Ville | ✅ DONE | 5.3 |
-| **5.6** | Formulaire entreprise cliente — Villes | TODO | 5.3 |
-| **5.7** | Filtres par ville — Candidats & Offres | TODO | 5.4, 5.5 |
+| **5.6** | Formulaire entreprise cliente — Villes | ✅ DONE | 5.3 |
+| **5.7** | Filtres par ville — Candidats & Offres | ✅ DONE | 5.4, 5.5 |
 | **5.8** | Drag & drop villes candidat | TODO | 5.4 |
 
-**Prochaine étape :** démarrer la story 5.6 (formulaire entreprise cliente — villes).
+**Prochaine étape :** démarrer la story 5.8 (drag & drop villes candidat).
 
 ---
 
@@ -89,4 +89,4 @@ Le champ email est actuellement affiché en lecture seule dans le profil. Implé
 ## ✅ Référence — Stories terminées
 
 Épics 1–4 : **36 stories DONE** (1.1 → 4.9).
-Épic 5 : 5 stories DONE (5.1 → 5.5), 3 stories TODO (5.6 → 5.8).
+Épic 5 : 7 stories DONE (5.1 → 5.7), 1 story TODO (5.8).

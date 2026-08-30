@@ -117,8 +117,20 @@ describe("offerListInputSchema", () => {
     ).toBe(false)
   })
 
-  it.todo("accepts location filter and trims whitespace — location replaced by City relation in story 5.7")
-  it.todo("transforms empty location string to undefined — location replaced by City relation in story 5.7")
+  it("accepts a valid cityId filter", () => {
+    const result = offerListInputSchema.safeParse({
+      cityId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+    })
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.cityId).toBe("a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11")
+    }
+  })
+
+  it("rejects invalid cityId filter", () => {
+    const result = offerListInputSchema.safeParse({ cityId: "not-a-uuid" })
+    expect(result.success).toBe(false)
+  })
 
   it("accepts valid clientCompanyId filter", () => {
     const result = offerListInputSchema.safeParse({
@@ -143,6 +155,7 @@ describe("offerListInputSchema", () => {
       expect(result.data.salaryMin).toBeUndefined()
       expect(result.data.salaryMax).toBeUndefined()
       expect(result.data.clientCompanyId).toBeUndefined()
+      expect(result.data.cityId).toBeUndefined()
     }
   })
 })
