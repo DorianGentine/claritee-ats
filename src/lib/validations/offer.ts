@@ -27,6 +27,7 @@ export const offerListInputSchema = z.object({
   salaryMin: z.number().int().nonnegative().optional(),
   salaryMax: z.number().int().nonnegative().optional(),
   clientCompanyId: z.uuid().optional(),
+  cityId: z.uuid().optional(),
 })
 
 export type OfferListInput = z.infer<typeof offerListInputSchema>

@@ -114,6 +114,9 @@ export const candidateRouter = router({
       const tagIds = input.tagIds?.filter(Boolean).length
         ? input.tagIds
         : undefined;
+      const cityIds = input.cityIds?.filter(Boolean).length
+        ? input.cityIds
+        : undefined;
       const languageNames = input.languageNames?.filter(Boolean).length
         ? input.languageNames
         : undefined;
@@ -124,6 +127,9 @@ export const candidateRouter = router({
           ? tagIds.map((tagId) => ({
               tags: { some: { tagId } },
             }))
+          : []),
+        ...(cityIds?.length
+          ? [{ cities: { some: { cityId: { in: cityIds } } } }]
           : []),
         ...(languageNames?.length
           ? languageNames.map((name) => ({

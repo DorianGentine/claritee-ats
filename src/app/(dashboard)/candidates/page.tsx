@@ -14,11 +14,16 @@ import {
   type CandidateFilters,
 } from "@/components/candidates/CandidateListFilters"
 import { ActiveFilterChips } from "@/components/candidates/ActiveFilterChips"
+import type { CityOption } from "@/components/shared/CityAutocomplete"
 
 const PAGE_SIZE = 20
 
 const FILTER_TAGS_PARAM = "tags"
+const FILTER_CITIES_PARAM = "cityIds"
 const FILTER_LANGUAGES_PARAM = "languages"
+
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 const parseFiltersFromSearchParams = (
   params: URLSearchParams
@@ -28,7 +33,15 @@ const parseFiltersFromSearchParams = (
     ? tagsParam
         .split(",")
         .map((s) => s.trim())
-        .filter((s) => /^[0-9a-f-]{36}$/i.test(s))
+        .filter((s) => UUID_REGEX.test(s))
+        .slice(0, 20)
+    : []
+  const citiesParam = params.get(FILTER_CITIES_PARAM)
+  const cityIds = citiesParam
+    ? citiesParam
+        .split(",")
+        .map((s) => s.trim())
+        .filter((s) => UUID_REGEX.test(s))
         .slice(0, 20)
     : []
   const languagesParam = params.get(FILTER_LANGUAGES_PARAM)
@@ -39,13 +52,16 @@ const parseFiltersFromSearchParams = (
         .filter((s) => s.length > 0 && s.length <= 50)
         .slice(0, 20)
     : []
-  return { tagIds, languageNames }
+  return { tagIds, cityIds, languageNames }
 }
 
 const buildSearchParams = (filters: CandidateFilters): URLSearchParams => {
   const params = new URLSearchParams()
   if (filters.tagIds.length > 0) {
     params.set(FILTER_TAGS_PARAM, filters.tagIds.join(","))
+  }
+  if (filters.cityIds.length > 0) {
+    params.set(FILTER_CITIES_PARAM, filters.cityIds.join(","))
   }
   if (filters.languageNames.length > 0) {
     params.set(
@@ -89,6 +105,38 @@ export default function CandidatesPage() {
     filtersRef.current = filters
   }, [filters])
 
+  // Villes sélectionnées (objets complets, pour le nom affiché sur les chips) :
+  // état local propre à la session — l'URL ne contient que les UUIDs (AC 8).
+  // Hydraté depuis `filters.cityIds` via `city.getByIds` ci-dessous quand un id
+  // actif (ex. arrivée depuis un lien partagé, ou retour arrière navigateur)
+  // n'est pas encore résolu localement — voir Review Findings story 5.7.
+  const [selectedCities, setSelectedCities] = useState<CityOption[]>([])
+
+  const missingCityIds = useMemo(
+    () =>
+      filters.cityIds.filter(
+        (cityId) => !selectedCities.some((city) => city.id === cityId)
+      ),
+    [filters.cityIds, selectedCities]
+  )
+
+  const { data: resolvedCities } = api.city.getByIds.useQuery(
+    { ids: missingCityIds },
+    { enabled: missingCityIds.length > 0 }
+  )
+
+  useEffect(() => {
+    if (!resolvedCities || resolvedCities.length === 0) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- hydrate depuis une résolution serveur
+    setSelectedCities((prev) => {
+      const existingIds = new Set(prev.map((city) => city.id))
+      const newCities = resolvedCities.filter(
+        (city) => !existingIds.has(city.id)
+      )
+      return newCities.length > 0 ? [...prev, ...newCities] : prev
+    })
+  }, [resolvedCities])
+
   const syncUrl = useCallback(
     (nextFilters: CandidateFilters) => {
       const params = buildSearchParams(nextFilters)
@@ -109,6 +157,7 @@ export default function CandidatesPage() {
 
   const handleClearFilters = useCallback(() => {
     setCursor(undefined)
+    setSelectedCities([])
     syncUrl(EMPTY_CANDIDATE_FILTERS)
   }, [syncUrl])
 
@@ -118,6 +167,37 @@ export default function CandidatesPage() {
       handleFiltersChange({
         ...current,
         tagIds: current.tagIds.filter((id) => id !== tagId),
+      })
+    },
+    [handleFiltersChange]
+  )
+
+  const handleCitiesChange = useCallback(
+    (cities: CityOption[]) => {
+      setSelectedCities(cities)
+      // `cities` ne reflète que ce que le picker connaît déjà (dérivé de
+      // `selectedCities`) : tant que `city.getByIds` n'a pas fini de résoudre
+      // un id venu de l'URL, ce dernier est absent de `cities` sans que
+      // l'utilisateur ait choisi de le retirer. On le préserve via
+      // `missingCityIds` pour ne pas l'effacer silencieusement du filtre.
+      const nextCityIds = [
+        ...new Set([...cities.map((city) => city.id), ...missingCityIds]),
+      ]
+      handleFiltersChange({
+        ...filtersRef.current,
+        cityIds: nextCityIds,
+      })
+    },
+    [handleFiltersChange, missingCityIds]
+  )
+
+  const handleRemoveCity = useCallback(
+    (cityId: string) => {
+      setSelectedCities((prev) => prev.filter((city) => city.id !== cityId))
+      const current = filtersRef.current
+      handleFiltersChange({
+        ...current,
+        cityIds: current.cityIds.filter((id) => id !== cityId),
       })
     },
     [handleFiltersChange]
@@ -139,6 +219,7 @@ export default function CandidatesPage() {
       limit: PAGE_SIZE,
       ...(cursor ? { cursor } : {}),
       ...(filters.tagIds.length > 0 ? { tagIds: filters.tagIds } : {}),
+      ...(filters.cityIds.length > 0 ? { cityIds: filters.cityIds } : {}),
       ...(filters.languageNames.length > 0
         ? { languageNames: filters.languageNames }
         : {}),
@@ -170,6 +251,8 @@ export default function CandidatesPage() {
             filters={filters}
             onFiltersChange={handleFiltersChange}
             onClear={handleClearFilters}
+            selectedCities={selectedCities}
+            onSelectedCitiesChange={handleCitiesChange}
           />
         </div>
 
@@ -179,7 +262,9 @@ export default function CandidatesPage() {
               filters={filters}
               totalCount={displayCount}
               isLoading={isFetching}
+              selectedCities={selectedCities}
               onRemoveTag={handleRemoveTag}
+              onRemoveCity={handleRemoveCity}
               onRemoveLanguage={handleRemoveLanguage}
             />
           </div>

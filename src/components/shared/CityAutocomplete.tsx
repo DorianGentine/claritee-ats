@@ -38,6 +38,8 @@ type SingleProps = {
   disabled?: boolean;
   /** Id posé sur le déclencheur, pour l'associer à un `<Label htmlFor>`. */
   id?: string;
+  /** Affiche la sélection sous forme de chip(s) intégrée(s) au composant (défaut : true). À désactiver quand un composant parent affiche déjà ses propres chips (ex. filtres de liste), pour éviter le doublon. */
+  showChips?: boolean;
 };
 
 type MultiProps = {
@@ -50,6 +52,8 @@ type MultiProps = {
   ordered?: boolean;
   /** Id posé sur le déclencheur, pour l'associer à un `<Label htmlFor>`. */
   id?: string;
+  /** Affiche la sélection sous forme de chip(s) intégrée(s) au composant (défaut : true). À désactiver quand un composant parent affiche déjà ses propres chips (ex. filtres de liste), pour éviter le doublon. */
+  showChips?: boolean;
 };
 
 type Props = SingleProps | MultiProps;
@@ -63,8 +67,25 @@ const MAX_QUERY_LENGTH = 100; // aligné sur `cityAutocompleteInputSchema` (q: m
 const formatCitySubtitle = (city: CityOption) =>
   [city.region, city.country].filter(Boolean).join(" · ");
 
+/**
+ * Libellé du déclencheur. Quand `showChips` est désactivé, la sélection n'est
+ * affichée nulle part ailleurs dans le composant — le déclencheur doit donc la
+ * porter lui-même (nom unique en mode single, décompte en mode multi).
+ */
+const getTriggerLabel = (props: Props, showChips: boolean): string => {
+  if (props.mode === "single") {
+    if (!showChips && props.value) return props.value.name;
+    return props.placeholder ?? "Sélectionner une ville";
+  }
+  if (!showChips && props.value.length > 0) {
+    const count = props.value.length;
+    return `${count} ville${count > 1 ? "s" : ""} sélectionnée${count > 1 ? "s" : ""}`;
+  }
+  return props.placeholder ?? "Ajouter une ville";
+};
+
 export const CityAutocomplete = (props: Props) => {
-  const { mode, placeholder, disabled, id } = props;
+  const { mode, disabled, id, showChips = true } = props;
   const ordered = mode === "multi" ? (props.ordered ?? true) : true;
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -143,10 +164,17 @@ export const CityAutocomplete = (props: Props) => {
     );
   };
 
+  // Quand `showChips` est désactivé, le déclencheur affiche lui-même la
+  // sélection (nom unique, ou décompte) puisqu'aucune chip interne n'est
+  // rendue — sinon la sélection resterait invisible dans le composant.
+  const hasDisplayValue =
+    !showChips && (mode === "single" ? !!props.value : props.value.length > 0);
+  const triggerLabel = getTriggerLabel(props, showChips);
+
   return (
     <div className="flex flex-col gap-2">
       {/* AC 7 — chips ordonnés affichés au-dessus du trigger (mode multi) */}
-      {mode === "multi" && props.value.length > 0 && (
+      {showChips && mode === "multi" && props.value.length > 0 && (
         <ul className="flex flex-wrap gap-2">
           {props.value.map((city, index) => (
             <li key={city.id}>
@@ -196,7 +224,7 @@ export const CityAutocomplete = (props: Props) => {
       )}
 
       <Popover open={open} onOpenChange={setOpen}>
-        {mode === "single" && props.value ? (
+        {showChips && mode === "single" && props.value ? (
           <span
             className={`inline-flex w-fit items-center gap-1 rounded-full bg-primary py-0.5 pl-3 pr-1 text-xs font-medium text-primary-foreground ${disabled ? "opacity-50" : ""
               }`}
@@ -233,13 +261,10 @@ export const CityAutocomplete = (props: Props) => {
               disabled={disabled}
               aria-expanded={open}
               aria-haspopup="listbox"
-              className="w-full justify-start text-left font-normal text-muted-foreground sm:w-64"
+              className={`w-full justify-start text-left font-normal sm:w-64 ${hasDisplayValue ? "" : "text-muted-foreground"}`}
             >
-              <MapPin className="size-4" />
-              {placeholder ??
-                (mode === "single"
-                  ? "Sélectionner une ville"
-                  : "Ajouter une ville")}
+              <MapPin className="size-4 shrink-0" />
+              <span className="truncate">{triggerLabel}</span>
             </Button>
           </PopoverTrigger>
         )}

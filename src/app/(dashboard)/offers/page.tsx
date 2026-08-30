@@ -72,6 +72,7 @@ export default function OffersPage() {
     salaryMin: filters.salaryMin,
     salaryMax: filters.salaryMax,
     clientCompanyId: filters.clientCompanyId,
+    cityId: filters.city?.id,
   })
   const data = listQuery.data
   const items = data?.items ?? []
@@ -153,9 +154,7 @@ export default function OffersPage() {
               onRemoveSalaryMax={() =>
                 setFilters((f) => ({ ...f, salaryMax: undefined }))
               }
-              onRemoveLocation={() =>
-                setFilters((f) => ({ ...f, location: undefined }))
-              }
+              onRemoveCity={() => setFilters((f) => ({ ...f, city: null }))}
               onRemoveClientCompany={() =>
                 setFilters((f) => ({ ...f, clientCompanyId: undefined }))
               }

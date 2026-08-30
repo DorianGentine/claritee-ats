@@ -162,7 +162,63 @@ describe.runIf(!!connectionString)("candidate", () => {
     expect(page2.items[0].id).not.toBe(page1.items[0].id);
   });
 
-  it.todo("list: filters by city (case insensitive, partial match contains) — replaced by CandidateCity relation in story 5.7");
+  it("list: filters by cityIds (OR logic - candidate must have at least one)", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const [cityParis, cityLyon] = await Promise.all([
+      db.city.create({
+        data: {
+          name: `FilterParis-${Date.now()}`,
+          country: "France",
+          latitude: 48.8566,
+          longitude: 2.3522,
+        },
+      }),
+      db.city.create({
+        data: {
+          name: `FilterLyon-${Date.now()}`,
+          country: "France",
+          latitude: 45.764,
+          longitude: 4.8357,
+        },
+      }),
+    ]);
+
+    await db.candidateCity.createMany({
+      data: [
+        { candidateId: candidateA1Id, cityId: cityParis.id, order: 0 },
+        { candidateId: candidateA2Id, cityId: cityLyon.id, order: 0 },
+      ],
+    });
+
+    const onlyParis = await caller.candidate.list({
+      limit: 20,
+      cityIds: [cityParis.id],
+    });
+    expect(onlyParis.items.map((c) => c.id)).toEqual([candidateA1Id]);
+
+    const parisOrLyon = await caller.candidate.list({
+      limit: 20,
+      cityIds: [cityParis.id, cityLyon.id],
+    });
+    expect(parisOrLyon.items.map((c) => c.id).sort()).toEqual(
+      [candidateA1Id, candidateA2Id].sort(),
+    );
+
+    const noFilter = await caller.candidate.list({ limit: 20, cityIds: [] });
+    expect(noFilter.items.length).toBeGreaterThanOrEqual(2);
+
+    await db.candidateCity.deleteMany({
+      where: {
+        candidateId: { in: [candidateA1Id, candidateA2Id] },
+        cityId: { in: [cityParis.id, cityLyon.id] },
+      },
+    });
+    await db.city.deleteMany({
+      where: { id: { in: [cityParis.id, cityLyon.id] } },
+    });
+  });
 
   it("list: filters by tagIds (AND logic - candidate must have ALL tags)", async () => {
     const ctx = createContext(companyAId);
@@ -217,7 +273,55 @@ describe.runIf(!!connectionString)("candidate", () => {
     await db.tag.deleteMany({ where: { id: { in: [tag1.id, tag2.id] } } });
   });
 
-  it.todo("list: combines city and tagIds filters — replaced by CandidateCity relation in story 5.7");
+  it("list: combines cityIds and tagIds filters", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const city = await db.city.create({
+      data: {
+        name: `FilterCombo-${Date.now()}`,
+        country: "France",
+        latitude: 48.8566,
+        longitude: 2.3522,
+      },
+    });
+    const tag = await db.tag.create({
+      data: {
+        name: `FilterComboTag-${Date.now()}`,
+        color: "#9B8BA8",
+        companyId: companyAId,
+      },
+    });
+
+    await db.candidateCity.createMany({
+      data: [
+        { candidateId: candidateA1Id, cityId: city.id, order: 0 },
+        { candidateId: candidateA2Id, cityId: city.id, order: 0 },
+      ],
+    });
+    await db.candidateTag.create({
+      data: { candidateId: candidateA1Id, tagId: tag.id },
+    });
+
+    const result = await caller.candidate.list({
+      limit: 20,
+      cityIds: [city.id],
+      tagIds: [tag.id],
+    });
+    expect(result.items.map((c) => c.id)).toEqual([candidateA1Id]);
+
+    await db.candidateTag.deleteMany({
+      where: { candidateId: candidateA1Id, tagId: tag.id },
+    });
+    await db.candidateCity.deleteMany({
+      where: {
+        candidateId: { in: [candidateA1Id, candidateA2Id] },
+        cityId: city.id,
+      },
+    });
+    await db.tag.delete({ where: { id: tag.id } });
+    await db.city.delete({ where: { id: city.id } });
+  });
 
   it("list: filters by languageNames (AND logic)", async () => {
     const ctx = createContext(companyAId);
@@ -287,9 +391,6 @@ describe.runIf(!!connectionString)("candidate", () => {
       },
     });
   });
-
-  it.todo("listDistinctCities: returns distinct cities for the cabinet only — removed, replaced by City relation in story 5.2");
-  it.todo("listDistinctCities: throws UNAUTHORIZED when not authenticated — removed, replaced by City relation in story 5.2");
 
   it("list: throws UNAUTHORIZED when not authenticated", async () => {
     const ctx = createContext(null);

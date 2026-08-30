@@ -10,6 +10,10 @@ export const candidateListInputSchema = z.object({
     .array(z.uuid())
     .max(20, "Maximum 20 tags pour le filtre")
     .optional(),
+  cityIds: z
+    .array(z.uuid())
+    .max(20, "Maximum 20 villes pour le filtre")
+    .optional(),
   languageNames: z
     .array(z.string().max(50))
     .max(20, "Maximum 20 langues pour le filtre")

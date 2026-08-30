@@ -8,3 +8,10 @@ export const cityAutocompleteInputSchema = z.object({
 })
 
 export type CityAutocompleteInput = z.infer<typeof cityAutocompleteInputSchema>
+
+/** Input pour la résolution de villes par ids (hydratation du nom depuis une liste d'UUIDs). */
+export const cityGetByIdsInputSchema = z.object({
+  ids: z.array(z.uuid()).max(20, "Maximum 20 villes"),
+})
+
+export type CityGetByIdsInput = z.infer<typeof cityGetByIdsInputSchema>

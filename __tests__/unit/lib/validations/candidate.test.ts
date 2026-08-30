@@ -32,7 +32,22 @@ describe("candidate validations", () => {
       expect(result.tagIds).toEqual([validUuid1, validUuid2]);
     });
 
-    it.todo("filters by cities — city filter added to list input in story 5.7");
+    it("accepts cityIds array of UUIDs", () => {
+      const result = candidateListInputSchema.parse({
+        limit: 10,
+        cityIds: [validUuid1, validUuid2],
+      });
+      expect(result.cityIds).toEqual([validUuid1, validUuid2]);
+    });
+
+    it("rejects invalid cityIds (non-UUID)", () => {
+      expect(() =>
+        candidateListInputSchema.parse({
+          limit: 10,
+          cityIds: ["not-a-uuid"],
+        }),
+      ).toThrow();
+    });
 
     it("rejects invalid tagIds (non-UUID)", () => {
       expect(() =>

@@ -135,3 +135,66 @@ describe.runIf(!!connectionString)("city.autocomplete (integration)", () => {
     expect(consoleError).toHaveBeenCalledOnce()
   })
 })
+
+describe.runIf(!!connectionString)("city.getByIds (integration)", () => {
+  let db: PrismaClient
+
+  const caller = () =>
+    cityRouter.createCaller({
+      db,
+      user: null,
+      companyId: null,
+      headers: new Headers(),
+    } as unknown as Context)
+
+  beforeAll(async () => {
+    const adapter = new PrismaPg({ connectionString: connectionString! })
+    db = new PrismaClient({ adapter })
+
+    await db.city.deleteMany({ where: { country: TEST_COUNTRY } })
+  })
+
+  afterAll(async () => {
+    await db.city.deleteMany({ where: { country: TEST_COUNTRY } })
+    await db.$disconnect()
+  })
+
+  it("returns [] for an empty ids array (no DB hit)", async () => {
+    const result = await caller().getByIds({ ids: [] })
+    expect(result).toEqual([])
+  })
+
+  it("resolves cities by id and never exposes lat/long", async () => {
+    const city = await db.city.create({
+      data: {
+        name: "Yyytestcity",
+        region: "Test Region",
+        country: TEST_COUNTRY,
+        latitude: 44.0,
+        longitude: 4.0,
+      },
+    })
+
+    const result = await caller().getByIds({ ids: [city.id] })
+
+    expect(result).toEqual([
+      {
+        id: city.id,
+        name: "Yyytestcity",
+        region: "Test Region",
+        country: TEST_COUNTRY,
+      },
+    ])
+    expect(result[0]).not.toHaveProperty("latitude")
+    expect(result[0]).not.toHaveProperty("longitude")
+
+    await db.city.delete({ where: { id: city.id } })
+  })
+
+  it("silently ignores ids that don't exist (no throw)", async () => {
+    const result = await caller().getByIds({
+      ids: ["00000000-0000-0000-0000-000000000000"],
+    })
+    expect(result).toEqual([])
+  })
+})

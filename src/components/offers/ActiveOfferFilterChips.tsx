@@ -1,8 +1,7 @@
 "use client"
 
 import { api } from "@/lib/trpc/client"
-import { cn } from "@/lib/utils"
-import { FilterChip } from "@/components/shared/FilterChip"
+import { FilterChipsBar, type FilterChipDescriptor } from "@/components/shared/FilterChipsBar"
 import { hasActiveOfferFilters, type OfferFilters } from "./OfferListFilters"
 
 const STATUS_LABELS: Record<string, string> = {
@@ -19,7 +18,7 @@ type ActiveOfferFilterChipsProps = {
   onRemoveTag: (tagId: string) => void
   onRemoveSalaryMin: () => void
   onRemoveSalaryMax: () => void
-  onRemoveLocation: () => void
+  onRemoveCity: () => void
   onRemoveClientCompany: () => void
   className?: string
 }
@@ -32,7 +31,7 @@ export const ActiveOfferFilterChips = ({
   onRemoveTag,
   onRemoveSalaryMin,
   onRemoveSalaryMax,
-  onRemoveLocation,
+  onRemoveCity,
   onRemoveClientCompany,
   className,
 }: ActiveOfferFilterChipsProps) => {
@@ -44,71 +43,73 @@ export const ActiveOfferFilterChips = ({
 
   if (!hasActiveOfferFilters(filters)) return null
 
+  const chips: FilterChipDescriptor[] = [
+    ...filters.statuses.map((status) => {
+      const label = STATUS_LABELS[status] ?? status
+      return {
+        key: `status-${status}`,
+        label: `Statut: ${label}`,
+        onRemove: () => onRemoveStatus(status),
+        removeAriaLabel: `Retirer le filtre statut ${label}`,
+      }
+    }),
+    ...filters.tagIds.map((tagId) => {
+      const label = tagById[tagId]?.name ?? tagId
+      return {
+        key: `tag-${tagId}`,
+        label: `Tag: ${label}`,
+        onRemove: () => onRemoveTag(tagId),
+        removeAriaLabel: `Retirer le filtre tag ${label}`,
+      }
+    }),
+    ...(filters.salaryMin !== undefined
+      ? [
+          {
+            key: "salary-min",
+            label: `Salaire min: ${filters.salaryMin}`,
+            onRemove: onRemoveSalaryMin,
+            removeAriaLabel: "Retirer le filtre salaire minimum",
+          },
+        ]
+      : []),
+    ...(filters.salaryMax !== undefined
+      ? [
+          {
+            key: "salary-max",
+            label: `Salaire max: ${filters.salaryMax}`,
+            onRemove: onRemoveSalaryMax,
+            removeAriaLabel: "Retirer le filtre salaire maximum",
+          },
+        ]
+      : []),
+    ...(filters.city
+      ? [
+          {
+            key: "city",
+            label: `Ville: ${filters.city.name}`,
+            onRemove: onRemoveCity,
+            removeAriaLabel: `Retirer le filtre ville ${filters.city.name}`,
+          },
+        ]
+      : []),
+    ...(filters.clientCompanyId
+      ? [
+          {
+            key: "client",
+            label: `Client: ${clientById[filters.clientCompanyId]?.name ?? filters.clientCompanyId}`,
+            onRemove: onRemoveClientCompany,
+            removeAriaLabel: "Retirer le filtre client",
+          },
+        ]
+      : []),
+  ]
+
   return (
-    <div
-      className={cn("flex flex-wrap items-center gap-2", className)}
-      role="list"
-      aria-label="Filtres actifs"
-    >
-      {filters.statuses.map((status) => {
-        const label = STATUS_LABELS[status] ?? status
-        return (
-          <FilterChip
-            key={status}
-            label={`Statut: ${label}`}
-            onRemove={() => onRemoveStatus(status)}
-            removeAriaLabel={`Retirer le filtre statut ${label}`}
-          />
-        )
-      })}
-      {filters.tagIds.map((tagId) => {
-        const label = tagById[tagId]?.name ?? tagId
-        return (
-          <FilterChip
-            key={tagId}
-            label={`Tag: ${label}`}
-            onRemove={() => onRemoveTag(tagId)}
-            removeAriaLabel={`Retirer le filtre tag ${label}`}
-          />
-        )
-      })}
-      {filters.salaryMin !== undefined && (
-        <FilterChip
-          label={`Salaire min: ${filters.salaryMin}`}
-          onRemove={onRemoveSalaryMin}
-          removeAriaLabel="Retirer le filtre salaire minimum"
-        />
-      )}
-      {filters.salaryMax !== undefined && (
-        <FilterChip
-          label={`Salaire max: ${filters.salaryMax}`}
-          onRemove={onRemoveSalaryMax}
-          removeAriaLabel="Retirer le filtre salaire maximum"
-        />
-      )}
-      {filters.location?.trim() && (
-        <FilterChip
-          label={`Ville: ${filters.location}`}
-          onRemove={onRemoveLocation}
-          removeAriaLabel={`Retirer le filtre ville ${filters.location}`}
-        />
-      )}
-      {filters.clientCompanyId && (
-        <FilterChip
-          label={`Client: ${clientById[filters.clientCompanyId]?.name ?? filters.clientCompanyId}`}
-          onRemove={onRemoveClientCompany}
-          removeAriaLabel="Retirer le filtre client"
-        />
-      )}
-      <span
-        className="text-sm text-muted-foreground"
-        aria-live="polite"
-        aria-busy={isLoading}
-      >
-        {isLoading
-          ? "Chargement…"
-          : `${totalCount} offre${totalCount !== 1 ? "s" : ""} trouvée${totalCount !== 1 ? "s" : ""}`}
-      </span>
-    </div>
+    <FilterChipsBar
+      chips={chips}
+      isLoading={isLoading}
+      countLabel={`${totalCount} offre${totalCount !== 1 ? "s" : ""} trouvée${totalCount !== 1 ? "s" : ""}`}
+      className={className}
+    />
   )
 }
