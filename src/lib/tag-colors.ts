@@ -1,7 +1,7 @@
 import type React from "react"
 
 /**
- * Palette de couleurs pour les tags (design-system §2).
+ * Palette de couleurs pour les tags (docs/coding-standards.md § Styles et tokens).
  * Assignation : colorIndex = hash(tagName) % 8.
  */
 export const TAG_PALETTE: readonly [string, string, string, string, string, string, string, string] = [

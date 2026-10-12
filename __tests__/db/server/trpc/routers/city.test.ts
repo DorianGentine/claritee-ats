@@ -102,12 +102,22 @@ describe.runIf(!!connectionString)("city.autocomplete (integration)", () => {
         },
       ],
     }
-    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response(JSON.stringify(photonPayload), { status: 200 })
-    )
+    // Le fallback interroge 3 bbox en parallèle (Europe, Antilles/Guyane,
+    // Océan Indien) : tous les appels sont mockés pour ne jamais atteindre le
+    // vrai Photon. Seul le premier (Europe) renvoie la ville.
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementation(
+        async () =>
+          new Response(JSON.stringify({ features: [] }), { status: 200 })
+      )
+      .mockImplementationOnce(
+        async () => new Response(JSON.stringify(photonPayload), { status: 200 })
+      )
 
     const result = await caller().autocomplete({ q: "Qqq" })
 
+    expect(fetchSpy).toHaveBeenCalledTimes(3)
     expect(result.map((city) => city.name)).toEqual(["Qqqfallbackville"])
 
     // La ville a bien été créée en base (upsert), avec ses coordonnées.
@@ -125,9 +135,7 @@ describe.runIf(!!connectionString)("city.autocomplete (integration)", () => {
     const consoleError = vi
       .spyOn(console, "error")
       .mockImplementation(() => undefined)
-    vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(
-      new Error("network error")
-    )
+    vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("network error"))
 
     const result = await caller().autocomplete({ q: "Wwwunreachable" })
 

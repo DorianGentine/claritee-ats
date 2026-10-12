@@ -128,7 +128,7 @@ describe.runIf(!!connectionString)("offer router", () => {
 
   // TODO(db-test-debt): flaky — offres créées à la même milliseconde → ordre du tri
   // secondaire indéfini (le router ne trie que par createdAt). Skippé, à fiabiliser
-  // (timestamps espacés ou tiebreaker) — voir docs/prd/TO-DO.md.
+  // (timestamps espacés ou tiebreaker) — voir docs/TO-DO.md.
   it.skip("default sort is createdAt desc (newest first)", async () => {
     const ctx = createContext(companyAId)
     const caller = appRouter.createCaller(ctx)
@@ -148,7 +148,7 @@ describe.runIf(!!connectionString)("offer router", () => {
     expect(result.items[1].id).toBe(expectedOrder[1])
   })
 
-  // TODO(db-test-debt): échoue sur base fraîche — skippé temporairement, à corriger (voir docs/prd/TO-DO.md)
+  // TODO(db-test-debt): échoue sur base fraîche — skippé temporairement, à corriger (voir docs/TO-DO.md)
   it.skip("can sort by status", async () => {
     const ctx = createContext(companyAId)
     const caller = appRouter.createCaller(ctx)

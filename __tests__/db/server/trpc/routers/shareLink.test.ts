@@ -212,7 +212,7 @@ describe.runIf(!!connectionString)("shareLink router", () => {
 
   // ─── shareLink.getPublicByToken ──────────────────────────────────────────
   // TODO(db-test-debt): ces 5 tests échouent sur base fraîche (setup de données à
-  // fiabiliser). Skippés temporairement — à corriger et dé-skipper. Voir docs/prd/TO-DO.md.
+  // fiabiliser). Skippés temporairement — à corriger et dé-skipper. Voir docs/TO-DO.md.
 
   it.skip("getPublicByToken returns public candidate data for a valid NORMAL token", async () => {
     // Create a NORMAL link with no expiration

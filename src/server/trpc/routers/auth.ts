@@ -18,7 +18,7 @@ const REGISTER_UNAVAILABLE_MESSAGE =
 export const authRouter = router({
   /**
    * Inscription complète côté serveur : vérifie SIREN et email (Auth + User),
-   * puis crée l'utilisateur Auth (email_confirm: true, pas d'envoi d'email),
+   * puis crée l'utilisateur Auth (email_confirm: false + envoi de l'email de confirmation),
    * puis Company + User en une transaction. Évite les utilisateurs Auth orphelins.
    */
   register: publicProcedure

@@ -93,7 +93,7 @@ describe.runIf(!!connectionString)("client", () => {
     expect(result.some((c) => c.id === clientB1Id)).toBe(false);
   });
 
-  // TODO(db-test-debt): échoue sur base fraîche — skippé temporairement, à corriger (voir docs/prd/TO-DO.md)
+  // TODO(db-test-debt): échoue sur base fraîche — skippé temporairement, à corriger (voir docs/TO-DO.md)
   it.skip("list: returns items sorted by createdAt desc", async () => {
     const ctx = createContext(companyAId);
     const caller = appRouter.createCaller(ctx);

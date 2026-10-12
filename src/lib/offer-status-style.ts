@@ -1,7 +1,7 @@
 /**
  * Mapping statut offre → label + style badge.
  * Réutilisable liste offres, fiche offre (Story 3.6), Dashboard.
- * Couleurs alignées sur docs/design-system.md § Statuts offre.
+ * Couleurs alignées sur les tokens de docs/coding-standards.md § Styles et tokens.
  */
 
 import type { JobOfferStatus } from "@prisma/client";
@@ -12,7 +12,7 @@ export const OFFER_STATUS_LABELS: Record<JobOfferStatus, string> = {
   DONE: "Terminé",
 };
 
-/** Classes Tailwind pour le badge (design tokens quand possible). Terminé = design-system § Statuts offre (vert). */
+/** Classes Tailwind pour le badge (design tokens quand possible). Terminé = token success (vert). */
 export const OFFER_STATUS_BADGE_CLASS: Record<JobOfferStatus, string> = {
   TODO: "bg-muted text-muted-foreground border-transparent",
   IN_PROGRESS: "bg-secondary text-secondary-foreground border-transparent",

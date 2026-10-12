@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Claritee ATS** — lightweight recruitment management platform for small French recruitment agencies. Centralises candidates, job offers, clients, and collaboration. Built solo, deployed free (Supabase + Vercel). All UI text is in **French**.
 
-4 epics, 39 stories. Fully specified in `docs/prd.md`. Current progress: stories 1.1 → 4.6 implemented.
+Epics 1–5 delivered (MVP + structured cities). Product scope in `docs/prd.md`; next actions in `docs/TO-DO.md`.
 
 ## Commands
 
@@ -32,7 +32,7 @@ pnpm db:local:reset # Base locale à neuf (reset + migrations, sans données)
 pnpm db:pull:prod   # Rapatrie les données de prod (public + comptes auth) → local
 ```
 
-Run a single test file: `pnpm vitest run __tests__/path/to/file.test.ts`
+Run a single unit test file: `pnpm vitest run __tests__/unit/path/to/file.test.ts`. DB tests: `pnpm test:db -t "<test name>"` (the script always targets `__tests__/db`).
 
 ## Architecture
 
@@ -40,7 +40,7 @@ Run a single test file: `pnpm vitest run __tests__/path/to/file.test.ts`
 
 ### Multi-tenancy
 
-Every user belongs to a `Company`. All data tables include `companyId`. Row Level Security (RLS) on PostgreSQL enforces tenant isolation at the database level. The tRPC `protectedProcedure` additionally checks `ctx.companyId` resolved from the Supabase JWT.
+Every user belongs to a `Company`. Root business tables carry `companyId`; child tables (experiences, tags, candidatures, contacts, cities…) are only reached through their parent. **Prisma connects as the table owner and bypasses RLS**: the application-level `companyId` filter is the real isolation. RLS only protects direct Supabase API access.
 
 ### Request flow
 
@@ -48,7 +48,7 @@ Every user belongs to a `Company`. All data tables include `companyId`. Row Leve
 Browser → Supabase Auth (JWT cookie)
        → tRPC client → /api/trpc/[...trpc]
        → context.ts resolves user + companyId
-       → Prisma queries filtered by companyId + RLS
+       → Prisma queries filtered by companyId (RLS bypassed by Prisma)
        → TanStack Query caches (staleTime: 5min default)
 ```
 
@@ -67,17 +67,13 @@ Browser → Supabase Auth (JWT cookie)
 
 ### tRPC conventions
 
-- Use `protectedProcedure` for all authenticated endpoints; it injects `ctx.session`, `ctx.user`, and `ctx.companyId`
+- Use `protectedProcedure` for all authenticated endpoints; it injects `ctx.user` and `ctx.companyId` (context also holds `db` and `headers`)
 - Filter every Prisma query with `companyId: ctx.companyId` for tenant isolation
 - After mutations, invalidate related queries: `utils.<router>.<procedure>.invalidate()`
 
-### Data model (Prisma, 16 entities)
+### Data model
 
-`Company` → `User`, `Candidate`, `JobOffer`, `ClientCompany`, `Tag`, `Note`, `Invitation`
-`Candidate` ↔ `JobOffer` via `Candidature` (with status)
-`Candidate` has: `Experience`, `Formation`, `Language`, `CandidateTag`, `Note`, `ShareLink`
-`JobOffer` has: `OfferTag`, `Note`, `Candidature`
-`ClientCompany` has: `ClientContact`, `JobOffer`
+See `prisma/schema.prisma` (source of truth) and `docs/architecture.md` (entity overview).
 
 ### Frontend patterns
 
@@ -115,12 +111,13 @@ Use Tailwind tokens (`bg-primary`, `text-muted-foreground`) — no raw hex in cl
 
 ## Docs
 
-In-repo documentation lives in `/docs/`:
-- `prd/TO-DO.md` — **Source of truth for next dev actions** (current epic, one-off tasks, infra/devops backlog, deferred features). Check this first.
-- `prd.md` — Full product requirements (4 epics, 39 stories, acceptance criteria)
-- `architecture.md` — Full technical design and RLS policies
-- `architecture/coding-standards.md` — Naming conventions, tRPC templates, pitfalls table
-- `architecture/source-tree.md` — Where to place new files
-- `frontend-architecture.md` — Routing, state management, component patterns
-- `design-system.md` — Design tokens, colors, typography
-- `stories/` — One story file per feature with tasks, dev notes, and completion status
+`docs/` holds exactly 4 files — keep it that way (no story files, no reports: git history and the `docs-archive-2026-10` tag hold the past):
+
+| File | Content |
+|------|---------|
+| `docs/TO-DO.md` | **Source of truth for next dev actions** (bugs, infra, tests, tech debt, post-MVP). Check this first. |
+| `docs/prd.md` | Product vision, requirements, epics summary |
+| `docs/architecture.md` | Stack, source tree, multi-tenancy/RLS, auth, API, data model, deployment, ADRs |
+| `docs/coding-standards.md` | Conventions, design tokens, testing patterns, known pitfalls |
+
+When a feature is done, update these files instead of adding new ones.

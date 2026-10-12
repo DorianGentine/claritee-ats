@@ -50,7 +50,7 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
-/* Claritee ATS Design System — docs/design-system.md */
+/* Claritee ATS Design System — docs/coding-standards.md § Styles et tokens */
 :root {
   --radius: 0.5rem;
   --background: #f5f0e8;

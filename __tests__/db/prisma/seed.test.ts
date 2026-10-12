@@ -16,7 +16,7 @@ describe.runIf(!!connectionString)("Prisma seed", () => {
     await prisma.$disconnect();
   });
 
-  // TODO(db-test-debt): échoue sur base fraîche — skippé temporairement, à corriger (voir docs/prd/TO-DO.md)
+  // TODO(db-test-debt): échoue sur base fraîche — skippé temporairement, à corriger (voir docs/TO-DO.md)
   it.skip("has at least one Company, one User, one Invitation after seed", async () => {
     const companies = await prisma.company.findMany();
     const users = await prisma.user.findMany();
