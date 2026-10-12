@@ -11,7 +11,7 @@ globs:
 
 # Performance du serveur de développement (Turbopack)
 
-Référence complète : `docs/architecture.md` §10.2.1
+Référence : `docs/coding-standards.md` (section performance du serveur de dev)
 
 ## Règles critiques
 

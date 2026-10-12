@@ -109,7 +109,7 @@ export default function CandidatesPage() {
   // état local propre à la session — l'URL ne contient que les UUIDs (AC 8).
   // Hydraté depuis `filters.cityIds` via `city.getByIds` ci-dessous quand un id
   // actif (ex. arrivée depuis un lien partagé, ou retour arrière navigateur)
-  // n'est pas encore résolu localement — voir Review Findings story 5.7.
+  // n'est pas encore résolu localement.
   const [selectedCities, setSelectedCities] = useState<CityOption[]>([])
 
   const missingCityIds = useMemo(

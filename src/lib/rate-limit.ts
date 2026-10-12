@@ -2,7 +2,7 @@
  * Rate limiting pour Claritee ATS.
  * Implémentation in-memory, utilisable en dev et en production (limite par instance).
  *
- * Référence : docs/architecture.md §10.6 et docs/architecture/rate-limiting.md
+ * Référence : docs/architecture.md § Rate limiting
  */
 import { TRPCError } from "@trpc/server";
 
@@ -52,7 +52,7 @@ const inMemoryStore: RateLimitStore = {
   },
 };
 
-/** Seuils recommandés (architecture §10.6) */
+/** Seuils recommandés (docs/architecture.md § Rate limiting) */
 export const RATE_LIMITS = {
   /** Auth (login/register) par IP : 10 req / minute */
   AUTH_PER_IP: { limit: 10, windowMs: 60 * 1000 },

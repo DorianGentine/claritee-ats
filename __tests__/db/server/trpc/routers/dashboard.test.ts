@@ -115,7 +115,7 @@ describe.runIf(!!connectionString)("dashboard.getStats", () => {
     expect(offer?.createdAt).toBeInstanceOf(Date);
   });
 
-  // TODO(db-test-debt): échoue sur base fraîche — skippé temporairement, à corriger (voir docs/prd/TO-DO.md)
+  // TODO(db-test-debt): échoue sur base fraîche — skippé temporairement, à corriger (voir docs/TO-DO.md)
   it.skip("recentNotes inclut les relations candidate et jobOffer", async () => {
     const note = await db.note.create({
       data: {
@@ -137,7 +137,7 @@ describe.runIf(!!connectionString)("dashboard.getStats", () => {
     await db.note.delete({ where: { id: note.id } });
   });
 
-  // TODO(db-test-debt): échoue sur base fraîche — skippé temporairement, à corriger (voir docs/prd/TO-DO.md)
+  // TODO(db-test-debt): échoue sur base fraîche — skippé temporairement, à corriger (voir docs/TO-DO.md)
   it.skip("recentNotes ne retourne que les notes de la société (isolation tenant)", async () => {
     const noteA = await db.note.create({
       data: { content: blockNoteContent, companyId: companyAId, authorId: "u1" },

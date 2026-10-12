@@ -144,7 +144,7 @@ describe.runIf(!!connectionString)("candidate", () => {
     expect(result.items[1].id).toBe(expectedOrder[1]);
   });
 
-  // TODO(db-test-debt): échoue sur base fraîche — skippé temporairement, à corriger (voir docs/prd/TO-DO.md)
+  // TODO(db-test-debt): échoue sur base fraîche — skippé temporairement, à corriger (voir docs/TO-DO.md)
   it.skip("list: pagination returns nextCursor and hasMore when more than limit", async () => {
     const ctx = createContext(companyAId);
     const caller = appRouter.createCaller(ctx);

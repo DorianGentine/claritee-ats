@@ -5,5 +5,4 @@ docs/
 tests/
 
 # Optionnel : autres dossiers non nécessaires au build
-.bmad-core/
 .cursor/

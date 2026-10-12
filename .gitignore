@@ -30,7 +30,5 @@ secrets/
 *.log
 .ai/
 
-# BMAD
-.bmad-infrastructure-devops/
+# Claude Code (local)
 .claude/
-_bmad/

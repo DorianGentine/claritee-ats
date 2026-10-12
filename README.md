@@ -20,74 +20,55 @@ Stack : **Next.js 16** (App Router), **React 19.2**, **TypeScript**, **tRPC**, *
 
 ### Prérequis
 
-- **Node.js** 18+ (recommandé : LTS)
-- Compte **Supabase** (gratuit) et projet créé (région EU recommandée pour RGPD)
-- **Git**
+- **Node.js 20.9+** (requis par Next 16) et **pnpm** (version fixée par `packageManager` dans `package.json` ; `corepack enable`)
+- **Docker** + **Supabase CLI** (base locale) et un client **PostgreSQL** (`psql`, `pg_dump`, utilisés par les scripts de test et `db:pull:prod`)
 
 ### Installation
 
 ```bash
-# Cloner le dépôt
 git clone <url-du-repo>
 cd claritee-ats
-
-# Installer les dépendances
 pnpm install
+cp .env.example .env.local   # ne jamais committer .env.local
 ```
 
-### Variables d’environnement
-
-1. Copier le fichier d’exemple :  
-   `cp .env.example .env.local`
-2. **Ne pas committer `.env.local`** — ce fichier est une copie de `.env.example` et doit rester local (il est ignoré par Git).
-3. Renseigner les variables dans `.env.local` (voir `.env.example` pour la liste) :
-   - **DATABASE_URL** : connection string PostgreSQL du projet Supabase (Settings → Database)
-   - **NEXT_PUBLIC_SUPABASE_URL** : URL du projet (ex. `https://xxx.supabase.co`)
-   - **NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY** : clé publique (API Keys → Publishable key)
-   - **SUPABASE_SECRET_KEY** : clé secrète (serveur uniquement, jamais exposer au client)
-
-### Base de données
+### Base locale
 
 ```bash
-# Appliquer les migrations (schéma + RLS)
-npx prisma migrate deploy
-
-# (Optionnel) Alimenter la base avec des données de dev
-npx prisma db seed
+pnpm db:local:start   # stack Supabase locale (Docker) — affiche les URLs et clés
+pnpm db:local:reset   # base à neuf + migrations (schéma + RLS)
 ```
 
-### Lancer l’application
+Renseigner `.env.local` avec les valeurs affichées par `supabase status` (`DATABASE_URL`, `DIRECT_DATABASE_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`). Données de dev : `pnpm prisma db seed`, ou copie de la prod avec `pnpm db:pull:prod`.
+
+### Lancer l'application
 
 ```bash
-npm run dev
-# ou
-pnpm dev
+pnpm dev   # vérifie d'abord que la stack locale répond
 ```
 
-Ouvrir [http://localhost:3000](http://localhost:3000). Vérifier le health check : [http://localhost:3000/api/health](http://localhost:3000/api/health) (200 OK).
+Ouvrir [http://localhost:3000](http://localhost:3000) ; health check : [http://localhost:3000/api/health](http://localhost:3000/api/health).
 
 ### Commandes utiles
 
 | Commande | Description |
 |----------|-------------|
-| `npm run dev` | Serveur de développement |
-| `npm run build` | Build de production |
-| `npm run lint` | Lint (ESLint) |
-| `npx prisma studio` | Interface d’édition de la base (Prisma Studio) |
-| `npx prisma migrate dev` | Créer / appliquer une migration en dev |
+| `pnpm dev` / `pnpm build` | Serveur de dev / build de production |
+| `pnpm lint` | ESLint |
+| `pnpm test:unit` / `pnpm test:db` | Tests unitaires / tests DB (stack locale démarrée) |
+| `pnpm db:migrate` | Créer / appliquer une migration en dev |
+| `pnpm prisma studio` | Interface d'édition de la base |
 
 ### Documentation
 
 | Document | Contenu |
 |----------|---------|
-| [docs/prd.md](docs/prd.md) | Product Requirements Document (fonctionnel, NFR) |
-| [docs/brief.md](docs/brief.md) | Brief projet, positionnement, proposition de valeur |
-| [docs/architecture.md](docs/architecture.md) | Architecture technique (stack, RLS, API, déploiement) |
-| [docs/architecture/tech-stack.md](docs/architecture/tech-stack.md) | Versions pinnées des dépendances |
-| [docs/architecture/source-tree.md](docs/architecture/source-tree.md) | Arborescence du repo et où placer le code |
-| [docs/architecture/coding-standards.md](docs/architecture/coding-standards.md) | Conventions de code (nommage, tRPC, tests) |
-| [docs/design-system.md](docs/design-system.md) | Design system (couleurs, typo, composants, accessibilité) |
-| [docs/architecture/adr/](docs/architecture/adr/) | Architecture Decision Records (décisions clés) |
+| [docs/TO-DO.md](docs/TO-DO.md) | Prochaines actions : bugs, infra, tests, dette technique, post-MVP |
+| [docs/prd.md](docs/prd.md) | Vision produit, exigences fonctionnelles et non fonctionnelles, épics |
+| [docs/architecture.md](docs/architecture.md) | Stack, arborescence, multi-tenancy/RLS, auth, API, modèle de données, déploiement, décisions (ADR) |
+| [docs/coding-standards.md](docs/coding-standards.md) | Conventions de code, design tokens, tests, pièges connus |
+
+L'historique (stories, rétros, rapports QA, ADR détaillés) est conservé dans le tag git `docs-archive-2026-10`.
 
 ---
 

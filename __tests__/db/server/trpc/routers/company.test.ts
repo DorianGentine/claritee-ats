@@ -44,7 +44,7 @@ describe.runIf(!!connectionString)("company", () => {
     await db.$disconnect();
   });
 
-  // TODO(db-test-debt): échoue sur base fraîche — skippé temporairement, à corriger (voir docs/prd/TO-DO.md)
+  // TODO(db-test-debt): échoue sur base fraîche — skippé temporairement, à corriger (voir docs/TO-DO.md)
   it.skip("getMyCompany: returns id and name for authenticated user", async () => {
     const ctx = createProtectedContext();
     const caller = appRouter.createCaller(ctx);
