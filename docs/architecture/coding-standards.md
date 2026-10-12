@@ -20,7 +20,9 @@
 
 ### Dépendances (package.json)
 
-- **Versions exactes** : utiliser des **versions stables (sans préfixe `^`)** pour toutes les dépendances dans `package.json`. Exemple : `"@radix-ui/react-avatar": "1.1.2"` et non `"^1.1.2"`. Cela évite qu’un `npm install` (ou équivalent) tire une montée de version non désirée (minor/patch) et casse la production. Les mises à jour de dépendances doivent être explicites (changement de version dans le fichier, review, tests).
+- **Versions exactes** : toutes les dépendances de `package.json` (`dependencies`, `devDependencies`, `optionalDependencies`) sont déclarées en **version exacte `MAJEUR.MINEUR.PATCH`** (pré-release autorisée, ex. `1.0.0-beta.2`). Exemple : `"@radix-ui/react-avatar": "1.1.11"`. Sont interdits : `"^1.1.11"`, `"~1.1.11"`, une version partielle (`"19.2"`), un intervalle (`">=1.0.0"`), `"latest"` ou `"*"`. Cela évite qu’un `pnpm install` sans lockfile (ou une régénération du lockfile) tire une montée de version non désirée et casse la production. Les mises à jour de dépendances doivent être explicites (changement de version dans le fichier, review, tests).
+- **Ajout / mise à jour** : `.npmrc` contient `save-exact=true`, donc `pnpm add <pkg>` et `pnpm update <pkg> --latest` écrivent directement une version exacte. Vérifier quand même le diff de `package.json` avant de commiter.
+- **Garde-fou automatisé** : `__tests__/unit/package-json.test.ts` (lancé par `pnpm test:unit` et la CI) échoue en listant chaque dépendance qui n’est pas en version exacte.
 
 ---
 
@@ -190,4 +192,4 @@ export const createExampleSchema = z.object({
 
 ---
 
-*Dernière mise à jour : 2026-03-11. Ajout §4 : règle `networkMode: "always"` pour les mutations optimistes. Aligné avec `docs/architecture.md`, `docs/design-system.md` et `docs/frontend-architecture.md`.*
+*Dernière mise à jour : 2026-10-11. §1 Dépendances : versions exactes étendues (pas de version partielle), `save-exact` dans `.npmrc` et test garde-fou. Précédente (2026-03-11) : ajout §4 règle `networkMode: "always"` pour les mutations optimistes. Aligné avec `docs/architecture.md`, `docs/design-system.md` et `docs/frontend-architecture.md`.*

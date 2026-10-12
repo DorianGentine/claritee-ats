@@ -54,6 +54,63 @@ const lyon: CityOption = {
   country: "France",
 };
 
+const marseille: CityOption = {
+  id: "marseille",
+  name: "Marseille",
+  region: "Provence-Alpes-Côte d'Azur",
+  country: "France",
+};
+
+const CHIP_WIDTH_PX = 100;
+const CHIP_HEIGHT_PX = 24;
+
+/**
+ * jsdom ne calcule aucun layout : on positionne chaque chip (`li`) sur une
+ * ligne pour que le KeyboardSensor de dnd-kit trouve les positions voisines.
+ */
+const mockChipLayout = () => {
+  vi.spyOn(Element.prototype, "getBoundingClientRect").mockImplementation(
+    function (this: Element) {
+      const chip = this.closest("li");
+      const chipIndex = chip?.parentElement
+        ? Array.from(chip.parentElement.children).indexOf(chip)
+        : 0;
+      const left = chipIndex * CHIP_WIDTH_PX;
+      return {
+        x: left,
+        y: 0,
+        left,
+        top: 0,
+        right: left + CHIP_WIDTH_PX,
+        bottom: CHIP_HEIGHT_PX,
+        width: CHIP_WIDTH_PX,
+        height: CHIP_HEIGHT_PX,
+        toJSON: () => ({}),
+      } as DOMRect;
+    }
+  );
+};
+
+/** Envoie une touche et laisse dnd-kit traiter l'événement (rAF, état). */
+const pressKey = async (target: HTMLElement, key: string) => {
+  await act(async () => {
+    fireEvent.keyDown(target, { key, code: key === " " ? "Space" : key });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+};
+
+/** Saisit une chip via sa poignée (espace), la déplace d'un cran puis la dépose. */
+const dragWithKeyboard = async (
+  handleName: RegExp,
+  arrowKey: "ArrowLeft" | "ArrowRight"
+) => {
+  const handle = screen.getByRole("button", { name: handleName });
+  handle.focus();
+  await pressKey(handle, " ");
+  await pressKey(handle, arrowKey);
+  await pressKey(handle, " ");
+};
+
 const mockSuggestions = (cities: CityOption[], isLoading = false) => {
   vi.mocked(api.city.autocomplete.useQuery).mockReturnValue({
     data: cities,
@@ -81,10 +138,12 @@ describe("CityAutocomplete", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockSuggestions([]);
+    mockChipLayout();
   });
 
   afterEach(async () => {
     cleanup();
+    vi.restoreAllMocks();
     // Ouvrir/fermer le Popover Radix planifie du travail via le scheduler React
     // (MessageChannel). On le vide pendant que `window` existe encore, sinon la
     // tâche se déclenche après le teardown jsdom → "window is not defined".
@@ -159,9 +218,7 @@ describe("CityAutocomplete", () => {
         />
       );
 
-      expect(
-        screen.getByRole("button", { name: "Paris" })
-      ).toBeDefined();
+      expect(screen.getByRole("button", { name: "Paris" })).toBeDefined();
       // Pas de badge interne avec bouton "Effacer"
       expect(
         screen.queryByRole("button", { name: /Effacer Paris/ })
@@ -233,7 +290,40 @@ describe("CityAutocomplete", () => {
       expect(onChange).toHaveBeenCalledWith([lyon]);
     });
 
-    it("remonte une ville avec ↑ (ordre inversé)", () => {
+    it("réordonne les villes au clavier via la poignée (espace, flèche, espace)", async () => {
+      const onChange = vi.fn();
+
+      render(
+        <CityAutocomplete
+          mode="multi"
+          value={[paris, lyon, marseille]}
+          onChange={onChange}
+        />
+      );
+
+      await dragWithKeyboard(/Déplacer Paris/, "ArrowRight");
+
+      expect(onChange).toHaveBeenCalledTimes(1);
+      expect(onChange).toHaveBeenCalledWith([lyon, paris, marseille]);
+    });
+
+    it("remonte une ville au clavier (flèche gauche)", async () => {
+      const onChange = vi.fn();
+
+      render(
+        <CityAutocomplete
+          mode="multi"
+          value={[paris, lyon, marseille]}
+          onChange={onChange}
+        />
+      );
+
+      await dragWithKeyboard(/Déplacer Marseille/, "ArrowLeft");
+
+      expect(onChange).toHaveBeenCalledWith([paris, marseille, lyon]);
+    });
+
+    it("n'appelle pas onChange quand le déplacement est annulé avec Échap", async () => {
       const onChange = vi.fn();
 
       render(
@@ -244,29 +334,16 @@ describe("CityAutocomplete", () => {
         />
       );
 
-      // ↑ sur la 2e ville (Lyon) → Lyon passe devant Paris
-      fireEvent.click(screen.getByRole("button", { name: /Monter Lyon/ }));
+      const handle = screen.getByRole("button", { name: /Déplacer Paris/ });
+      handle.focus();
+      await pressKey(handle, " ");
+      await pressKey(handle, "ArrowRight");
+      await pressKey(handle, "Escape");
 
-      expect(onChange).toHaveBeenCalledWith([lyon, paris]);
+      expect(onChange).not.toHaveBeenCalled();
     });
 
-    it("descend une ville avec ↓", () => {
-      const onChange = vi.fn();
-
-      render(
-        <CityAutocomplete
-          mode="multi"
-          value={[paris, lyon]}
-          onChange={onChange}
-        />
-      );
-
-      fireEvent.click(screen.getByRole("button", { name: /Descendre Paris/ }));
-
-      expect(onChange).toHaveBeenCalledWith([lyon, paris]);
-    });
-
-    it("désactive ↑ sur le premier chip et ↓ sur le dernier", () => {
+    it("affiche une poignée de drag par chip par défaut (ordered omis), sans boutons ↑↓", () => {
       const onChange = vi.fn();
 
       render(
@@ -278,21 +355,33 @@ describe("CityAutocomplete", () => {
       );
 
       expect(
-        screen.getByRole("button", { name: /Monter Paris/ })
+        screen.getByRole("button", { name: /Déplacer Paris/ })
+      ).toBeDefined();
+      expect(
+        screen.getByRole("button", { name: /Déplacer Lyon/ })
+      ).toBeDefined();
+      expect(screen.queryByRole("button", { name: /Monter/ })).toBeNull();
+      expect(screen.queryByRole("button", { name: /Descendre/ })).toBeNull();
+    });
+
+    it("désactive les poignées de drag quand le composant est désactivé", () => {
+      const onChange = vi.fn();
+
+      render(
+        <CityAutocomplete
+          mode="multi"
+          value={[paris, lyon]}
+          onChange={onChange}
+          disabled
+        />
+      );
+
+      expect(
+        screen.getByRole("button", { name: /Déplacer Paris/ })
       ).toHaveProperty("disabled", true);
-      expect(
-        screen.getByRole("button", { name: /Descendre Lyon/ })
-      ).toHaveProperty("disabled", true);
-      // Les mouvements internes restent possibles
-      expect(
-        screen.getByRole("button", { name: /Descendre Paris/ })
-      ).toHaveProperty("disabled", false);
-      expect(
-        screen.getByRole("button", { name: /Monter Lyon/ })
-      ).toHaveProperty("disabled", false);
     });
 
-    it("masque les boutons ↑↓ quand ordered=false, garde le bouton de suppression", () => {
+    it("n'affiche aucune poignée de drag quand ordered=false, garde le bouton de suppression", () => {
       const onChange = vi.fn();
 
       render(
@@ -304,27 +393,9 @@ describe("CityAutocomplete", () => {
         />
       );
 
-      expect(screen.queryByRole("button", { name: /Monter/ })).toBeNull();
-      expect(screen.queryByRole("button", { name: /Descendre/ })).toBeNull();
+      expect(screen.queryByRole("button", { name: /Déplacer/ })).toBeNull();
       expect(
         screen.getByRole("button", { name: /Retirer Paris/ })
-      ).toBeDefined();
-    });
-
-    it("affiche les boutons ↑↓ par défaut (ordered omis)", () => {
-      const onChange = vi.fn();
-
-      render(
-        <CityAutocomplete
-          mode="multi"
-          value={[paris, lyon]}
-          onChange={onChange}
-        />
-      );
-
-      expect(screen.getByRole("button", { name: /Monter Lyon/ })).toBeDefined();
-      expect(
-        screen.getByRole("button", { name: /Descendre Paris/ })
       ).toBeDefined();
     });
 
@@ -341,7 +412,7 @@ describe("CityAutocomplete", () => {
       );
 
       expect(screen.queryByRole("button", { name: /Retirer/ })).toBeNull();
-      expect(screen.queryByRole("button", { name: /Monter/ })).toBeNull();
+      expect(screen.queryByRole("button", { name: /Déplacer/ })).toBeNull();
       expect(
         screen.getByRole("button", { name: "2 villes sélectionnées" })
       ).toBeDefined();

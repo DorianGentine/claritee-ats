@@ -1,7 +1,32 @@
 "use client";
 
-import { useState } from "react";
-import { ChevronDown, ChevronUp, MapPin, X } from "lucide-react";
+import {
+  useId,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+  type Ref,
+} from "react";
+import { GripVertical, MapPin, X } from "lucide-react";
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type Announcements,
+  type DragEndEvent,
+  type ScreenReaderInstructions,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  rectSortingStrategy,
+  sortableKeyboardCoordinates,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { keepPreviousData } from "@tanstack/react-query";
 import { api } from "@/lib/trpc/client";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -48,7 +73,7 @@ type MultiProps = {
   onChange: (cities: CityOption[]) => void;
   placeholder?: string;
   disabled?: boolean;
-  /** Affiche les boutons ↑↓ de réordonnancement des chips (défaut : true). */
+  /** Rend les chips réordonnables par drag & drop (souris et clavier) (défaut : true). */
   ordered?: boolean;
   /** Id posé sur le déclencheur, pour l'associer à un `<Label htmlFor>`. */
   id?: string;
@@ -62,6 +87,216 @@ const MIN_QUERY_LENGTH = 3;
 const DEBOUNCE_MS = 300;
 const SUGGESTIONS_STALE_TIME_MS = 60 * 1000;
 const MAX_QUERY_LENGTH = 100; // aligné sur `cityAutocompleteInputSchema` (q: max 100)
+// Évite qu'un simple clic sur la poignée ne démarre un drag.
+const POINTER_ACTIVATION_DISTANCE_PX = 5;
+
+/**
+ * Annonces lecteur d'écran en français (dnd-kit les fournit en anglais par
+ * défaut). Les ids des items sont des ids de ville : on les résout en nom.
+ */
+const buildDragAnnouncements = (cities: CityOption[]): Announcements => {
+  const getCityName = (cityId: string | number) =>
+    cities.find((city) => city.id === cityId)?.name ?? String(cityId);
+  const getPosition = (cityId: string | number) =>
+    cities.findIndex((city) => city.id === cityId) + 1;
+
+  return {
+    onDragStart: ({ active }) =>
+      `${getCityName(active.id)} saisie, position ${getPosition(active.id)} sur ${cities.length}.`,
+    onDragOver: ({ active, over }) =>
+      over
+        ? `${getCityName(active.id)} déplacée en position ${getPosition(over.id)} sur ${cities.length}.`
+        : `${getCityName(active.id)} n'est plus au-dessus d'une position valide.`,
+    onDragEnd: ({ active, over }) =>
+      over
+        ? `${getCityName(active.id)} déposée en position ${getPosition(over.id)} sur ${cities.length}.`
+        : `${getCityName(active.id)} déposée.`,
+    onDragCancel: ({ active }) =>
+      `Déplacement annulé. ${getCityName(active.id)} reste à sa position initiale.`,
+  };
+};
+
+const SCREEN_READER_INSTRUCTIONS: ScreenReaderInstructions = {
+  draggable:
+    "Pour réordonner une ville, appuyez sur espace pour la saisir, utilisez les flèches pour la déplacer, puis espace pour la déposer ou Échap pour annuler.",
+};
+
+type CityChipProps = {
+  city: CityOption;
+  disabled?: boolean;
+  onRemove: () => void;
+};
+
+type CityChipLayoutProps = CityChipProps & {
+  ref?: Ref<HTMLLIElement>;
+  style?: CSSProperties;
+  className?: string;
+  /** Poignée de drag affichée à gauche du nom (chips réordonnables uniquement). */
+  dragHandle?: ReactNode;
+};
+
+const CityChip = ({
+  city,
+  disabled,
+  onRemove,
+  ref,
+  style,
+  className,
+  dragHandle,
+}: CityChipLayoutProps) => (
+  <li ref={ref} style={style} className={className}>
+    <span
+      className={`inline-flex items-center gap-1 rounded-full bg-secondary py-0.5 pr-1 text-xs font-medium text-secondary-foreground ${
+        dragHandle ? "pl-1" : "pl-3"
+      }`}
+    >
+      {dragHandle}
+      <span className="truncate">{city.name}</span>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="size-5 text-secondary-foreground hover:bg-secondary-foreground/10"
+        disabled={disabled}
+        aria-label={`Retirer ${city.name}`}
+        onClick={onRemove}
+      >
+        <X className="size-3" />
+      </Button>
+    </span>
+  </li>
+);
+
+/** Chip réordonnable : la poignée (⠿) porte le drag souris et clavier. */
+const SortableCityChip = ({ city, disabled, onRemove }: CityChipProps) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: city.id,
+    disabled,
+    attributes: { roleDescription: "ville réordonnable" },
+  });
+
+  return (
+    <CityChip
+      city={city}
+      disabled={disabled}
+      onRemove={onRemove}
+      ref={setNodeRef}
+      style={{ transform: CSS.Translate.toString(transform), transition }}
+      className={isDragging ? "relative z-10 opacity-50" : undefined}
+      dragHandle={
+        <button
+          ref={setActivatorNodeRef}
+          type="button"
+          disabled={disabled}
+          aria-label={`Déplacer ${city.name}`}
+          className="inline-flex size-5 cursor-grab touch-none items-center justify-center rounded-full hover:bg-secondary-foreground/10 active:cursor-grabbing disabled:cursor-not-allowed"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="size-3" />
+        </button>
+      }
+    />
+  );
+};
+
+type SortableCityListProps = {
+  cities: CityOption[];
+  onChange: (cities: CityOption[]) => void;
+  children: ReactNode;
+};
+
+/** Contexte dnd-kit des chips ordonnées : réordonne `cities` au drop. */
+const SortableCityList = ({
+  cities,
+  onChange,
+  children,
+}: SortableCityListProps) => {
+  // Id stable SSR/client : dnd-kit dérive l'`aria-describedby` des poignées d'un compteur global.
+  const dndContextId = useId();
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: POINTER_ACTIVATION_DISTANCE_PX },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = ({ active, over }: DragEndEvent) => {
+    if (!over || active.id === over.id) return;
+    const oldIndex = cities.findIndex((city) => city.id === active.id);
+    const newIndex = cities.findIndex((city) => city.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+    onChange(arrayMove(cities, oldIndex, newIndex));
+  };
+
+  return (
+    <DndContext
+      id={dndContextId}
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+      accessibility={{
+        announcements: buildDragAnnouncements(cities),
+        screenReaderInstructions: SCREEN_READER_INSTRUCTIONS,
+      }}
+    >
+      <SortableContext
+        items={cities.map((city) => city.id)}
+        strategy={rectSortingStrategy}
+      >
+        {children}
+      </SortableContext>
+    </DndContext>
+  );
+};
+
+type CityChipListProps = {
+  cities: CityOption[];
+  onChange: (cities: CityOption[]) => void;
+  ordered: boolean;
+  disabled?: boolean;
+};
+
+const CityChipList = ({
+  cities,
+  onChange,
+  ordered,
+  disabled,
+}: CityChipListProps) => {
+  const ChipComponent = ordered ? SortableCityChip : CityChip;
+  const chipList = (
+    <ul className="flex flex-wrap gap-2">
+      {cities.map((city, index) => (
+        <ChipComponent
+          key={city.id}
+          city={city}
+          disabled={disabled}
+          onRemove={() =>
+            onChange(cities.filter((_city, cityIndex) => cityIndex !== index))
+          }
+        />
+      ))}
+    </ul>
+  );
+
+  return ordered ? (
+    <SortableCityList cities={cities} onChange={onChange}>
+      {chipList}
+    </SortableCityList>
+  ) : (
+    chipList
+  );
+};
 
 /** Sous-titre d'une suggestion : `Région · Pays`, ou juste le pays si pas de région. */
 const formatCitySubtitle = (city: CityOption) =>
@@ -147,23 +382,6 @@ export const CityAutocomplete = (props: Props) => {
     }
   };
 
-  const handleMove = (index: number, direction: -1 | 1) => {
-    if (mode !== "multi") return;
-    const target = index + direction;
-    if (target < 0 || target >= props.value.length) return;
-    const reordered = [...props.value];
-    const [moved] = reordered.splice(index, 1);
-    reordered.splice(target, 0, moved);
-    props.onChange(reordered);
-  };
-
-  const handleRemove = (index: number) => {
-    if (mode !== "multi") return;
-    props.onChange(
-      props.value.filter((_city, cityIndex) => cityIndex !== index)
-    );
-  };
-
   // Quand `showChips` est désactivé, le déclencheur affiche lui-même la
   // sélection (nom unique, ou décompte) puisqu'aucune chip interne n'est
   // rendue — sinon la sélection resterait invisible dans le composant.
@@ -175,59 +393,20 @@ export const CityAutocomplete = (props: Props) => {
     <div className="flex flex-col gap-2">
       {/* AC 7 — chips ordonnés affichés au-dessus du trigger (mode multi) */}
       {showChips && mode === "multi" && props.value.length > 0 && (
-        <ul className="flex flex-wrap gap-2">
-          {props.value.map((city, index) => (
-            <li key={city.id}>
-              <span className="inline-flex items-center gap-1 rounded-full bg-secondary py-0.5 pl-3 pr-1 text-xs font-medium text-secondary-foreground">
-                <span className="truncate">{city.name}</span>
-                {ordered && (
-                  <>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="size-5 text-secondary-foreground hover:bg-secondary-foreground/10"
-                      disabled={disabled || index === 0}
-                      aria-label={`Monter ${city.name}`}
-                      onClick={() => handleMove(index, -1)}
-                    >
-                      <ChevronUp className="size-3" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="size-5 text-secondary-foreground hover:bg-secondary-foreground/10"
-                      disabled={disabled || index === props.value.length - 1}
-                      aria-label={`Descendre ${city.name}`}
-                      onClick={() => handleMove(index, 1)}
-                    >
-                      <ChevronDown className="size-3" />
-                    </Button>
-                  </>
-                )}
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="size-5 text-secondary-foreground hover:bg-secondary-foreground/10"
-                  disabled={disabled}
-                  aria-label={`Retirer ${city.name}`}
-                  onClick={() => handleRemove(index)}
-                >
-                  <X className="size-3" />
-                </Button>
-              </span>
-            </li>
-          ))}
-        </ul>
+        <CityChipList
+          cities={props.value}
+          onChange={props.onChange}
+          ordered={ordered}
+          disabled={disabled}
+        />
       )}
 
       <Popover open={open} onOpenChange={setOpen}>
         {showChips && mode === "single" && props.value ? (
           <span
-            className={`inline-flex w-fit items-center gap-1 rounded-full bg-primary py-0.5 pl-3 pr-1 text-xs font-medium text-primary-foreground ${disabled ? "opacity-50" : ""
-              }`}
+            className={`inline-flex w-fit items-center gap-1 rounded-full bg-primary py-0.5 pl-3 pr-1 text-xs font-medium text-primary-foreground ${
+              disabled ? "opacity-50" : ""
+            }`}
           >
             <PopoverTrigger asChild>
               <button
