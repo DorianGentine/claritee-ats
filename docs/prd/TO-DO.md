@@ -17,9 +17,9 @@ La migration DB (story 5.1) est appliquée en production. Les 3 stories suivante
 | **5.5** | Formulaire offre d'emploi — Ville | ✅ DONE | 5.3 |
 | **5.6** | Formulaire entreprise cliente — Villes | ✅ DONE | 5.3 |
 | **5.7** | Filtres par ville — Candidats & Offres | ✅ DONE | 5.4, 5.5 |
-| **5.8** | Drag & drop villes candidat | TODO | 5.4 |
+| **5.8** | Drag & drop villes candidat | 🔍 REVIEW | 5.4 |
 
-**Prochaine étape :** démarrer la story 5.8 (drag & drop villes candidat).
+**Prochaine étape :** relire et merger la story 5.8 (branche `5.8`), puis clôturer l'épic 5.
 
 ---
 
@@ -64,6 +64,13 @@ La migration DB (story 5.1) est appliquée en production. Les 3 stories suivante
   - *À évaluer :* est-ce que RHF gagne encore sa place, ou est-ce qu'un simple `useState` + `safeParse(candidateSchema)` au submit serait plus lisible et homogène (un seul paradigme de state) ? Peser le coût (revalidation par champ, gestion des erreurs inline) vs le bénéfice.
   - *Périmètre :* formulaires candidat d'abord ; regarder si offre/client ont le même écartèlement avant de généraliser.
 
+- **Dépendances transitives dépréciées** _(signalées par pnpm le 2026-10-11, story 5.8)_
+  Présentes avant la story, révélées par les annotations `deprecated:` ajoutées au `pnpm-lock.yaml` lors de la régénération :
+  - `@ungap/structured-clone@1.3.0` (prod, via `@blocknote/core` → `rehype-remark`) — ⚠️ *Potential CWE-502*, corrigé en `1.3.1+`
+  - `basic-ftp@5.1.0` (dev uniquement, via `pa11y` → `puppeteer`) — ⚠️ vulnérabilité de sécurité corrigée en `5.2.1+`
+  - `uuid@8.3.2` — plus maintenu
+  - *Pistes :* vérifier si une montée de version du parent (`@blocknote/*`, `pa11y`) tire la version corrigée ; sinon `pnpm.overrides` ciblé dans `package.json` (en version exacte). Relancer `pnpm why <pkg>` pour confirmer la chaîne avant d'agir.
+
 ---
 
 ## 📦 Post-MVP — Fonctionnalités différées
@@ -89,4 +96,4 @@ Le champ email est actuellement affiché en lecture seule dans le profil. Implé
 ## ✅ Référence — Stories terminées
 
 Épics 1–4 : **36 stories DONE** (1.1 → 4.9).
-Épic 5 : 7 stories DONE (5.1 → 5.7), 1 story TODO (5.8).
+Épic 5 : 7 stories DONE (5.1 → 5.7), 1 story en review (5.8).
