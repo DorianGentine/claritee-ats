@@ -2,8 +2,8 @@
  * @vitest-environment jsdom
  */
 import React from "react"
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
-import { render, screen, fireEvent, cleanup } from "@testing-library/react"
+import { describe, it, expect, vi, beforeEach } from "vitest"
+import { render, screen, fireEvent, waitFor } from "@testing-library/react"
 import { api } from "@/lib/trpc/client"
 import { OfferNotesSection } from "@/components/offers/OfferNotesSection"
 
@@ -104,10 +104,6 @@ describe("OfferNotesSection", () => {
     vi.clearAllMocks()
   })
 
-  afterEach(() => {
-    cleanup()
-  })
-
   it("shows loading state", () => {
     vi.mocked(api.note.listByOffer.useQuery).mockReturnValue({
       data: undefined,
@@ -147,16 +143,15 @@ describe("OfferNotesSection", () => {
 
     render(<OfferNotesSection offerId="offer-1" />)
 
-    // currentUserId is "user-1" (from supabase mock) — loaded async
-    // Wait for useEffect to resolve
-    await new Promise((r) => setTimeout(r, 0))
-
+    // currentUserId is "user-1" (from supabase mock) — loaded async by a useEffect
     // n1 belongs to user-1 → edit/delete visible; n2 belongs to user-2 → not visible
-    const pencilButtons = screen.getAllByRole("button").filter(
-      (b) => b.querySelector("svg") !== null,
-    )
-    // At least 2 action buttons for own note (edit + delete) and 1 save button for form
-    expect(pencilButtons.length).toBeGreaterThanOrEqual(2)
+    await waitFor(() => {
+      const pencilButtons = screen.getAllByRole("button").filter(
+        (button) => button.querySelector("svg") !== null,
+      )
+      // Exactly edit + delete of n1 (the form's save button has no icon)
+      expect(pencilButtons.length).toBe(2)
+    })
   })
 
   it("shows the new note form", () => {

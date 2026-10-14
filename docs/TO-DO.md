@@ -77,8 +77,11 @@ Cocher `[x]` une tâche livrée ; les tâches cochées sont retirées à la mise
 - [ ] **Faux vert possible sur les tests DB**
   `describe.runIf` skippe silencieusement les 14 fichiers de `__tests__/db` si `DATABASE_URL` est absent. Faire échouer la CI dans ce cas.
 
-- [ ] **Tests composants flaky (React 19 + jsdom)**
-  `pnpm test:unit` remonte parfois `ReferenceError: window is not defined` (tâche du scheduler React après le teardown jsdom). _Pistes :_ séparer jsdom et node (vitest `projects`), ou généraliser le flush en `afterEach` (voir `coding-standards.md`, pièges tests).
+- [x] **Tests composants flaky (React 19 + jsdom)**
+  `ReferenceError: window is not defined` non capturé (scheduler React après le teardown jsdom) faisait échouer la CI. Corrigé par un setup global (`__tests__/setup/react-dom.ts`), 15 runs verts d'affilée ; test `OfferNotesSection` qui attendait un effet via `setTimeout` passé en `waitFor`. Si l'erreur revient : le flush ne vide que le travail déjà planifié — chercher un timer à délai > 0 (transition Radix, toast) dans le fichier signalé.
+
+- [ ] **Avertissements « not wrapped in act » restants**
+  11 avertissements, sans échec : `OfferNotesSection` (×5) met à jour son état après un `supabase.auth.getUser()` asynchrone, hors `act` → attendre cet état dans ses tests (`findBy*` / `waitFor`) ; `SiteNavbar.a11y` (×6) vient de l'état interne de `next/link` (`LinkComponent`) → attendre la fin du rendu ou mocker `next/link`.
 
 ---
 

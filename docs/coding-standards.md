@@ -226,7 +226,7 @@ Diagnostic si CPU/mémoire excessifs ou « Compiling… » en boucle : `pnpm dev
 
 ### Patterns
 
-- **Composants (Testing Library)** : directive `/** @vitest-environment jsdom */` en tête de fichier ; `afterEach(() => cleanup())`.
+- **Composants (Testing Library)** : directive `/** @vitest-environment jsdom */` en tête de fichier. `cleanup()`, le vidage du scheduler React et `IS_REACT_ACT_ENVIRONMENT` sont gérés globalement par `__tests__/setup/react-dom.ts` (inutile de les répéter). Attendre un effet asynchrone avec `waitFor` / `findBy*`, jamais un `setTimeout`.
 - Texte présent plusieurs fois : `getAllByText`, pas `getByText`.
 - Mock tRPC : `vi.mock("@/lib/trpc/client", () => ({ api: { … } }))`.
 - Routers tRPC unitaires : contexte et `ctx.db` mockés ; routers en DB : `appRouter.createCaller(ctx)` avec données créées par le test.
@@ -263,7 +263,7 @@ Leçons tirées des stories passées, vérifiées contre le code actuel. Sécuri
 | Next.js        | Pages publiques `/share` : risque de fuite                                                             | Server Component + Prisma direct, `select` unique `publicCandidateSelect`, anonymisation côté serveur, même erreur pour token inconnu / mauvais type, `generateMetadata` sans nom en mode anonyme. |
 | tests          | jsdom sans `scrollIntoView`, `ResizeObserver`, `*PointerCapture` (Radix, cmdk)                         | Polyfills dans le fichier de test (modèle : `__tests__/unit/components/shared/CityAutocomplete.test.tsx`).                                                                                         |
 | tests          | Contenu Dialog / AlertDialog rendu en portail, hors `container`                                        | `screen.*` ou `within(document.body)`.                                                                                                                                                             |
-| tests          | Popover laisse du travail planifié → `window is not defined` au teardown                               | `afterEach` : `cleanup()` puis `await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)) })`.                                                                                |
+| tests          | Travail planifié par le scheduler React (popovers…) → `window is not defined` au teardown jsdom, run en échec même si tous les tests passent | Géré par le setup global `__tests__/setup/react-dom.ts` (`cleanup()` puis `act` + `setTimeout(0)` en `afterEach`). |
 | tests          | Matcher `vitest-axe` = typage seul ; `color-contrast` exige canvas                                     | `expect(results.violations).toEqual([])` ; désactiver `color-contrast` en jsdom.                                                                                                                   |
 | tests          | dnd-kit en jsdom : pas de layout                                                                       | Tests clavier (espace / flèche / espace) avec `getBoundingClientRect` mocké.                                                                                                                       |
 | tests          | `await caller.x()` avant `expect` lève trop tôt ; fixtures partagées entre fichiers en série           | `await expect(caller.x()).rejects.toMatchObject({ code })` ; noms uniques (`randomUUID()`) ; nettoyage ciblé en `try/finally`.                                                                     |
