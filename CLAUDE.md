@@ -40,7 +40,9 @@ Run a single unit test file: `pnpm vitest run __tests__/unit/path/to/file.test.t
 
 ### Multi-tenancy
 
-Every user belongs to a `Company`. Root business tables carry `companyId`; child tables (experiences, tags, candidatures, contacts, cities…) are only reached through their parent. **Prisma connects as the table owner and bypasses RLS**: the application-level `companyId` filter is the real isolation. RLS only protects direct Supabase API access.
+Every user belongs to a `Company`. Root business tables carry `companyId`; child tables (experiences, tags, candidatures, contacts, cities…) are only reached through their parent. **Prisma connects as the table owner and bypasses RLS**: the application-level `companyId` filter is the real isolation.
+
+**Supabase Data API is closed on `public`**: `anon`/`authenticated` have no privileges on existing tables nor on future objects created by `postgres` (migrations). Every new table gets `ENABLE ROW LEVEL SECURITY` in its migration; never `GRANT` to those roles. Prod migrations run in the Vercel build, after `next build`, on production deployments only — keep migrations backward-compatible with the code still live (no destructive change in the same deploy). New migrations must be dated after the latest existing one (the RLS ones are dated 2030).
 
 ### Request flow
 

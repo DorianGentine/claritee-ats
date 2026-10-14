@@ -4,6 +4,7 @@ import type { Metadata } from "next"
 import { db } from "@/server/db"
 import {
   publicCandidateSelect,
+  mapToPublicDto,
   mapToAnonymousPublicDto,
 } from "@/server/publicCandidateSelect"
 import { PublicCandidateProfile } from "@/components/share/PublicCandidateProfile"
@@ -66,7 +67,7 @@ export default async function SharePage({ params }: Props) {
   }
 
   if (link.type === "NORMAL") {
-    const { company, ...candidateFields } = link.candidate
+    const { company, ...candidateFields } = mapToPublicDto(link.candidate)
     return (
       <PublicCandidateProfile
         candidate={candidateFields}
@@ -76,11 +77,10 @@ export default async function SharePage({ params }: Props) {
   }
 
   if (link.type === "ANONYMOUS") {
-    const { company, ...candidateFields } = link.candidate
     return (
       <AnonymousCandidateProfile
-        candidate={mapToAnonymousPublicDto(candidateFields)}
-        companyName={company.name}
+        candidate={mapToAnonymousPublicDto(link.candidate)}
+        companyName={link.candidate.company.name}
       />
     )
   }

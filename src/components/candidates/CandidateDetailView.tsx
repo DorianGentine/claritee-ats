@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Share2 } from "lucide-react";
 import { api } from "@/lib/trpc/client";
+import { formatCandidateCities } from "@/lib/candidate-utils";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { CandidateDetailSkeleton } from "./CandidateDetailSkeleton";
@@ -59,10 +60,7 @@ export const CandidateDetailView = ({ candidateId }: Props) => {
   }
 
   const candidate = getByIdQuery.data;
-  const citiesLabel =
-    candidate.cities.length > 0
-      ? candidate.cities.map((candidateCity) => candidateCity.city.name).join(" · ")
-      : null;
+  const citiesLabel = formatCandidateCities(candidate.cities);
 
   return (
     <main className="min-h-[calc(100vh-3.5rem)] bg-background p-6 print:bg-white">
