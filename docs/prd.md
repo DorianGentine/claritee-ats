@@ -70,23 +70,24 @@ Un ATS web gratuit, simple et chaleureux qui centralise candidats, offres, clien
 
 ### Non fonctionnelles
 
-| ID          | Exigence                                                                                       |
-| ----------- | ---------------------------------------------------------------------------------------------- |
-| NFR1        | Uniquement des services gratuits (Supabase, Vercel)                                            |
-| NFR2        | Isolation stricte des données par cabinet (multi-tenant)                                       |
-| NFR3        | Chargement initial < 3 s                                                                       |
-| NFR4        | Réponse aux actions utilisateur < 500 ms                                                       |
-| NFR5        | Au moins 100 utilisateurs simultanés                                                           |
-| NFR6        | Desktop d'abord, navigateurs récents (Chrome, Firefox, Safari, Edge) ; tablette utilisable     |
-| NFR7 / NFR8 | Mots de passe jamais stockés en clair ; HTTPS partout                                          |
-| NFR9        | RGPD : hébergement UE, suppression des données ; l'export n'est pas implémenté                 |
-| NFR10       | Cabinet créé et opérationnel en < 5 min                                                        |
-| NFR11       | Fiche candidat complète créée en < 3 min                                                       |
-| NFR12       | Candidat retrouvé par recherche ou tags en < 30 s                                              |
-| NFR13       | Fiche partageable générée en < 1 min                                                           |
-| NFR14       | Limitation de débit sur l'authentification, le partage, les uploads et les écritures sensibles |
-| NFR15       | Fichiers bornés : photo ≤ 2 Mo, CV ≤ 5 Mo                                                      |
-| NFR16       | Accessibilité WCAG AA (voir §3)                                                                |
+| ID          | Exigence                                                                                                                                       |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| NFR1        | Uniquement des services gratuits (Supabase, Vercel)                                                                                            |
+| NFR2        | Isolation stricte des données par cabinet (multi-tenant) ; aucune table accessible directement avec la clé publique Supabase (API REST fermée) |
+| NFR3        | Chargement initial < 3 s                                                                                                                       |
+| NFR4        | Réponse aux actions utilisateur < 500 ms                                                                                                       |
+| NFR5        | Au moins 100 utilisateurs simultanés                                                                                                           |
+| NFR6        | Desktop d'abord, navigateurs récents (Chrome, Firefox, Safari, Edge) ; tablette utilisable                                                     |
+| NFR7 / NFR8 | Mots de passe jamais stockés en clair ; HTTPS partout                                                                                          |
+| NFR9        | RGPD : hébergement UE, suppression des données ; l'export n'est pas implémenté                                                                 |
+| NFR10       | Cabinet créé et opérationnel en < 5 min                                                                                                        |
+| NFR11       | Fiche candidat complète créée en < 3 min                                                                                                       |
+| NFR12       | Candidat retrouvé par recherche ou tags en < 30 s                                                                                              |
+| NFR13       | Fiche partageable générée en < 1 min                                                                                                           |
+| NFR14       | Limitation de débit sur l'authentification, le partage, les uploads et les écritures sensibles                                                 |
+| NFR15       | Fichiers bornés : photo ≤ 2 Mo, CV ≤ 5 Mo                                                                                                      |
+| NFR16       | Accessibilité WCAG AA (voir §3)                                                                                                                |
+| NFR17       | Migrations de base appliquées automatiquement à chaque mise en production ; un échec bloque le déploiement                                     |
 
 Modèle de données : voir `architecture.md`.
 
