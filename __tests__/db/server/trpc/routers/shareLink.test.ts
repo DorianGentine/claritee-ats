@@ -6,6 +6,9 @@ import type { Context } from "@/server/trpc/context"
 
 const connectionString = process.env.DATABASE_URL
 
+// Pays fictif pour isoler les villes de test de la table partagée `cities`.
+const TEST_COUNTRY = "Sharelinkland"
+
 describe.runIf(!!connectionString)("shareLink router", () => {
   let db: PrismaClient
   let companyAId: string
@@ -61,6 +64,26 @@ describe.runIf(!!connectionString)("shareLink router", () => {
     ])
     candidateAId = candidateA.id
     candidateBId = candidateB.id
+
+    // Villes insérées dans le désordre pour vérifier le tri par `order`.
+    // Nettoyage préalable : un run interrompu sur une base persistante laisse ces villes
+    // (liaisons d'abord : CandidateCity → City est en onDelete: Restrict).
+    await db.candidateCity.deleteMany({ where: { city: { country: TEST_COUNTRY } } })
+    await db.city.deleteMany({ where: { country: TEST_COUNTRY } })
+    const [secondCity, firstCity] = await Promise.all([
+      db.city.create({
+        data: { name: "Zzlyon", country: TEST_COUNTRY, latitude: 45.0, longitude: 4.0 },
+      }),
+      db.city.create({
+        data: { name: "Zzparis", country: TEST_COUNTRY, latitude: 48.0, longitude: 2.0 },
+      }),
+    ])
+    await db.candidateCity.createMany({
+      data: [
+        { candidateId: candidateAId, cityId: secondCity.id, order: 1 },
+        { candidateId: candidateAId, cityId: firstCity.id, order: 0 },
+      ],
+    })
   })
 
   afterAll(async () => {
@@ -73,6 +96,7 @@ describe.runIf(!!connectionString)("shareLink router", () => {
     await db.company.deleteMany({
       where: { id: { in: [companyAId, companyBId] } },
     })
+    await db.city.deleteMany({ where: { country: TEST_COUNTRY } })
     await db.$disconnect()
   })
 
@@ -211,10 +235,8 @@ describe.runIf(!!connectionString)("shareLink router", () => {
   })
 
   // ─── shareLink.getPublicByToken ──────────────────────────────────────────
-  // TODO(db-test-debt): ces 5 tests échouent sur base fraîche (setup de données à
-  // fiabiliser). Skippés temporairement — à corriger et dé-skipper. Voir docs/TO-DO.md.
 
-  it.skip("getPublicByToken returns public candidate data for a valid NORMAL token", async () => {
+  it("getPublicByToken returns public candidate data for a valid NORMAL token", async () => {
     // Create a NORMAL link with no expiration
     const creator = appRouter.createCaller(createContext(companyAId))
     const link = await creator.shareLink.create({
@@ -231,6 +253,8 @@ describe.runIf(!!connectionString)("shareLink router", () => {
     if (data.type !== "NORMAL") throw new Error("Expected NORMAL")
     expect(data.firstName).toBe("Alice")
     expect(data.lastName).toBe("Test")
+    expect(data.city).toBe("Zzparis · Zzlyon")
+    expect("cities" in data).toBe(false)
     // Must not expose internal fields
     expect("tags" in data).toBe(false)
     expect("candidatures" in data).toBe(false)
@@ -243,7 +267,7 @@ describe.runIf(!!connectionString)("shareLink router", () => {
     expect(data.company).toMatchObject({ name: expect.any(String) })
   })
 
-  it.skip("getPublicByToken throws FORBIDDEN (TOKEN_EXPIRED) for an expired token", async () => {
+  it("getPublicByToken throws FORBIDDEN (TOKEN_EXPIRED) for an expired token", async () => {
     // Insert an already-expired link directly in DB
     const expiredLink = await db.shareLink.create({
       data: {
@@ -260,14 +284,14 @@ describe.runIf(!!connectionString)("shareLink router", () => {
     ).rejects.toMatchObject({ code: "FORBIDDEN", message: "TOKEN_EXPIRED" })
   })
 
-  it.skip("getPublicByToken throws NOT_FOUND for an unknown token", async () => {
+  it("getPublicByToken throws NOT_FOUND for an unknown token", async () => {
     const publicCaller = appRouter.createCaller(createContext(null))
     await expect(
       publicCaller.shareLink.getPublicByToken({ token: "does-not-exist" })
     ).rejects.toMatchObject({ code: "NOT_FOUND" })
   })
 
-  it.skip("getPublicByToken returns anonymized DTO for a valid ANONYMOUS token", async () => {
+  it("getPublicByToken returns anonymized DTO for a valid ANONYMOUS token", async () => {
     const creator = appRouter.createCaller(createContext(companyAId))
     const link = await creator.shareLink.create({
       candidateId: candidateAId,
@@ -279,6 +303,9 @@ describe.runIf(!!connectionString)("shareLink router", () => {
     const data = await publicCaller.shareLink.getPublicByToken({ token: link.token })
 
     expect(data.type).toBe("ANONYMOUS")
+    if (data.type !== "ANONYMOUS") throw new Error("Expected ANONYMOUS")
+    expect(data.city).toBe("Zzparis · Zzlyon")
+    expect("cities" in data).toBe(false)
     // Identity fields must be absent
     expect("firstName" in data).toBe(false)
     expect("lastName" in data).toBe(false)
@@ -292,7 +319,7 @@ describe.runIf(!!connectionString)("shareLink router", () => {
     expect(Array.isArray(data.languages)).toBe(true)
   })
 
-  it.skip("getPublicByToken throws FORBIDDEN (TOKEN_EXPIRED) for an expired ANONYMOUS token", async () => {
+  it("getPublicByToken throws FORBIDDEN (TOKEN_EXPIRED) for an expired ANONYMOUS token", async () => {
     const expiredLink = await db.shareLink.create({
       data: {
         candidateId: candidateAId,

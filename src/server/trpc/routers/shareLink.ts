@@ -10,6 +10,7 @@ import {
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit"
 import {
   publicCandidateSelect,
+  mapToPublicDto,
   mapToAnonymousPublicDto,
 } from "@/server/publicCandidateSelect"
 
@@ -85,15 +86,6 @@ export const shareLinkRouter = router({
       })
     }),
 
-  /**
-   * Procédure publique (sans auth) : résout un token NORMAL et retourne le
-   * DTO public du candidat. Utilisée pour les tests d'intégration ; la page
-   * publique interroge directement Prisma côté serveur pour le SSR.
-   *
-   * Erreurs :
-   *   NOT_FOUND  — token inconnu ou type !== NORMAL
-   *   FORBIDDEN  — token expiré (message: "TOKEN_EXPIRED")
-   */
   getPublicByToken: publicProcedure
     .input(z.object({ token: z.string().min(1) }))
     .query(async ({ ctx, input }) => {
@@ -119,6 +111,6 @@ export const shareLinkRouter = router({
       if (link.type === "ANONYMOUS") {
         return { type: "ANONYMOUS" as const, ...mapToAnonymousPublicDto(link.candidate) }
       }
-      return { type: "NORMAL" as const, ...link.candidate }
+      return { type: "NORMAL" as const, ...mapToPublicDto(link.candidate) }
     }),
 })
