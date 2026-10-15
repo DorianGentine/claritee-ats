@@ -3,7 +3,7 @@
 # db-pull-prod.sh — Récupère les DONNÉES de production (Supabase cloud) vers la base LOCALE.
 #
 # Ce que fait le script :
-#   1. Lit l'URL directe de prod depuis .env.prod.local (DIRECT_DATABASE_URL).
+#   1. Lit l'URL de prod depuis .env.prod.local (DIRECT_DATABASE_URL : pooler Supabase en mode session).
 #   2. S'assure que le schéma local est à jour (prisma migrate deploy).
 #   3. Dump data-only du schéma `public` de la prod (hors _prisma_migrations).
 #   4. Dump des comptes auth de prod (auth.users + auth.identities).
@@ -44,7 +44,7 @@ if [[ "$LOCAL_DB_URL" != *"127.0.0.1"* && "$LOCAL_DB_URL" != *"localhost"* ]]; t
 fi
 
 echo "🔻 Récupération des données PROD → LOCAL (public + comptes auth)"
-echo "   Source (prod) : ${PROD_DB_URL%%@*}@[...]"
+echo "   Source (prod) : [identifiants masqués]@${PROD_DB_URL##*@}"
 echo "   Cible (local) : $LOCAL_DB_URL"
 echo ""
 echo "⚠️  Cela ÉCRASE les données locales (schéma public + comptes auth)."

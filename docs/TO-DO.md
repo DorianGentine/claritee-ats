@@ -2,7 +2,7 @@
 
 Source de vérité pour les prochaines actions de développement, par urgence puis par thème. Les épics 1 à 5 (MVP + villes structurées) sont livrés — voir `prd.md`. L'historique complet des stories, rétros et rapports QA est dans le tag git `docs-archive-2026-10`.
 
-Dernière mise à jour : 2026-10-14
+Dernière mise à jour : 2026-10-15
 
 Cocher `[x]` une tâche livrée ; les tâches cochées sont retirées à la mise à jour suivante.
 
@@ -10,20 +10,16 @@ Cocher `[x]` une tâche livrée ; les tâches cochées sont retirées à la mise
 
 ## 🔥 Urgent — bugs et sécurité
 
-- [x] **Page publique `/share/[token]` cassée (`Unknown field city`)**
-  `publicCandidateSelect` sélectionnait encore `city`, supprimée par la migration `20260614000000_city_structured`. Corrigé : select `cities` ordonné typé `satisfies Prisma.CandidateSelect` (tsc détecte désormais un champ inconnu), libellé `city` « Ville · Ville » dans les DTO public et anonyme, 5 tests `getPublicByToken` dé-skippés.
-
-- [x] **API REST Supabase ouverte en prod sur `CandidateCity`, `ClientCompanyCity`, `cities`** — _migration prête, à déployer_
-  Audit prod (2026-10-14) : RLS désactivée sur ces 3 tables et `anon`/`authenticated` ont tous les droits sur toutes les tables `public` (privilèges par défaut de l'ancien Supabase) → lecture/écriture/suppression avec la clé publishable. Les autres tables ont la RLS activée en prod (dérive vs migrations : en local elles ne l'avaient pas).
-  - _Correctif :_ migration `20300102000000_revoke_data_api_access` (révocation des droits actuels, des droits par défaut sur les futurs objets de `postgres` dont `EXECUTE` à `PUBLIC`, RLS partout), testée sur une base simulant les privilèges de la prod. Non couvert : objets de `supabase_admin` (fonctions d'extensions, inoffensives).
-  - _Après déploiement :_ relancer l'audit dans le SQL Editor (toutes les colonnes `anon_*`/`auth_*` à `false`, `rls` à `true` ; aucun privilège par défaut de `postgres` vers `anon`/`authenticated`, y compris en portée globale).
+- [ ] **Déployer en prod la fermeture de l'API REST Supabase**
+  La migration `20300102000000_revoke_data_api_access` (droits `anon`/`authenticated` révoqués, RLS partout) et le correctif `/share` attendent un déploiement de production réussi.
+  - _Config Vercel (Production) :_ `DIRECT_DATABASE_URL` = `DATABASE_URL` avec le port 5432 et sans `?pgbouncer=true` (pooler Session, utilisateur `postgres.<ref>`), puis redéployer.
+  - _Vérifier :_ logs de build `Applying migration …` ; dans le SQL Editor, `rls` à `true` partout, aucun droit ni privilège par défaut de `postgres` vers `anon`/`authenticated`.
 
 - [ ] **Policies RLS en récursion infinie**
   `user_select_same_company` interroge `User` depuis une policy de `User` → `infinite recursion detected` pour tout rôle non propriétaire, et donc toutes les policies tenant (sous-requête sur `User`) échouent. Sans effet tant que la Data API est fermée ; à corriger (fonction `SECURITY DEFINER` renvoyant le `companyId` courant) avant toute utilisation de la Data API.
 
-- [ ] **Build command Vercel versionnée** — _`vercel.json` prêt, à vérifier au premier déploiement_
-  `vercel.json` → `scripts/vercel-build.sh` : `next build` puis `prisma migrate deploy`, **en production uniquement** (`VERCEL_ENV`) : les previews ne migrent jamais la base. Il prime sur le réglage du dashboard. Un build en échec ne touche pas la base ; une migration en échec, `VERCEL_ENV` absent ou `DIRECT_DATABASE_URL` absente en production fait échouer le déploiement.
-  - _À vérifier :_ `DIRECT_DATABASE_URL` (port 5432) définie pour l'environnement Production (sinon le build échoue) ; après merge, les logs de build montrent `Applying migration …`.
+- [ ] **Vérifier la connexion DB avant le build Vercel** _(optionnel)_
+  `scripts/vercel-build.sh` rejette les formats d'URL connus comme invalides, mais un mauvais mot de passe ou un projet en pause n'échoue qu'après `next build`. Piste : `echo "select 1" | pnpm exec prisma db execute --stdin` avant le build (teste la connexion sans dépendre de l'état des migrations ; `prisma migrate status` ne convient pas, il échoue dès qu'une migration est en attente).
 
 ---
 
@@ -76,9 +72,6 @@ Cocher `[x]` une tâche livrée ; les tâches cochées sont retirées à la mise
 
 - [ ] **Faux vert possible sur les tests DB**
   `describe.runIf` skippe silencieusement les 14 fichiers de `__tests__/db` si `DATABASE_URL` est absent. Faire échouer la CI dans ce cas.
-
-- [x] **Tests composants flaky (React 19 + jsdom)**
-  `ReferenceError: window is not defined` non capturé (scheduler React après le teardown jsdom) faisait échouer la CI. Corrigé par un setup global (`__tests__/setup/react-dom.ts`), 15 runs verts d'affilée ; test `OfferNotesSection` qui attendait un effet via `setTimeout` passé en `waitFor`. Si l'erreur revient : le flush ne vide que le travail déjà planifié — chercher un timer à délai > 0 (transition Radix, toast) dans le fichier signalé.
 
 - [ ] **Avertissements « not wrapped in act » restants**
   11 avertissements, sans échec : `OfferNotesSection` (×5) met à jour son état après un `supabase.auth.getUser()` asynchrone, hors `act` → attendre cet état dans ses tests (`findBy*` / `waitFor`) ; `SiteNavbar.a11y` (×6) vient de l'état interne de `next/link` (`LinkComponent`) → attendre la fin du rendu ou mocker `next/link`.
