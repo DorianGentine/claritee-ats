@@ -11,7 +11,7 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "pnpm test:unit && pnpm test:db",
+    "test": "bun run test:unit && bun run test:db",
     "test:unit": "vitest run __tests__/unit",
     "test:db": "bash scripts/test-db.sh",
     "test:watch": "vitest __tests__/unit",
@@ -89,5 +89,5 @@
   "prisma": {
     "seed": "tsx prisma/seed.ts"
   },
-  "packageManager": "pnpm@10.4.1"
+  "packageManager": "bun@1.4.1"
 }

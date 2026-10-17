@@ -17,16 +17,16 @@ Architecture (flux, RLS, auth, routers, modèle de données, déploiement) : `do
 | ESLint (`eslint.config.mjs`) | `next/core-web-vitals` + `next/typescript` + `eslint-config-prettier`. `no-console` en warn (`console.warn` / `console.error` autorisés). Variables / arguments inutilisés tolérés s'ils sont préfixés `_`. `react/no-unescaped-entities` limité à `>` et `}`.                                                              |
 | Logs                         | Pas de `console.log`. `console.warn` / `console.error` côté serveur pour les erreurs ; jamais de mot de passe, token ni donnée personnelle.                                                                                                                                                                                 |
 | JSX                          | Écrire `'` et `"` directement dans le texte ; pas de `&apos;` / `&quot;`.                                                                                                                                                                                                                                                   |
-| Définition de « terminé »    | `pnpm lint` et `tsc --noEmit` sans erreur, `pnpm test:unit` vert (+ `pnpm test:db` si routers/DB touchés).                                                                                                                                                                                                                  |
+| Définition de « terminé »    | `bun run lint` et `tsc --noEmit` sans erreur, `bun run test:unit` vert (+ `bun run test:db` si routers/DB touchés).                                                                                                                                                                                                                  |
 
 ---
 
 ## 2. Dépendances
 
 - **Versions exactes** : toutes les entrées de `package.json` (`dependencies`, `devDependencies`, `optionalDependencies`) sont en `MAJEUR.MINEUR.PATCH` exact (pré-release autorisée, ex. `1.0.0-beta.2`). Interdits : `^`, `~`, version partielle (`"19.2"`), intervalle (`">=1.0.0"`), `"latest"`, `"*"`. Toute montée de version est explicite (diff, review, tests).
-- **Ajout / mise à jour** : `.npmrc` contient `save-exact=true`, donc `pnpm add <pkg>` et `pnpm update <pkg> --latest` écrivent une version exacte. Relire quand même le diff de `package.json`.
-- **Garde-fou** : `__tests__/unit/package-json.test.ts` (lancé par `pnpm test:unit` et la CI) échoue en listant chaque dépendance non exacte.
-- **Gestionnaire** : pnpm uniquement (lockfile `pnpm-lock.yaml`, CI en `--frozen-lockfile`).
+- **Ajout / mise à jour** : `bunfig.toml` contient `exact = true`, donc `bun add <pkg>` et `bun update <pkg> --latest` écrivent une version exacte. Relire quand même le diff de `package.json`.
+- **Garde-fou** : `__tests__/unit/package-json.test.ts` (lancé par `bun run test:unit` et la CI) échoue en listant chaque dépendance non exacte.
+- **Gestionnaire** : bun uniquement (lockfile `bun.lock`, CI en `--frozen-lockfile`) ; Node reste le runtime de Next et de Vitest. Scripts via `bun run <script>` (`bun test` lancerait le testeur de bun), binaires locaux via `bun run <bin>` (ex. `bun run prisma …`), jamais `bunx` : si le binaire local manque, il télécharge en silence la dernière version (ex. un Prisma majeur plus récent lancé sur la prod).
 - Avant d'ajouter une dépendance : vérifier qu'une lib déjà présente ne couvre pas le besoin (date-fns, Radix, dnd-kit, sonner…). Pas de package « umbrella » (voir §6).
 
 ---
@@ -195,7 +195,7 @@ Pattern réutilisé : extraire un hook (modèle : `src/hooks/useCandidatureUpdat
 - Focus visible sur tout élément interactif (ring `primary`) ; jamais `outline-none` sans alternative.
 - Contraste ≥ 4.5:1 pour le texte (les tokens ci-dessus le respectent sur `background`/`card`).
 - Annonces dynamiques (`aria-live`, annonces dnd-kit) en français.
-- Vérifications : tests `vitest-axe` sur les composants critiques (§7), `pnpm a11y` (pa11y WCAG2AA, serveur local lancé) avant release, passage clavier manuel.
+- Vérifications : tests `vitest-axe` sur les composants critiques (§7), `bun run a11y` (pa11y WCAG2AA, serveur local lancé) avant release, passage clavier manuel.
 
 ---
 
@@ -208,7 +208,7 @@ Pattern réutilisé : extraire un hook (modèle : `src/hooks/useCandidatureUpdat
 | Ne pas modifier `jsx` dans `tsconfig.json`.                                                                                                                                                                                              | Next 16 impose `"react-jsx"` et le réécrit au démarrage.                                           |
 | Éviter les imports lourds dans le layout racine.                                                                                                                                                                                         | Temps de compilation et bundle initial.                                                            |
 
-Diagnostic si CPU/mémoire excessifs ou « Compiling… » en boucle : `pnpm dev` (vide déjà `.next`) ; vérifier qu'aucun package umbrella n'a été ajouté ; regarder l'onglet Network (polling / retry en boucle) ; en dernier recours `pnpm next dev --no-turbopack`.
+Diagnostic si CPU/mémoire excessifs ou « Compiling… » en boucle : `bun run dev` (vide déjà `.next`) ; vérifier qu'aucun package umbrella n'a été ajouté ; regarder l'onglet Network (polling / retry en boucle) ; en dernier recours `bun run next dev --no-turbopack`.
 
 ---
 
@@ -218,11 +218,11 @@ Diagnostic si CPU/mémoire excessifs ou « Compiling… » en boucle : `pnpm dev
 
 | Suite               | Emplacement                                   | Commande                                           | Config                          |
 | ------------------- | --------------------------------------------- | -------------------------------------------------- | ------------------------------- |
-| Unitaires (sans DB) | `__tests__/unit/**` (arbo calquée sur `src/`) | `pnpm test:unit`                                   | `vitest.config.ts` (env `node`) |
-| DB / intégration    | `__tests__/db/**`                             | `pnpm test:db` (base `claritee_test` recréée)      | `vitest.config.db.ts`, en série |
-| Tout                | —                                             | `pnpm test` (stack Supabase locale démarrée)       | —                               |
-| Un fichier          | —                                             | `pnpm vitest run __tests__/unit/path/file.test.ts` | —                               |
-| Watch               | —                                             | `pnpm test:watch`                                  | —                               |
+| Unitaires (sans DB) | `__tests__/unit/**` (arbo calquée sur `src/`) | `bun run test:unit`                                   | `vitest.config.ts` (env `node`) |
+| DB / intégration    | `__tests__/db/**`                             | `bun run test:db` (base `claritee_test` recréée)      | `vitest.config.db.ts`, en série |
+| Tout                | —                                             | `bun run test` (stack Supabase locale démarrée)       | —                               |
+| Un fichier          | —                                             | `bun run vitest run __tests__/unit/path/file.test.ts` | —                               |
+| Watch               | —                                             | `bun run test:watch`                                  | —                               |
 
 ### Patterns
 
@@ -245,7 +245,7 @@ Leçons tirées des stories passées, vérifiées contre le code actuel. Sécuri
 | Prisma/DB      | Prisma 7 : l'URL n'est plus dans `schema.prisma`, `directUrl` n'existe plus                            | URL dans `prisma.config.ts` (`DIRECT_DATABASE_URL ?? DATABASE_URL`) ; `@prisma/adapter-pg` obligatoire dans `db.ts`.                                                                               |
 | Prisma/DB      | Mélanger FK scalaire (`cityId`) et relation `connect` dans un même `data` → TS2322 (Checked/Unchecked) | Tout en `connect` / `disconnect`.                                                                                                                                                                  |
 | Prisma/DB      | `deleteMany` + `createMany` de relations hors transaction                                              | `$transaction` (seul `groupBy` y est incompatible → `Promise.all`).                                                                                                                                |
-| Prisma/DB      | Objet créé à la main en prod → rejeu des migrations cassé sur base fraîche                             | Aucun DDL manuel en prod ; `DROP … IF EXISTS` dans les migrations correctives ; `pnpm db:local:reset` OK avant merge.                                                                              |
+| Prisma/DB      | Objet créé à la main en prod → rejeu des migrations cassé sur base fraîche                             | Aucun DDL manuel en prod ; `DROP … IF EXISTS` dans les migrations correctives ; `bun run db:local:reset` OK avant merge.                                                                              |
 | Prisma/DB      | `$queryRaw` avec `ILIKE` : `%` et `_` non échappés                                                     | Échapper puis `ESCAPE '\'`.                                                                                                                                                                        |
 | RLS/Supabase   | `User.id` / `authorId` sont `TEXT`, `auth.uid()` est `UUID` → `operator does not exist: text = uuid`   | Caster la colonne : `"id"::uuid = auth.uid()`, jamais `auth.uid()::text`.                                                                                                                          |
 | RLS/Supabase   | La navbar lit `user_metadata`, pas la table `User`                                                     | Toute MAJ de profil appelle aussi `auth.admin.updateUserById(id, { user_metadata })`.                                                                                                              |

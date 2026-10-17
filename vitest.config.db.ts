@@ -9,7 +9,7 @@ import path from "path";
 //
 // `test:unit` (config par défaut vitest.config.ts) reste volontairement SANS DB : les
 // tests d'intégration se skippent (describe.runIf) tant que DATABASE_URL n'est pas défini.
-// `pnpm test` enchaîne les deux : test:unit (config.ts) puis test:db (cette config).
+// `bun run test` enchaîne les deux : test:unit (config.ts) puis test:db (cette config).
 config({ path: ".env.local" });
 config();
 

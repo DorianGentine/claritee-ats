@@ -1,0 +1,3 @@
+[install]
+# Versions exactes dans package.json (ni ^ ni ~) ; vérifié par __tests__/unit/package-json.test.ts.
+exact = true

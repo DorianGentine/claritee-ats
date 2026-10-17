@@ -46,11 +46,11 @@ if [ "$VERCEL_ENV" = "production" ]; then
   fi
 fi
 
-pnpm build
+bun run build
 
 if [ "$VERCEL_ENV" = "production" ]; then
   echo "→ Migrations (VERCEL_ENV=production)"
-  pnpm exec prisma migrate deploy
+  bun run prisma migrate deploy
 else
   echo "→ Migrations ignorées (VERCEL_ENV=$VERCEL_ENV)"
 fi

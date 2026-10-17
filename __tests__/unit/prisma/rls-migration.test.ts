@@ -1,54 +1,54 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync, existsSync } from "fs";
+import { readFileSync, readdirSync } from "fs";
 import { join } from "path";
 
-describe("RLS migration", () => {
-  const migrationsPath = join(
-    process.cwd(),
-    "prisma",
-    "migrations",
+const migrationsPath = join(process.cwd(), "prisma", "migrations");
+
+const readMigration = (name: string) =>
+  readFileSync(join(migrationsPath, name, "migration.sql"), "utf-8");
+
+const allMigrationsSql = readdirSync(migrationsPath, { withFileTypes: true })
+  .filter((entry) => entry.isDirectory())
+  .map((entry) => readMigration(entry.name))
+  .join("\n");
+
+const extractPolicies = (content: string, statement: RegExp) =>
+  [...content.matchAll(statement)].map(
+    ([, policyName, tableName]) => `${tableName}.${policyName}`,
   );
 
-  const expectedPolicies = [
-    "company_select_own",
-    "company_update_own",
-    "user_select_same_company",
-    "user_update_self",
-    "invitation_select",
-    "invitation_insert",
-    "invitation_update",
-    "invitation_delete",
-  ];
+describe("RLS migrations", () => {
+  const createdPolicies = extractPolicies(
+    readMigration("20300101000000_add_rls_policies"),
+    /CREATE POLICY "([^"]+)" ON "([^"]+)"/g,
+  );
+  const dropMigration = readMigration("20300103000000_drop_unused_rls_policies");
+  const droppedPolicies = extractPolicies(
+    dropMigration,
+    /DROP POLICY IF EXISTS "([^"]+)" ON "([^"]+)"/g,
+  );
 
-  it("has migration folder for RLS policies", () => {
-    const rlsMigration = join(migrationsPath, "20300101000000_add_rls_policies");
-    expect(existsSync(rlsMigration)).toBe(true);
+  it("supprime chaque policy créée par la migration RLS initiale", () => {
+    expect(createdPolicies.length).toBeGreaterThan(0);
+    expect(droppedPolicies.toSorted()).toEqual(createdPolicies.toSorted());
   });
 
-  it("enables RLS on Company, User, Invitation", () => {
-    const rlsMigrationPath = join(
-      migrationsPath,
-      "20300101000000_add_rls_policies",
-      "migration.sql",
-    );
-    const content = readFileSync(rlsMigrationPath, "utf-8");
-    expect(content).toContain('ALTER TABLE "Company" ENABLE ROW LEVEL SECURITY');
-    expect(content).toContain('ALTER TABLE "User" ENABLE ROW LEVEL SECURITY');
-    expect(content).toContain('ALTER TABLE "Invitation" ENABLE ROW LEVEL SECURITY');
+  it("ne recrée aucune policy", () => {
+    expect(dropMigration).not.toMatch(/CREATE POLICY/);
   });
 
-  it("contains expected RLS policies", () => {
-    const rlsMigrationPath = join(
-      migrationsPath,
-      "20300101000000_add_rls_policies",
-      "migration.sql",
+  it("active la RLS sur chaque table créée par les migrations, sans jamais la désactiver", () => {
+    const createdTables = [...allMigrationsSql.matchAll(/CREATE TABLE "([^"]+)"/g)].map(
+      ([, tableName]) => tableName,
     );
-    const content = readFileSync(rlsMigrationPath, "utf-8");
+    const tablesWithRls = new Set(
+      [...allMigrationsSql.matchAll(/ALTER TABLE "([^"]+)" ENABLE ROW LEVEL SECURITY/g)].map(
+        ([, tableName]) => tableName,
+      ),
+    );
 
-    for (const policy of expectedPolicies) {
-      expect(content, `Missing policy: ${policy}`).toContain(
-        `"${policy}"`,
-      );
-    }
+    expect(createdTables.length).toBeGreaterThan(0);
+    expect(createdTables.filter((tableName) => !tablesWithRls.has(tableName))).toEqual([]);
+    expect(allMigrationsSql).not.toMatch(/DISABLE ROW LEVEL SECURITY/);
   });
 });

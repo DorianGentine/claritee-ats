@@ -32,13 +32,13 @@ fi
 # Le gateway Kong de Supabase local répond 404 sur la racine par design (routage
 # par chemin, pas de route "/") même quand la stack est parfaitement saine —
 # vérifié en conditions réelles (`docker ps` : tous les conteneurs "healthy").
-# Avec --fail, ce 404 légitime ferait échouer le check à chaque `pnpm dev`.
+# Avec --fail, ce 404 légitime ferait échouer le check à chaque `bun run dev`.
 if ! curl -s -o /dev/null --max-time 1 "$SUPABASE_URL"; then
   echo ""
   echo "❌ Supabase local ne répond pas sur $SUPABASE_URL"
   echo ""
   echo "   → Vérifie que Docker Desktop est lancé, puis démarre la stack :"
-  echo "     pnpm db:local:start"
+  echo "     bun run db:local:start"
   echo ""
   exit 1
 fi

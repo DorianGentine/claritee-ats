@@ -16,7 +16,7 @@
 # ⚠️  Copie des données sensibles (emails, hash de mots de passe) en local. Reste local :
 #     la base locale n'est jamais exposée et n'est pas versionnée.
 #
-# Usage : pnpm db:pull:prod
+# Usage : bun run db:pull:prod
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -59,7 +59,7 @@ AUTH_DUMP="$(mktemp -t prod-auth.XXXXXX.sql)"
 trap 'rm -f "$PUBLIC_DUMP" "$AUTH_DUMP"' EXIT
 
 echo "→ Mise à jour du schéma local (prisma migrate deploy)…"
-pnpm exec prisma migrate deploy >/dev/null
+bun run prisma migrate deploy >/dev/null
 
 # NB : pas de --disable-triggers. Il exige superuser (désactive aussi les triggers
 # système de contrôle FK), or le rôle `postgres` local ne l'est pas. On bypasse plutôt
