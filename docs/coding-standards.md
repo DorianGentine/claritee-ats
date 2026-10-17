@@ -1,6 +1,6 @@
 # Claritee ATS — Standards de code
 
-> Règles à suivre pour écrire du code dans ce repo (humains et agents) : style, nommage, API, frontend, tests, pièges connus. Dernière mise à jour : 2026-10-12.
+> Règles à suivre pour écrire du code dans ce repo (humains et agents) : style, nommage, API, frontend, tests, pièges connus. Dernière mise à jour : 2026-10-17.
 
 Architecture (flux, RLS, auth, routers, modèle de données, déploiement) : `docs/architecture.md`. Exigences produit : `docs/prd.md`. En cas de contradiction avec la config ou le code, **le code fait foi**.
 
@@ -110,7 +110,7 @@ export const exampleRouter = router({
 - **DRY** : dès la 2ᵉ occurrence d'un bloc JSX ou d'une logique, extraire en composant partagé ou en hook (`src/hooks/`). Helpers purs dans `src/lib/`. Pas de copier-coller de patterns loading / erreur / empty state.
 - Props typées (type exporté `XxxProps`), état interne limité à l'UI (ouverture de modal, onglet). Pas de données serveur recopiées en state local.
 - `Note.content` est du JSON BlockNote : ne jamais l'afficher brut, passer par `NoteBlockNoteEditor`.
-- Navigation interne : `next/link` ; images : `next/image`.
+- Navigation interne : `next/link`. Images : `<img>` / `AvatarImage` (Radix) ; `next/image` n'est pas utilisé (aucun `remotePatterns` dans `next.config.ts` pour les URL Supabase).
 
 ### Styles et tokens
 
@@ -208,7 +208,7 @@ Pattern réutilisé : extraire un hook (modèle : `src/hooks/useCandidatureUpdat
 | Ne pas modifier `jsx` dans `tsconfig.json`.                                                                                                                                                                                              | Next 16 impose `"react-jsx"` et le réécrit au démarrage.                                           |
 | Éviter les imports lourds dans le layout racine.                                                                                                                                                                                         | Temps de compilation et bundle initial.                                                            |
 
-Diagnostic si CPU/mémoire excessifs ou « Compiling… » en boucle : `bun run dev` (vide déjà `.next`) ; vérifier qu'aucun package umbrella n'a été ajouté ; regarder l'onglet Network (polling / retry en boucle) ; en dernier recours `bun run next dev --no-turbopack`.
+Diagnostic si CPU/mémoire excessifs ou « Compiling… » en boucle : `bun run dev` (vide déjà `.next`) ; vérifier qu'aucun package umbrella n'a été ajouté ; regarder l'onglet Network (polling / retry en boucle) ; en dernier recours `bun run next dev --webpack`.
 
 ---
 
