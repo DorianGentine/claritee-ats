@@ -46,7 +46,7 @@ Vérifier qu'aucune règle `@apply` n'est dupliquée.
 
 Si le serveur consomme trop de CPU/mémoire ou affiche "Compiling..." en permanence :
 
-1. `rm -rf .next && pnpm dev` (nettoyer le cache)
+1. `rm -rf .next && bun run dev` (nettoyer le cache)
 2. Vérifier qu'aucun package umbrella (ex. `radix-ui`) n'a été ajouté
 3. Vérifier l'onglet Network du navigateur (polling/retry en boucle ?)
-4. En dernier recours : `pnpm next dev --no-turbopack`
+4. En dernier recours : `bun run next dev --no-turbopack`

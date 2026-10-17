@@ -20,7 +20,7 @@ Stack : **Next.js 16** (App Router), **React 19.2**, **TypeScript**, **tRPC**, *
 
 ### Prérequis
 
-- **Node.js 20.9+** (requis par Next 16) et **pnpm** (version fixée par `packageManager` dans `package.json` ; `corepack enable`)
+- **Node.js 20.9+** (requis par Next 16, exécute l'app et les tests) et **bun** (gestionnaire de paquets et lanceur de scripts, version fixée par `packageManager` dans `package.json`). Lancer les scripts avec `bun run <script>` : `bun test` est le testeur intégré de bun, pas nos tests.
 - **Docker** + **Supabase CLI** (base locale) et un client **PostgreSQL** (`psql`, `pg_dump`, utilisés par les scripts de test et `db:pull:prod`)
 
 ### Installation
@@ -28,23 +28,23 @@ Stack : **Next.js 16** (App Router), **React 19.2**, **TypeScript**, **tRPC**, *
 ```bash
 git clone <url-du-repo>
 cd claritee-ats
-pnpm install
+bun install
 cp .env.example .env.local   # ne jamais committer .env.local
 ```
 
 ### Base locale
 
 ```bash
-pnpm db:local:start   # stack Supabase locale (Docker) — affiche les URLs et clés
-pnpm db:local:reset   # base à neuf + migrations (schéma + RLS)
+bun run db:local:start   # stack Supabase locale (Docker) — affiche les URLs et clés
+bun run db:local:reset   # base à neuf + migrations (schéma + RLS)
 ```
 
-Renseigner `.env.local` avec les valeurs affichées par `supabase status` (`DATABASE_URL`, `DIRECT_DATABASE_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`). Données de dev : `pnpm prisma db seed`, ou copie de la prod avec `pnpm db:pull:prod`.
+Renseigner `.env.local` avec les valeurs affichées par `supabase status` (`DATABASE_URL`, `DIRECT_DATABASE_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`). Données de dev : `bun run prisma db seed`, ou copie de la prod avec `bun run db:pull:prod`.
 
 ### Lancer l'application
 
 ```bash
-pnpm dev   # vérifie d'abord que la stack locale répond
+bun run dev   # vérifie d'abord que la stack locale répond
 ```
 
 Ouvrir [http://localhost:3000](http://localhost:3000) ; health check : [http://localhost:3000/api/health](http://localhost:3000/api/health).
@@ -53,11 +53,11 @@ Ouvrir [http://localhost:3000](http://localhost:3000) ; health check : [http://l
 
 | Commande | Description |
 |----------|-------------|
-| `pnpm dev` / `pnpm build` | Serveur de dev / build de production |
-| `pnpm lint` | ESLint |
-| `pnpm test:unit` / `pnpm test:db` | Tests unitaires / tests DB (stack locale démarrée) |
-| `pnpm db:migrate` | Créer / appliquer une migration en dev |
-| `pnpm prisma studio` | Interface d'édition de la base |
+| `bun run dev` / `bun run build` | Serveur de dev / build de production |
+| `bun run lint` | ESLint |
+| `bun run test:unit` / `bun run test:db` | Tests unitaires / tests DB (stack locale démarrée) |
+| `bun run db:migrate` | Créer / appliquer une migration en dev |
+| `bun run prisma studio` | Interface d'édition de la base |
 
 ### Documentation
 

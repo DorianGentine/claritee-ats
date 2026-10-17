@@ -5,11 +5,11 @@
 # Pourquoi une base dédiée ?
 #   - Les tests d'intégration ne s'isolent pas entre eux → ils exigent une base
 #     fraîche à chaque run pour être déterministes.
-#   - On ne veut PAS écraser la base de dev (`postgres`) à chaque `pnpm test:db`.
+#   - On ne veut PAS écraser la base de dev (`postgres`) à chaque `bun run test:db`.
 #   → On (re)crée `claritee_test` à neuf sur la même instance Postgres locale.
 #
 # Fonctionne à l'identique en local et en CI (instance fournie par `supabase start`).
-# Args supplémentaires transmis à vitest (ex: `pnpm test:db -t "city"`).
+# Args supplémentaires transmis à vitest (ex: `bun run test:db -t "city"`).
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -33,8 +33,8 @@ psql "$TEST_URL" -v ON_ERROR_STOP=1 -q \
   -c "CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid AS \$\$ SELECT NULL::uuid \$\$ LANGUAGE sql;"
 
 echo "→ Application des migrations sur '${TEST_DB}'…"
-DATABASE_URL="$TEST_URL" DIRECT_DATABASE_URL="$TEST_URL" pnpm exec prisma migrate deploy
+DATABASE_URL="$TEST_URL" DIRECT_DATABASE_URL="$TEST_URL" bun run prisma migrate deploy
 
 echo "→ Tests db (série) sur '${TEST_DB}'…"
 DATABASE_URL="$TEST_URL" DIRECT_DATABASE_URL="$TEST_URL" \
-  pnpm exec vitest run --config vitest.config.db.ts __tests__/db "$@"
+  bun run vitest run --config vitest.config.db.ts __tests__/db "$@"

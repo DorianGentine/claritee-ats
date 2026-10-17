@@ -11,28 +11,30 @@ Epics 1–5 delivered (MVP + structured cities). Product scope in `docs/prd.md`;
 ## Commands
 
 ```bash
-pnpm dev          # Start dev server (clears .next cache first)
-pnpm build        # Production build
-pnpm test         # Run tests once
-pnpm test:watch   # Run tests in watch mode
-pnpm lint         # ESLint check
-pnpm lint:fix     # ESLint auto-fix
-pnpm format       # Prettier write
-pnpm format:check # Prettier check
+bun run dev          # Start dev server (clears .next cache first)
+bun run build        # Production build
+bun run test         # Run tests once
+bun run test:watch   # Run tests in watch mode
+bun run lint         # ESLint check
+bun run lint:fix     # ESLint auto-fix
+bun run format       # Prettier write
+bun run format:check # Prettier check
 
 # Database
-pnpm db:generate    # Regenerate Prisma client
-pnpm db:migrate     # Run migrations (dev)
-pnpm db:push        # Push schema without migration
+bun run db:generate    # Regenerate Prisma client
+bun run db:migrate     # Run migrations (dev)
+bun run db:push        # Push schema without migration
 
 # Base Supabase locale (dev + tests)
-pnpm db:local:start # Démarre la stack Supabase locale (Docker)
-pnpm db:local:stop  # Arrête la stack (données conservées)
-pnpm db:local:reset # Base locale à neuf (reset + migrations, sans données)
-pnpm db:pull:prod   # Rapatrie les données de prod (public + comptes auth) → local
+bun run db:local:start # Démarre la stack Supabase locale (Docker)
+bun run db:local:stop  # Arrête la stack (données conservées)
+bun run db:local:reset # Base locale à neuf (reset + migrations, sans données)
+bun run db:pull:prod   # Rapatrie les données de prod (public + comptes auth) → local
 ```
 
-Run a single unit test file: `pnpm vitest run __tests__/unit/path/to/file.test.ts`. DB tests: `pnpm test:db -t "<test name>"` (the script always targets `__tests__/db`).
+**Bun is the package manager and script runner only; Node runs Next and Vitest.** Always `bun run test` — `bun test` would start Bun's own test runner. Local binaries via `bun run <bin>` (e.g. `bun run prisma …`), never `bunx`: it silently downloads the latest version when the local one is missing.
+
+Run a single unit test file: `bun run vitest run __tests__/unit/path/to/file.test.ts`. DB tests: `bun run test:db -t "<test name>"` (the script always targets `__tests__/db`).
 
 ## Architecture
 

@@ -31,7 +31,7 @@ protectedProcedure (UNAUTHORIZED si pas de user ou de companyId)
 Prisma (adapter pg) — chaque requête filtrée par companyId
   │
   ▼
-PostgreSQL Supabase (RLS activé sur les tables tenant)        Supabase Storage (service role)
+PostgreSQL Supabase (RLS activée, API REST fermée)          Supabase Storage (service role)
 ```
 
 ### Contraintes structurantes
@@ -48,7 +48,7 @@ PostgreSQL Supabase (RLS activé sur les tables tenant)        Supabase Storage 
 
 ## 2. Stack
 
-Versions exactes dans `package.json` (pas de `^`/`~`). Gestionnaire : **pnpm 10**.
+Versions exactes dans `package.json` (pas de `^`/`~`). Gestionnaire de paquets et lanceur de scripts : **bun** (lockfile `bun.lock`, `exact = true` dans `bunfig.toml`) ; runtime : **Node 20**.
 
 | Techno                                                   | Rôle                                                  | Version majeure                           |
 | -------------------------------------------------------- | ----------------------------------------------------- | ----------------------------------------- |
@@ -68,7 +68,7 @@ Versions exactes dans `package.json` (pas de `^`/`~`). Gestionnaire : **pnpm 10*
 | dnd-kit                                                  | Glisser-déposer (pipeline candidatures)               | 6                                         |
 | Sonner                                                   | Toasts                                                | 1                                         |
 | Vitest (+ Testing Library, jsdom, vitest-axe)            | Tests unitaires, composants, DB                       | 4                                         |
-| pa11y                                                    | Audit accessibilité WCAG AA (manuel, `pnpm a11y`)     | 9                                         |
+| pa11y                                                    | Audit accessibilité WCAG AA (manuel, `bun run a11y`)     | 9                                         |
 | Vercel (+ Speed Insights)                                | Hébergement front + API serverless                    | —                                         |
 | Supabase CLI (Docker)                                    | Stack locale dev + tests + CI                         | —                                         |
 | Photon (Komoot)                                          | API externe d'autocomplétion de villes (fallback)     | —                                         |
@@ -113,27 +113,22 @@ Hors `src/` : `prisma/` (schéma, migrations, seed), `supabase/` (config de la s
 | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Tenant                                    | `Company` (le cabinet). Chaque `User` appartient à exactement une `Company`.                                                                                                                                                                                                        |
 | Première ligne de défense : l'application | `protectedProcedure` injecte `ctx.companyId` (résolu via `User` à partir de l'id Supabase) ; **toute** requête Prisma filtre par `companyId`, et l'appartenance est vérifiée avant update/delete (`findFirst({ id, companyId })`).                                                  |
-| Défense en profondeur : RLS PostgreSQL    | Policies `companyId = (SELECT "companyId" FROM "User" WHERE id = auth.uid())` sur les tables portant `companyId`. Inactives en pratique : Prisma les contourne et la Data API est fermée (voir ci-dessous) ; elles sont de plus en récursion infinie (voir `TO-DO.md`). |
-| Portée réelle du RLS                      | Prisma se connecte avec le rôle propriétaire (`postgres`), qui **contourne** le RLS. Le RLS ne rattrape pas un oubli de filtre dans un router : le filtre applicatif est obligatoire. |
+| RLS PostgreSQL : activée, sans policy     | RLS activée sur **toutes** les tables `public`, **aucune policy** : tout accès d'un rôle non propriétaire est refusé. Prisma se connecte avec le rôle propriétaire (`postgres`), qui contourne la RLS : elle ne rattrape donc pas un oubli de filtre dans un router, le filtre applicatif est la seule isolation entre cabinets. |
 | API REST Supabase fermée                  | L'app n'utilise pas la Data API sur `public` (Prisma pour les tables, `service_role` pour le Storage). `anon`/`authenticated` n'ont aucun droit sur les tables et séquences `public`, ni sur les tables, séquences et fonctions **créées par `postgres`** à l'avenir (privilèges par défaut révoqués, `EXECUTE` à `PUBLIC` compris). Hors de portée de `postgres` : les objets de `supabase_admin` (fonctions des extensions `pg_trgm` / `unaccent`, sans accès aux données). |
-| Tables enfants                            | Pas de `companyId` ni de policy : RLS activée sans policy, accès uniquement via Prisma en passant par le parent filtré (ex. `candidate: { companyId }`).                                                                                                                             |
-| Données globales                          | `cities` est une table de référence partagée entre cabinets (pas de `companyId`). Comme `_keepalive` et `_prisma_migrations`, RLS activée sans policy (accès réservé au rôle `postgres`).                                                                                                                         |
+| Tables enfants                            | Pas de `companyId` : accès uniquement via Prisma en passant par le parent filtré (ex. `candidate: { companyId }`).                                                                                                                                                                  |
+| Données globales                          | `cities` est une table de référence partagée entre cabinets (pas de `companyId`).                                                                                                                                                                                                  |
 
-### Couverture RLS
+### Migrations RLS / droits
 
-| Table                                                                  | Clé tenant                   | RLS                                                       |
-| ---------------------------------------------------------------------- | ---------------------------- | --------------------------------------------------------- |
-| `Company`                                                              | `id`                         | SELECT / UPDATE de son propre cabinet                     |
-| `User`                                                                 | `companyId`                  | SELECT même cabinet ; UPDATE de soi-même                  |
-| `Invitation`, `Candidate`, `Tag`, `ClientCompany`, `JobOffer`, `Note`  | `companyId`                  | SELECT / INSERT / UPDATE / DELETE                         |
-| `ShareLink`                                                            | via `Candidate`              | SELECT / INSERT / DELETE via sous-requête sur le candidat |
-| `Experience`, `Formation`, `Language`, `CandidateTag`, `CandidateCity` | via `Candidate`              | Activée sans policy — contrôle applicatif                 |
-| `ClientContact`, `ClientCompanyCity`                                   | via `ClientCompany`          | Activée sans policy — contrôle applicatif                 |
-| `OfferTag`, `Candidature`                                              | via `JobOffer` / `Candidate` | Activée sans policy — contrôle applicatif                 |
+| Migration                                 | Effet                                                                                                                         |
+| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `20300101000000_add_rls_policies`         | Historique : activation RLS et 31 policies tenant (supprimées depuis, migration conservée car déjà appliquée).               |
+| `20300102000000_revoke_data_api_access`   | Révoque les droits `anon`/`authenticated` (actuels et par défaut) et active la RLS sur les autres tables.                     |
+| `20300103000000_drop_unused_rls_policies` | Supprime les 31 policies : jamais appliquées à un accès réel (Prisma les contourne, Data API fermée) et cassées (récursion). |
 
-### Source des policies
+Pour une nouvelle table : `ENABLE ROW LEVEL SECURITY` dans sa migration, aucune policy, jamais de `GRANT` à `anon`/`authenticated`. Les shadow DB et la base de test reçoivent un stub `auth.uid()` (référencé par l'ancienne migration ; voir `prisma.config.ts`, `scripts/test-db.sh`).
 
-La **seule source exécutée** est la migration `prisma/migrations/20300101000000_add_rls_policies/migration.sql` (31 policies + activation RLS), appliquée par `prisma migrate deploy` / `migrate reset`. Elle est datée 2030 pour s'exécuter après toutes les migrations de schéma sur une base vierge. La migration `20300102000000_revoke_data_api_access` révoque les droits `anon`/`authenticated` et active la RLS sur les autres tables. Pour une nouvelle table : `ENABLE ROW LEVEL SECURITY` dans sa migration (+ `companyId` et policies si tenant) ; ne jamais `GRANT` à `anon`/`authenticated` sans besoin réel de la Data API. Les shadow DB et la base de test reçoivent un stub `auth.uid()` (voir `prisma.config.ts`, `scripts/test-db.sh`).
+**Si un jour la Data API doit servir** (Supabase Realtime, requêtes directes depuis le navigateur, policies Storage lisant des tables) : rouvrir les droits table par table et écrire des policies qui obtiennent le cabinet courant via une fonction `SECURITY DEFINER` (ex. `current_company_id()`), jamais par une sous-requête sur `User` depuis une policy de `User` (récursion infinie).
 
 ---
 
@@ -275,7 +270,7 @@ Index notables : `Candidate(companyId, firstName, lastName, title)`, `JobOffer(c
 
 | Environnement | Base / Auth / Storage                                                               | Config                                                                                                                                 |
 | ------------- | ----------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| Local (dev)   | Stack Supabase CLI (Docker) : API 54321, Postgres 54322, Studio 54323, emails 54324 | `.env.local` (prioritaire), `.env` en repli ; `pnpm dev` vérifie d'abord que Supabase local répond (`scripts/check-local-services.sh`) |
+| Local (dev)   | Stack Supabase CLI (Docker) : API 54321, Postgres 54322, Studio 54323, emails 54324 | `.env.local` (prioritaire), `.env` en repli ; `bun run dev` vérifie d'abord que Supabase local répond (`scripts/check-local-services.sh`) |
 | Tests DB      | Base dédiée `claritee_test` recréée à chaque run sur l'instance locale              | `scripts/test-db.sh`                                                                                                                   |
 | CI            | `supabase start` dans GitHub Actions                                                | `.github/workflows/ci.yml`                                                                                                             |
 | Production    | Projet Supabase cloud (EU) + Vercel                                                 | Variables Vercel ; copie locale des identifiants prod dans `.env.prod.local` (non versionné)                                           |
@@ -297,9 +292,9 @@ Modèle : `.env.example`.
 
 | Commande                                | Effet                                                                                                                                      |
 | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `pnpm db:local:start` / `db:local:stop` | Démarre / arrête la stack Supabase locale (données conservées)                                                                             |
-| `pnpm db:local:reset`                   | Base locale vierge puis `prisma migrate deploy` (sans données)                                                                             |
-| `pnpm db:pull:prod`                     | Copie les données prod (`public` + `auth.users`/`auth.identities`) vers la base locale, après confirmation ; refuse toute cible non locale |
+| `bun run db:local:start` / `db:local:stop` | Démarre / arrête la stack Supabase locale (données conservées)                                                                             |
+| `bun run db:local:reset`                   | Base locale vierge puis `prisma migrate deploy` (sans données)                                                                             |
+| `bun run db:pull:prod`                     | Copie les données prod (`public` + `auth.users`/`auth.identities`) vers la base locale, après confirmation ; refuse toute cible non locale |
 | `scripts/seed-cities.ts`                | Pré-remplit `cities` via Photon (réseau)                                                                                                   |
 
 ### Migrations
@@ -308,18 +303,18 @@ Modèle : `.env.example`.
 | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Outil    | `prisma migrate dev` en local, `prisma migrate deploy` ailleurs ; config dans `prisma.config.ts` (externalTables, stub `auth.uid()` pour la shadow DB).                                                                                                                                       |
 | SQL brut | Extensions, RLS, `_keepalive` : migrations SQL éditées à la main.                                                                                                                                                                                                                             |
-| Ordre    | Les migrations RLS / droits sont datées 2030 (`20300101…`, `20300102…`) pour rester les dernières sur une base vierge. Une nouvelle migration doit être datée **après la dernière migration existante** (donc après `20300102000000`), sinon l'ordre diffère entre base vierge et prod. |
+| Ordre    | Les migrations RLS / droits sont datées 2030 (`20300101…` à `20300103…`) pour rester les dernières sur une base vierge. Une nouvelle migration doit être datée **après la dernière migration existante** (donc après `20300103000000`), sinon l'ordre diffère entre base vierge et prod. |
 | Prod     | `vercel.json` (versionné, prime sur le dashboard) appelle `scripts/vercel-build.sh` : `next build` puis `prisma migrate deploy`, **en production uniquement** (`VERCEL_ENV`) ; les previews ne migrent jamais. Un build en échec ne touche pas la base ; une migration en échec fait échouer le déploiement. `VERCEL_ENV` absent, ou `DIRECT_DATABASE_URL` absente ou mal ciblée en production (voir variables d'environnement) → échec avant le build. Limite : la migration est appliquée avant la promotion du nouveau code, l'ancien code tourne brièvement sur le nouveau schéma — une migration destructive doit rester compatible avec le code en ligne (expand / contract). |
 
 ### CI (`.github/workflows/ci.yml`, push / PR sur `main`)
 
 | Job                  | Contenu                                       |
 | -------------------- | --------------------------------------------- |
-| `lint-typecheck`     | `pnpm lint` + `tsc --noEmit`                  |
-| `test` (après lint)  | `supabase start` puis `pnpm test` (unit + DB) |
-| `build` (après lint) | `pnpm build` avec variables factices          |
+| `lint-typecheck`     | `bun run lint` + `tsc --noEmit`                  |
+| `test` (après lint)  | `supabase start` puis `bun run test` (unit + DB) |
+| `build` (après lint) | `bun run build` avec variables factices          |
 
-Node 20, pnpm installé en `--frozen-lockfile`.
+Node 20 (runtime) et bun (`oven-sh/setup-bun`, version lue dans `packageManager`) ; dépendances installées en `bun install --frozen-lockfile`.
 
 ### Keep-alive et supervision
 
@@ -336,11 +331,11 @@ Node 20, pnpm installé en `--frozen-lockfile`.
 
 | Suite            | Commande                                       | Périmètre                                                                                                                                                                                                       | Environnement                                                                                                                                                                                                  |
 | ---------------- | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Unitaires        | `pnpm test:unit` (`vitest run __tests__/unit`) | Logique pure, schémas Zod, rate limit, routers tRPC avec contexte/Prisma mockés, composants React (Testing Library, jsdom via directive de fichier), contrôle statique de la migration RLS et de `package.json` | `vitest.config.ts`, sans DB                                                                                                                                                                                    |
-| DB / intégration | `pnpm test:db` (`scripts/test-db.sh`)          | Routers tRPC contre une vraie base Postgres, seed                                                                                                                                                               | `claritee_test` recréée à chaque run + `migrate deploy` ; fichiers en `describe.runIf(DATABASE_URL)` (skippés en silence sans URL, voir TO-DO) ; `vitest.config.db.ts` en **série** (`fileParallelism: false`) |
-| Tout             | `pnpm test`                                    | unit puis DB                                                                                                                                                                                                    | Requiert la stack locale démarrée                                                                                                                                                                              |
-| Watch            | `pnpm test:watch`                              | Unitaires                                                                                                                                                                                                       | —                                                                                                                                                                                                              |
-| Accessibilité    | `pnpm a11y`                                    | pa11y WCAG2AA sur quelques pages                                                                                                                                                                                | Serveur local lancé                                                                                                                                                                                            |
+| Unitaires        | `bun run test:unit` (`vitest run __tests__/unit`) | Logique pure, schémas Zod, rate limit, routers tRPC avec contexte/Prisma mockés, composants React (Testing Library, jsdom via directive de fichier), contrôle statique de la migration RLS et de `package.json` | `vitest.config.ts`, sans DB                                                                                                                                                                                    |
+| DB / intégration | `bun run test:db` (`scripts/test-db.sh`)          | Routers tRPC contre une vraie base Postgres, seed                                                                                                                                                               | `claritee_test` recréée à chaque run + `migrate deploy` ; fichiers en `describe.runIf(DATABASE_URL)` (skippés en silence sans URL, voir TO-DO) ; `vitest.config.db.ts` en **série** (`fileParallelism: false`) |
+| Tout             | `bun run test`                                    | unit puis DB                                                                                                                                                                                                    | Requiert la stack locale démarrée                                                                                                                                                                              |
+| Watch            | `bun run test:watch`                              | Unitaires                                                                                                                                                                                                       | —                                                                                                                                                                                                              |
+| Accessibilité    | `bun run a11y`                                    | pa11y WCAG2AA sur quelques pages                                                                                                                                                                                | Serveur local lancé                                                                                                                                                                                            |
 
 Arborescence : `__tests__/unit/**` et `__tests__/db/**`, chacune calquée sur `src/`. Les tests DB créent leurs propres données (pas de seed réseau). Pas d'E2E (Playwright non installé) ni d'objectif de couverture : priorité aux chemins critiques et aux cas d'erreur (validation, non autorisé, introuvable, isolation tenant).
 
