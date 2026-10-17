@@ -125,3 +125,11 @@ Use Tailwind tokens (`bg-primary`, `text-muted-foreground`) — no raw hex in cl
 | `docs/coding-standards.md` | Conventions, design tokens, testing patterns, known pitfalls |
 
 When a feature is done, update these files instead of adding new ones.
+
+**Before every push, make sure `docs/` matches the change** (part of the same commit or PR, not a follow-up):
+- `TO-DO.md`: remove delivered items, add newly found bugs or debt, keep counts and paths accurate.
+- `architecture.md`: stack, scripts, env vars, migrations, CI, deployment.
+- `coding-standards.md`: new conventions or pitfalls.
+- `prd.md`: scope, requirements, epics.
+
+Describe only the final state and the decisions taken — no incident history.
