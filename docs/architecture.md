@@ -1,6 +1,6 @@
 # Claritee ATS — Architecture technique
 
-> Référence technique (flux, multi-tenancy, auth, API, données, déploiement, tests, décisions). Dernière mise à jour : 2026-10-12.
+> Référence technique (flux, multi-tenancy, auth, API, données, déploiement, tests, décisions). Dernière mise à jour : 2026-10-17.
 
 Conventions de code, nommage et pièges : `docs/coding-standards.md`. Exigences produit : `docs/prd.md`. En cas de contradiction avec le code, **le code fait foi**.
 
@@ -48,7 +48,7 @@ PostgreSQL Supabase (RLS activée, API REST fermée)          Supabase Storage (
 
 ## 2. Stack
 
-Versions exactes dans `package.json` (pas de `^`/`~`). Gestionnaire de paquets et lanceur de scripts : **bun** (lockfile `bun.lock`, `exact = true` dans `bunfig.toml`) ; runtime : **Node 20**.
+Versions exactes dans `package.json` (pas de `^`/`~`). Gestionnaire de paquets et lanceur de scripts : **bun** (lockfile `bun.lock`, `exact = true` dans `bunfig.toml`) ; runtime : **Node** (20 en CI ; version de Vercel réglée dans le dashboard, aucun `engines` ni `.nvmrc` versionné).
 
 | Techno                                                   | Rôle                                                  | Version majeure                           |
 | -------------------------------------------------------- | ----------------------------------------------------- | ----------------------------------------- |
@@ -65,7 +65,7 @@ Versions exactes dans `package.json` (pas de `^`/`~`). Gestionnaire de paquets e
 | React Hook Form (+ `@hookform/resolvers`)                | Formulaires                                           | 7                                         |
 | shadcn/ui (Radix, packages individuels) + Tailwind CSS   | Composants et styles                                  | Tailwind 4                                |
 | BlockNote                                                | Éditeur riche des notes (contenu stocké en JSON)      | 0.46                                      |
-| dnd-kit                                                  | Glisser-déposer (pipeline candidatures)               | 6                                         |
+| dnd-kit                                                  | Glisser-déposer (ordre des villes du candidat)        | 6                                         |
 | Sonner                                                   | Toasts                                                | 1                                         |
 | Vitest (+ Testing Library, jsdom, vitest-axe)            | Tests unitaires, composants, DB                       | 4                                         |
 | pa11y                                                    | Audit accessibilité WCAG AA (manuel, `bun run a11y`)     | 9                                         |
@@ -142,7 +142,7 @@ Pour une nouvelle table : `ENABLE ROW LEVEL SECURITY` dans sa migration, aucune 
 | Confirmation email              | Envoyée par Supabase via le **SMTP custom configuré dans le dashboard** (pas de nodemailer ni de config SMTP dans l'app). `admin.createUser` seul n'envoie jamais d'email, d'où l'appel explicite à `resend`. Un échec de `resend` est logué (`console.warn`) sans bloquer l'inscription. Prérequis dashboard : « Confirm email » activé, Site URL / Redirect URLs corrects. En local, les emails arrivent dans Inbucket/Mailpit (port 54324). |
 | Connexion                       | `signInWithPassword` côté client (Supabase) → cookie de session JWT.                                                                                                                                                                                                                                                                                                                                                                           |
 | Résolution serveur              | `createContext` : `supabase.auth.getUser()` (valide le JWT auprès de Supabase) puis lecture de `User.companyId`.                                                                                                                                                                                                                                                                                                                               |
-| Affichage client de l'état auth | `getSession()` (lecture locale, sans appel réseau) dans la navbar ; `getUser()` est réservé au serveur.                                                                                                                                                                                                                                                                                                                                        |
+| Affichage client de l'état auth | `getSession()` (lecture locale, sans appel réseau) dans la navbar ; `getUser()` côté serveur, et côté client pour l'id courant dans les sections de notes.                                                                                                                                                                                                                                                                                                                                        |
 | Protection des pages            | `src/proxy.ts` redirige vers `/login` sans user pour `/dashboard`, `/candidates`, `/offers`, `/clients`, `/settings`, `/notes`. Les procédures tRPC restent protégées indépendamment.                                                                                                                                                                                                                                                          |
 | Invitation                      | `invitation.create` (token, expiration 7 j) → page `/invite/[token]` → `invitation.getByToken` puis `invitation.accept` (publicProcedure) : vérifie usedAt / revokedAt / expiresAt, crée le compte Auth avec `email_confirm: true` (pas d'email : l'invitation fait foi), puis transaction `User` (companyId de l'invitation) + `usedAt`.                                                                                                      |
 | Profil                          | `auth.updateProfile` met à jour `User` et les métadonnées Supabase via l'Admin API.                                                                                                                                                                                                                                                                                                                                                            |
@@ -167,7 +167,7 @@ Implémentation : `src/lib/rate-limit.ts`, store **in-memory par instance** (non
 | Création de lien de partage                | `share-link:<userId>` | 20 / h   | `shareLink.create`                                      |
 | Upload photo / CV                          | `upload:<userId>`     | 30 / h   | `candidate.uploadPhoto`, `candidate.uploadCv`           |
 | Téléchargement CV depuis une page partagée | `cv-share:<ip>`       | 30 / min | `candidate.getCvDownloadUrlByShareToken`                |
-| Mutations métier générales                 | `mutation:<userId>`   | 60 / min | `checkMutationRateLimit` dans les mutations des routers |
+| Mutations métier générales                 | `mutation:<userId>`   | 60 / min | `checkMutationRateLimit` : appliqué à 17 mutations sur 41 (candidate, note, offer, client, candidature) ; absent d'`auth`, `company` et `invitation` (voir `TO-DO.md`) |
 
 Évolution si besoin d'une limite globale : store externe (Upstash Redis / Vercel KV).
 
@@ -193,7 +193,7 @@ Un router par domaine dans `src/server/trpc/routers/`, enregistré dans `_app.ts
 | `tag`                | `tag.ts`         | Tags du cabinet                                                                                  | —                              |
 | `search`             | `search.ts`      | Recherche globale (ilike/contains, cf. ADR 0004)                                                 | —                              |
 | `dashboard`          | `dashboard.ts`   | Statistiques d'accueil                                                                           | —                              |
-| `city`               | `city.ts`        | Autocomplétion de villes (local puis Photon, cf. ADR 0005)                                       | `autocomplete`, `getByIds`     |
+| `city`               | `city.ts`        | Autocomplétion de villes (local puis Photon, cf. ADR 0005). Procédure **publique** : les résultats Photon sont persistés (upsert) dans `cities`, partagée entre cabinets | `autocomplete`, `getByIds`     |
 
 ### Règles
 
@@ -202,7 +202,7 @@ Un router par domaine dans `src/server/trpc/routers/`, enregistré dans `_app.ts
 | `protectedProcedure` par défaut | Garantit `ctx.user` et `ctx.companyId` non nuls. `publicProcedure` uniquement pour l'onboarding (register, invitation), le partage public (validation token + expiration) et les données de référence (villes). |
 | Contexte                        | `ctx.db` (Prisma), `ctx.user` (Supabase), `ctx.companyId`, `ctx.headers` (IP pour le rate limit).                                                                                                               |
 | Inputs                          | Schémas Zod de `src/lib/validations/<domaine>.ts`.                                                                                                                                                              |
-| Erreurs                         | Codes tRPC standards (`UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`, `BAD_REQUEST`, `CONFLICT`, `TOO_MANY_REQUESTS`) ; messages génériques côté client, détails seulement dans les logs serveur.                     |
+| Erreurs                         | Codes tRPC standards (`UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`, `BAD_REQUEST`, `CONFLICT`, `TOO_MANY_REQUESTS`)  ; pas d'`errorFormatter` : une erreur Prisma non interceptée remonte en 500 brut au client (voir `TO-DO.md`).                     |
 | Notes                           | Modification / suppression réservées à l'auteur (`FORBIDDEN` sinon).                                                                                                                                            |
 | Partage public                  | Projection limitée (`publicCandidateSelect`) ; mode anonyme mappé côté serveur.                                                                                                                                 |
 
@@ -256,11 +256,11 @@ Index notables : `Candidate(companyId, firstName, lastName, title)`, `JobOffer(c
 
 | Sujet                  | Règle                                                                                                                                                                                                                                  |
 | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Chemins                | `{companyId}/candidates/{candidateId}/photo.{ext}` et `.../cv.{ext}` — préfixe tenant, un seul fichier par type (écrasement).                                                                                                          |
+| Chemins                | `{companyId}/candidates/{candidateId}/photo.{ext}` et `.../cv.{ext}` — préfixe tenant ; un nouvel upload écrase le fichier de même extension, mais une extension différente laisse l'ancien en place (voir `TO-DO.md`).                                                                                                          |
 | Écriture / suppression | Uniquement côté serveur, via le client admin (secret key) dans les procédures `candidate.uploadPhoto`, `uploadCv`, `deleteCv` ; fichier envoyé en base64 dans l'input tRPC. Les policies Storage sont donc contournées par conception. |
 | Lecture CV             | `candidate.getCvDownloadUrl` (authentifié) ou `candidate.getCvDownloadUrlByShareToken` (page publique : token + expiration validés, rate limit IP).                                                                                    |
 | `Candidate.cvUrl`      | URL de référence non exploitable directement (bucket privé) ; `cvFileName` conserve le nom d'origine.                                                                                                                                  |
-| Provisionnement        | Buckets créés manuellement dans le dashboard Supabase (non versionnés dans `supabase/config.toml` ni dans les migrations).                                                                                                             |
+| Provisionnement        | Buckets `photos` (public) et `cvs` (privé) créés manuellement dans le dashboard Supabase **et dans le Studio local** (http://127.0.0.1:54323) : non déclarés dans `supabase/config.toml` ni dans les migrations, une stack locale neuve ne les a pas.                                                                                                             |
 
 ---
 
@@ -295,7 +295,7 @@ Modèle : `.env.example`.
 | `bun run db:local:start` / `db:local:stop` | Démarre / arrête la stack Supabase locale (données conservées)                                                                             |
 | `bun run db:local:reset`                   | Base locale vierge puis `prisma migrate deploy` (sans données)                                                                             |
 | `bun run db:pull:prod`                     | Copie les données prod (`public` + `auth.users`/`auth.identities`) vers la base locale, après confirmation ; refuse toute cible non locale |
-| `scripts/seed-cities.ts`                | Pré-remplit `cities` via Photon (réseau)                                                                                                   |
+| `bun run prisma db seed`                | Seed de dev (`prisma/seed.ts`) : cabinet, utilisateur et invitation de démo, puis pré-remplissage de `cities` via Photon (`scripts/seed-cities.ts`, réseau) |
 
 ### Migrations
 
@@ -303,10 +303,10 @@ Modèle : `.env.example`.
 | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Outil    | `prisma migrate dev` en local, `prisma migrate deploy` ailleurs ; config dans `prisma.config.ts` (externalTables, stub `auth.uid()` pour la shadow DB).                                                                                                                                       |
 | SQL brut | Extensions, RLS, `_keepalive` : migrations SQL éditées à la main.                                                                                                                                                                                                                             |
-| Ordre    | Les migrations RLS / droits sont datées 2030 (`20300101…` à `20300103…`) pour rester les dernières sur une base vierge. Une nouvelle migration doit être datée **après la dernière migration existante** (donc après `20300103000000`), sinon l'ordre diffère entre base vierge et prod. |
+| Ordre    | Les migrations RLS / droits sont datées 2030 (`20300101…` à `20300103…`) pour rester les dernières sur une base vierge. `prisma migrate dev` génère un horodatage du jour, qui trie avant les migrations 2030 : **renommer le dossier** pour le dater après la dernière migration existante. Une nouvelle migration doit être datée **après la dernière migration existante** (donc après `20300103000000`), sinon l'ordre diffère entre base vierge et prod. |
 | Prod     | `vercel.json` (versionné, prime sur le dashboard) appelle `scripts/vercel-build.sh` : `next build` puis `prisma migrate deploy`, **en production uniquement** (`VERCEL_ENV`) ; les previews ne migrent jamais. Un build en échec ne touche pas la base ; une migration en échec fait échouer le déploiement. `VERCEL_ENV` absent, ou `DIRECT_DATABASE_URL` absente ou mal ciblée en production (voir variables d'environnement) → échec avant le build. Limite : la migration est appliquée avant la promotion du nouveau code, l'ancien code tourne brièvement sur le nouveau schéma — une migration destructive doit rester compatible avec le code en ligne (expand / contract). |
 
-### CI (`.github/workflows/ci.yml`, push / PR sur `main`)
+### CI (`.github/workflows/ci.yml`, push / PR sur `main` et `master`)
 
 | Job                  | Contenu                                       |
 | -------------------- | --------------------------------------------- |
@@ -335,7 +335,7 @@ Node 20 (runtime) et bun (`oven-sh/setup-bun`, version lue dans `packageManager`
 | DB / intégration | `bun run test:db` (`scripts/test-db.sh`)          | Routers tRPC contre une vraie base Postgres, seed                                                                                                                                                               | `claritee_test` recréée à chaque run + `migrate deploy` ; fichiers en `describe.runIf(DATABASE_URL)` (skippés en silence sans URL, voir TO-DO) ; `vitest.config.db.ts` en **série** (`fileParallelism: false`) |
 | Tout             | `bun run test`                                    | unit puis DB                                                                                                                                                                                                    | Requiert la stack locale démarrée                                                                                                                                                                              |
 | Watch            | `bun run test:watch`                              | Unitaires                                                                                                                                                                                                       | —                                                                                                                                                                                                              |
-| Accessibilité    | `bun run a11y`                                    | pa11y WCAG2AA sur quelques pages                                                                                                                                                                                | Serveur local lancé                                                                                                                                                                                            |
+| Accessibilité    | `bun run a11y`                                    | pa11y WCAG2AA sur `/dashboard` et `/settings/team` — pages protégées sans session dans pa11y : redirigées vers `/login`, seule page réellement auditée (voir `TO-DO.md`) | Serveur local lancé                                                                                                                                                                                            |
 
 Arborescence : `__tests__/unit/**` et `__tests__/db/**`, chacune calquée sur `src/`. Les tests DB créent leurs propres données (pas de seed réseau). Pas d'E2E (Playwright non installé) ni d'objectif de couverture : priorité aux chemins critiques et aux cas d'erreur (validation, non autorisé, introuvable, isolation tenant).
 
@@ -352,3 +352,5 @@ Une décision ne se supprime pas : une nouvelle ligne la remplace explicitement.
 | 0003 | tRPC v11 + Zod plutôt que REST/GraphQL                                                   | Contrat type-safe de bout en bout sans génération de client ; aucun besoin d'API publique                 |
 | 0004 | Recherche par `ilike`/`contains` Prisma, `tsvector` + GIN reporté                        | Volume par cabinet faible : simplicité et typage Prisma préférés à la pertinence et aux triggers SQL      |
 | 0005 | Villes structurées : table `cities` locale (unaccent + pg_trgm) avec fallback API Photon | Autocomplétion cohérente et gratuite (sans clé, couverture Europe) avec un référentiel local réutilisable |
+| 0006 | Remplace 0002 pour la RLS : isolation par `companyId` dans l'application seule ; RLS activée sans policy et API REST Supabase fermée | Prisma contourne la RLS et l'app n'utilise pas la Data API : des policies ne protégeaient rien (et étaient cassées) |
+| 0007 | Précise 0005 : recherche de villes par préfixe `unaccent(name) ILIKE 'x%'` ; `pg_trgm` installé mais inutilisé | Le préfixe suffit à l'autocomplétion ; index fonctionnel à créer (voir `TO-DO.md`) |

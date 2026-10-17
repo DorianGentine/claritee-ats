@@ -1,6 +1,6 @@
 # Claritee ATS — PRD
 
-> Référence produit : pourquoi Claritee existe, ce qu'il doit faire et ce qui a été livré. Dernière mise à jour : 2026-10-12.
+> Référence produit : pourquoi Claritee existe, ce qu'il doit faire et ce qui a été livré. Dernière mise à jour : 2026-10-17.
 
 ## 1. Vision & contexte
 
@@ -98,7 +98,7 @@ Modèle de données : voir `architecture.md`.
 | Principe                    | Traduction concrète                                                                                                 |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | Simple et rapide            | Peu de clics, quasiment rien à apprendre, aucune fonction superflue                                                 |
-| « Centre de contrôle »      | Barre de navigation en en-tête, toujours visible (Tableau de bord, Candidats, Offres, Clients, Paramètres)          |
+| « Centre de contrôle »      | Barre de navigation en en-tête, toujours visible (Dashboard, Candidats, Offres, Clients, Paramètres)                |
 | Recherche omniprésente      | Barre globale dans l'en-tête, raccourci Cmd/Ctrl+K                                                                  |
 | Saisie sans rupture         | Widget de note flottant (bouton + Cmd/Ctrl+J), enregistrement automatique, navigation possible pendant la saisie    |
 | Repérage visuel             | Tags colorés, badges de statut pour les offres et les candidatures                                                  |

@@ -8,15 +8,32 @@ Cocher `[x]` une tâche livrée ; les tâches cochées sont retirées à la mise
 
 ---
 
+## 🔥 Urgent — bugs et sécurité
+
+- [ ] **Limite de débit absente sur des procédures publiques et des mutations**
+  `checkMutationRateLimit` ne couvre que 17 mutations sur 41 (NFR14). Les cas exposés sans authentification :
+  - `invitation.accept` (`publicProcedure`) crée des comptes Supabase Auth, sans limite ;
+  - `city.autocomplete` (`publicProcedure`) appelle Photon 3 fois en parallèle et **persiste les résultats dans `cities`** : un anonyme peut écrire dans la base en boucle.
+
+  Également sans limite : `auth.updateProfile`, `company.updateCompany`, `invitation.create` / `revoke`.
+
+- [ ] **Upload de CV probablement refusé au-delà d'environ 3,3 Mo en prod**
+  Les fichiers transitent en base64 dans l'input tRPC (+33 %) : un CV de 5 Mo (limite NFR15) fait environ 6,7 Mo de corps de requête, au-delà de la limite de 4,5 Mo des fonctions Vercel. À confirmer en prod ; piste : URL d'upload signée Supabase (upload direct depuis le navigateur).
+
+- [ ] **Fichiers orphelins dans le Storage (RGPD, NFR9)**
+  `candidate.delete` laisse la photo et le CV dans le Storage ; un upload d'une extension différente (`photo.png` après `photo.jpg`) laisse l'ancien fichier. Aucune procédure de suppression pour un client, un lien de partage, un utilisateur ou un cabinet.
+
+---
+
 ## ⭐ Prioritaire
 
 - [ ] **Remplacer BlockNote par Tiptap**
-  BlockNote (`@blocknote/core|react|shadcn`) n'est utilisé que par l'éditeur de notes (`NoteBlockNoteEditor`) et tire `@ungap/structured-clone` (vulnérabilité, voir dépendances dépréciées). Les notes sont stockées en JSON de blocs BlockNote (cf. `isBlockNoteContentEmpty`) : prévoir la conversion des notes existantes vers le format Tiptap.
+  BlockNote (`@blocknote/core|react|shadcn`) n'est utilisé que par l'éditeur de notes (`NoteBlockNoteEditor`) et par l'import de styles dans `src/styles/globals.css` ; il tire `@ungap/structured-clone` (vulnérabilité) et `uuid@8.3.2` (voir dépendances dépréciées). `@tiptap/*` est déjà installé comme dépendance de BlockNote. Les notes sont stockées en JSON de blocs BlockNote (cf. `isBlockNoteContentEmpty`) : prévoir la conversion des notes existantes vers le format Tiptap.
 
 - [ ] **Refonte design**
 
 - [ ] **Générer une page d'accueil**
-  `src/app/page.tsx` n'est qu'un écran minimal (titre, accroche, boutons « Créer un compte » / connexion).
+  `src/app/page.tsx` n'est qu'un écran minimal : titre, accroche, et boutons « Créer un compte » / connexion (ou « Accéder à mon espace » si connecté).
 
 ---
 
@@ -35,10 +52,16 @@ Cocher `[x]` une tâche livrée ; les tâches cochées sont retirées à la mise
   - _Déjà en place :_ Supabase local (`bun run db:local:start`), migrations rejouables from scratch, job CI qui rejoue migrations + tests.
 
 - [ ] **Script `dev:prod`** _(à créer)_
-  Lancer l'app locale sur la DB de prod (`dotenv -e .env.prod.local -- next dev` ou wrapper shell) sans toucher `.env.local`. ⚠️ Toute écriture impacte la prod : debug lecture uniquement, avertissement visible dans le terminal.
+  Lancer l'app locale sur la DB de prod (wrapper shell, ou `dotenv -e .env.prod.local -- next dev` après ajout de `dotenv-cli`, non installé) sans toucher `.env.local`. ⚠️ Toute écriture impacte la prod : debug lecture uniquement, avertissement visible dans le terminal.
 
 - [ ] **Rate limiter en mémoire, par instance**
   `src/lib/rate-limit.ts` stocke les compteurs en mémoire : sur Vercel chaque instance a sa propre limite. Passer à un store distribué (ex. Upstash) si le trafic augmente.
+
+- [ ] **Buckets Storage non provisionnés en local**
+  `photos` et `cvs` ne sont pas déclarés dans `supabase/config.toml` : sur une stack locale neuve, upload et téléchargement échouent tant qu'on ne les crée pas à la main dans le Studio local. Les déclarer (`[storage.buckets.*]`).
+
+- [ ] **Supabase CLI non figée en CI**
+  `supabase/setup-cli` en `version: latest` dans `ci.yml`, contrairement à la règle des versions exactes. Fixer la version.
 
 - [ ] **Script `db-pull-prod.sh` : mot de passe tronqué**
   `tr -d '"'` supprime tous les guillemets, ce qui casse un mot de passe qui en contient. Idem `check-local-services.sh`, sensible à un commentaire en fin de ligne dans `.env`.
@@ -50,13 +73,16 @@ Cocher `[x]` une tâche livrée ; les tâches cochées sont retirées à la mise
 - [ ] **Dé-skipper les tests DB en dette** (tag `TODO(db-test-debt)`)
   9 tests `it.skip` échouent ou sont flaky sur base fraîche (isolation, setup, tri non déterministe) : `dashboard` (×2 `recentNotes`), `candidate` (pagination), `client` (tri `createdAt`), `company` (`getMyCompany`), `invitation` (list other company), `offer` (×2 tri), `prisma/seed`.
   - _Pistes :_ données uniques par test (`randomUUID`, pas `Date.now()` en `Promise.all`), cleanup ciblé en `try/finally`, tiebreaker ou `createdAt` espacés pour les tris, seed exécuté avant `seed.test.ts`.
-  - _Trous de couverture connus :_ `cityId` invalide à la création d'offre, `cityName: null`, interaction `CityAutocomplete` dans `JobOfferForm`.
+  - _Trous de couverture connus :_ `cityId` invalide à la création d'offre, `cityName: null` côté router (couvert seulement dans `JobOfferCard`), interaction `CityAutocomplete` dans `JobOfferForm`.
 
-- [ ] **La RLS n'est jamais exercée par les tests**
-  `scripts/test-db.sh` stubbe `auth.uid()` à `NULL` et les tests tournent en propriétaire. Ajouter quelques tests qui se connectent avec un rôle `authenticated` et un JWT simulé.
+- [ ] **Aucun test ne vérifie que l'API REST Supabase reste fermée**
+  Les tests DB tournent en propriétaire. Ajouter un test DB qui vérifie, pour chaque table `public`, `has_table_privilege('anon' | 'authenticated', …) = false` et `relrowsecurity = true` : une future migration qui rouvrirait un droit serait détectée.
+
+- [ ] **pa11y n'audite que `/login`**
+  `bun run a11y` cible `/dashboard` et `/settings/team`, pages protégées : sans session, `proxy.ts` redirige vers `/login`. Ajouter une page publique (`/`, `/register`, une fiche `/share`) ou authentifier pa11y (actions de login).
 
 - [ ] **Faux vert possible sur les tests DB**
-  `describe.runIf` skippe silencieusement les 14 fichiers de `__tests__/db` si `DATABASE_URL` est absent. Faire échouer la CI dans ce cas.
+  `describe.runIf` skippe silencieusement les 14 fichiers de `__tests__/db` si `DATABASE_URL` est absent. `bun run test:db` le définit toujours (`scripts/test-db.sh`) ; le risque ne concerne qu'un `bun run vitest` lancé directement. Faire échouer ces fichiers au lieu de les ignorer.
 
 - [ ] **Avertissements « not wrapped in act » restants**
   11 avertissements, sans échec : `OfferNotesSection` (×5) met à jour son état après un `supabase.auth.getUser()` asynchrone, hors `act` → attendre cet état dans ses tests (`findBy*` / `waitFor`) ; `SiteNavbar.a11y` (×6) vient de l'état interne de `next/link` (`LinkComponent`) → attendre la fin du rendu ou mocker `next/link`.
@@ -69,10 +95,10 @@ Cocher `[x]` une tâche livrée ; les tâches cochées sont retirées à la mise
   `.prettierrc` impose `semi: true` mais ~45 % des fichiers n'ont pas de `;` ; `bun run format:check` échoue sur ~185 fichiers et tout `prettier --write` reformate des fichiers entiers (diffs illisibles). Faire un commit de reformatage global unique (`bun run format`), puis ajouter `format:check` à la CI.
 
 - [ ] **Erreurs Prisma brutes côté client**
-  Pas d'`errorFormatter` tRPC : un `connect` sur un `cityId` invalide (offres) ou un `createMany` de `CandidateCity` en erreur remonte en 500 brut. Ajouter un `errorFormatter` qui mappe P2002/P2003/P2025 vers des codes tRPC et des messages génériques.
+  Pas d'`errorFormatter` tRPC : un `connect` sur un `cityId` invalide (offres) ou un `createMany` de `CandidateCity` / `ClientCompanyCity` en erreur remonte en 500 brut. Ajouter un `errorFormatter` qui mappe P2002/P2003/P2025 vers des codes tRPC et des messages génériques.
 
 - [ ] **Recherche de villes sans index**
-  `unaccent(name) ILIKE 'x%'` fait un scan complet de la table `City` à chaque frappe (l'index trigram a été supprimé par la migration `city_drift_fix`). Créer un index fonctionnel adapté (ex. `unaccent` immutable + `text_pattern_ops`, ou trigram).
+  `unaccent(name) ILIKE 'x%'` fait un scan complet de la table `cities` à chaque frappe (l'index trigram a été supprimé par la migration `city_drift_fix`). Créer un index fonctionnel adapté (ex. `unaccent` immutable + `text_pattern_ops`, ou trigram).
 
 - [ ] **Petits défauts vérifiés dans le code**
   - [ ] `candidate.list` : `filter(Boolean)` sans effet — la longueur est testée sur le tableau filtré mais c'est le tableau d'origine qui est passé (`src/server/trpc/routers/candidate.ts`).
@@ -85,6 +111,9 @@ Cocher `[x]` une tâche livrée ; les tâches cochées sont retirées à la mise
   - [ ] 15 assertions `ctx.user!` restantes (`client.ts` ×5, `offer.ts` ×4, `candidate.ts` ×3, `candidature.ts` ×2, `shareLink.ts` ×1) alors que `protectedProcedure` type déjà `ctx.user`.
   - [ ] Route `/search` non protégée par `src/proxy.ts` (les procédures tRPC restent protégées : pas de fuite, mais pas de redirection vers `/login`).
   - [ ] Fiche anonyme : UUIDs d'expériences/formations présents dans le DTO ; CTA « Contactez [cabinet] » sans `mailto` (pas d'email sur `Company`).
+  - [ ] Schémas Zod contraires aux standards : `z.string().email()` (forme Zod 3) dans `src/lib/validations/auth.ts`, et pas de `.max()` sur les chaînes du schéma public `register`.
+  - [ ] `&apos;` dans du JSX (4 fichiers, dont `src/app/page.tsx`) au lieu d'une apostrophe typographique.
+  - [ ] Commentaire faux dans `src/server/trpc/routers/city.ts` : les bbox de repli ne sont pas interrogées « seulement si l'Europe ne renvoie rien », les 3 le sont en parallèle.
 
 - [ ] **Questionner React Hook Form sur les formulaires candidat** _(story 5.4)_
   `candidates/new` et `candidates/[id]/edit` mélangent RHF (champs scalaires) et `useState` (villes, photo, préchargement). Évaluer un simple `useState` + `safeParse(candidateSchema)` au submit. Regarder offre/client avant de généraliser.
@@ -92,7 +121,7 @@ Cocher `[x]` une tâche livrée ; les tâches cochées sont retirées à la mise
 - [ ] **Dépendances transitives dépréciées** _(signalées le 2026-10-11)_
   - `@ungap/structured-clone@1.3.0` (prod, via `@blocknote/core` → `rehype-remark`) — ⚠️ _Potential CWE-502_, corrigé en `1.3.1+`
   - `basic-ftp@5.1.0` (dev, via `pa11y` → `puppeteer`) — ⚠️ vulnérabilité corrigée en `5.2.1+`
-  - `uuid@8.3.2` — plus maintenu
+  - `uuid@8.3.2` (prod, via `@blocknote/core`) — plus maintenu ; disparaît avec la migration vers Tiptap
   - _Pistes :_ monter le parent (`@blocknote/*`, `pa11y`) ; sinon `overrides` (package.json) ciblé en version exacte. Vérifier la chaîne avec `bun why <pkg>`.
 
 ---
