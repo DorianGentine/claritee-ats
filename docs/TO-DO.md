@@ -2,18 +2,13 @@
 
 Source de vérité pour les prochaines actions de développement, par urgence puis par thème. Les épics 1 à 5 (MVP + villes structurées) sont livrés — voir `prd.md`. L'historique complet des stories, rétros et rapports QA est dans le tag git `docs-archive-2026-10`.
 
-Dernière mise à jour : 2026-10-15
+Dernière mise à jour : 2026-10-17
 
 Cocher `[x]` une tâche livrée ; les tâches cochées sont retirées à la mise à jour suivante.
 
 ---
 
 ## 🔥 Urgent — bugs et sécurité
-
-- [ ] **Déployer en prod la fermeture de l'API REST Supabase**
-  La migration `20300102000000_revoke_data_api_access` (droits `anon`/`authenticated` révoqués, RLS partout) et le correctif `/share` attendent un déploiement de production réussi.
-  - _Config Vercel (Production) :_ `DIRECT_DATABASE_URL` = `DATABASE_URL` avec le port 5432 et sans `?pgbouncer=true` (pooler Session, utilisateur `postgres.<ref>`), puis redéployer.
-  - _Vérifier :_ logs de build `Applying migration …` ; dans le SQL Editor, `rls` à `true` partout, aucun droit ni privilège par défaut de `postgres` vers `anon`/`authenticated`.
 
 - [ ] **Policies RLS en récursion infinie**
   `user_select_same_company` interroge `User` depuis une policy de `User` → `infinite recursion detected` pour tout rôle non propriétaire, et donc toutes les policies tenant (sous-requête sur `User`) échouent. Sans effet tant que la Data API est fermée ; à corriger (fonction `SECURITY DEFINER` renvoyant le `companyId` courant) avant toute utilisation de la Data API.
