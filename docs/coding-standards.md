@@ -1,6 +1,6 @@
 # Claritee ATS — Standards de code
 
-> Règles à suivre pour écrire du code dans ce repo (humains et agents) : style, nommage, API, frontend, tests, pièges connus. Dernière mise à jour : 2026-10-17.
+> Règles à suivre pour écrire du code dans ce repo (humains et agents) : style, nommage, API, frontend, tests, pièges connus. Dernière mise à jour : 2026-10-18.
 
 Architecture (flux, RLS, auth, routers, modèle de données, déploiement) : `docs/architecture.md`. Exigences produit : `docs/prd.md`. En cas de contradiction avec la config ou le code, **le code fait foi**.
 
@@ -253,6 +253,7 @@ Leçons tirées des stories passées, vérifiées contre le code actuel. Sécuri
 | tRPC/API       | Pas d'`errorFormatter` : P2002 / P2003 remontent en 500 brut                                           | Valider en amont : `.refine` d'unicité Zod, `findFirst` avant `connect`, `skipDuplicates`.                                                                                                         |
 | tRPC/API       | Schéma d'update avec tableau de relations `.default([])` → tout est effacé si le champ est absent      | `.optional()` sans défaut ; ne remplacer que si `!== undefined`.                                                                                                                                   |
 | tRPC/API       | Endpoint public : `z.string()` sans borne                                                              | `.max()` sur tout `z.string()` public, même `maxLength` côté UI.                                                                                                                                   |
+| tRPC/API       | Fichier Storage lié à une ligne (photo, CV) : supprimer la ligne laisse le fichier (la cascade Prisma ne touche pas le Storage) | Supprimer le fichier dans la même procédure, avant la ligne, via les helpers de `src/server/candidateStorage.ts` (toutes extensions). |
 | tRPC/API       | Fetch externe : `response.json()` sans vérifier `ok` ni timeout                                        | Vérifier `response.ok`, `AbortSignal.timeout(…)`, logger et renvoyer un résultat vide en cas d'échec.                                                                                              |
 | TanStack Query | Reset de l'état UI avant la fin de la mutation → saisie perdue en cas d'erreur                         | `mutate(input, { onSuccess })` (s'ajoute aux callbacks du hook).                                                                                                                                   |
 | TanStack Query | `placeholderData: keepPreviousData` renvoie les anciennes données même avec `enabled: false`           | Vider explicitement quand la saisie repasse sous le seuil.                                                                                                                                         |
