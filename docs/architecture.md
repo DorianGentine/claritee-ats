@@ -1,6 +1,6 @@
 # Claritee ATS — Architecture technique
 
-> Référence technique (flux, multi-tenancy, auth, API, données, déploiement, tests, décisions). Dernière mise à jour : 2026-10-17.
+> Référence technique (flux, multi-tenancy, auth, API, données, déploiement, tests, décisions). Dernière mise à jour : 2026-10-18.
 
 Conventions de code, nommage et pièges : `docs/coding-standards.md`. Exigences produit : `docs/prd.md`. En cas de contradiction avec le code, **le code fait foi**.
 
@@ -256,8 +256,9 @@ Index notables : `Candidate(companyId, firstName, lastName, title)`, `JobOffer(c
 
 | Sujet                  | Règle                                                                                                                                                                                                                                  |
 | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Chemins                | `{companyId}/candidates/{candidateId}/photo.{ext}` et `.../cv.{ext}` — préfixe tenant ; un nouvel upload écrase le fichier de même extension, mais une extension différente laisse l'ancien en place (voir `TO-DO.md`).                                                                                                          |
-| Écriture / suppression | Uniquement côté serveur, via le client admin (secret key) dans les procédures `candidate.uploadPhoto`, `uploadCv`, `deleteCv` ; fichier envoyé en base64 dans l'input tRPC. Les policies Storage sont donc contournées par conception. |
+| Chemins                | `{companyId}/candidates/{candidateId}/photo.{ext}` et `.../cv.{ext}` — préfixe tenant, construits par `src/server/candidateStorage.ts`. Un nouvel upload écrase le fichier de même extension, puis supprime les variantes des autres extensions. |
+| Écriture / suppression | Uniquement côté serveur, via le client admin (secret key) dans les procédures `candidate.uploadPhoto`, `uploadCv`, `deleteCv`, `delete` ; fichier envoyé en base64 dans l'input tRPC. Les policies Storage sont donc contournées par conception. |
+| Suppression d'un candidat | `candidate.delete` supprime photo et CV (toutes extensions) **avant** la ligne ; si le Storage échoue, le candidat est conservé et l'erreur remontée, pour ne jamais laisser de fichier orphelin (RGPD). Un échec du nettoyage après upload ou dans `deleteCv` est seulement logué : `bun run storage:orphans` rattrape ces fichiers. |
 | Lecture CV             | `candidate.getCvDownloadUrl` (authentifié) ou `candidate.getCvDownloadUrlByShareToken` (page publique : token + expiration validés, rate limit IP).                                                                                    |
 | `Candidate.cvUrl`      | URL de référence non exploitable directement (bucket privé) ; `cvFileName` conserve le nom d'origine.                                                                                                                                  |
 | Provisionnement        | Buckets `photos` (public) et `cvs` (privé) créés manuellement dans le dashboard Supabase **et dans le Studio local** (http://127.0.0.1:54323) : non déclarés dans `supabase/config.toml` ni dans les migrations, une stack locale neuve ne les a pas.                                                                                                             |
@@ -295,6 +296,7 @@ Modèle : `.env.example`.
 | `bun run db:local:start` / `db:local:stop` | Démarre / arrête la stack Supabase locale (données conservées)                                                                             |
 | `bun run db:local:reset`                   | Base locale vierge puis `prisma migrate deploy` (sans données)                                                                             |
 | `bun run db:pull:prod`                     | Copie les données prod (`public` + `auth.users`/`auth.identities`) vers la base locale, après confirmation ; refuse toute cible non locale |
+| `bun run storage:orphans [--env-file .env.prod.local] [--apply]` | Liste les fichiers des buckets `photos` / `cvs` non référencés par un candidat (candidat supprimé, fichier remplacé ou retiré) ; `--apply` les supprime après confirmation. Les chemins hors convention sont listés, jamais supprimés. Cible par défaut : `.env.local` |
 | `bun run prisma db seed`                | Seed de dev (`prisma/seed.ts`) : cabinet, utilisateur et invitation de démo, puis pré-remplissage de `cities` via Photon (`scripts/seed-cities.ts`, réseau) |
 
 ### Migrations

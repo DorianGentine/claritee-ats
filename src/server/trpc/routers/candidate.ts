@@ -28,6 +28,11 @@ import {
 import { getTagColor } from "@/lib/tag-colors"
 import { checkRateLimit, checkMutationRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  getCandidateFilePath,
+  getCvStorageExt,
+  removeCandidateFile,
+} from "@/server/candidateStorage";
 
 /** Magic bytes PDF (%PDF) */
 const PDF_SIGNATURE = (buf: Buffer) =>
@@ -66,20 +71,18 @@ const IMAGE_SIGNATURES: Record<
     buf[11] === 0x50,
 };
 
-/** Dérive l'extension valide pour le chemin Storage CV */
-const getCvStorageExt = (cvFileName: string | null): string => {
-  const ext = cvFileName?.split(".").pop()?.toLowerCase();
-  return ["pdf", "doc", "docx"].includes(ext ?? "") ? (ext as string) : "pdf";
-};
-
 /** Génère une URL signée (15 min) pour le CV dans le bucket cvs */
 const createCvSignedUrl = async (
   companyId: string,
   candidateId: string,
   cvFileName: string | null,
 ): Promise<string> => {
-  const ext = getCvStorageExt(cvFileName);
-  const storagePath = `${companyId}/candidates/${candidateId}/cv.${ext}`;
+  const storagePath = getCandidateFilePath(
+    companyId,
+    candidateId,
+    "cvs",
+    getCvStorageExt(cvFileName),
+  );
   const supabase = createAdminClient();
   const { data, error } = await supabase.storage
     .from("cvs")
@@ -245,6 +248,8 @@ export const candidateRouter = router({
 
   /**
    * Supprime un candidat du cabinet. Vérifie companyId ; cascade Prisma gère les relations.
+   * Photo et CV sont supprimés du Storage avant la ligne : en cas d'échec Storage, le candidat
+   * est conservé pour ne pas laisser de fichier orphelin (RGPD).
    */
   delete: protectedProcedure
     .input(z.object({ id: z.uuid() }))
@@ -255,6 +260,20 @@ export const candidateRouter = router({
       });
       if (!existing) {
         throw new TRPCError({ code: "NOT_FOUND" });
+      }
+      const supabase = createAdminClient();
+      const storageErrors = (
+        await Promise.all([
+          removeCandidateFile(supabase, ctx.companyId, input.id, "photos"),
+          removeCandidateFile(supabase, ctx.companyId, input.id, "cvs"),
+        ])
+      ).filter((error) => error !== null);
+      if (storageErrors.length > 0) {
+        console.error("[candidate.delete] Storage remove failed:", storageErrors);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Une erreur est survenue. Réessayez.",
+        });
       }
       await ctx.db.candidate.delete({ where: { id: input.id } });
       return { success: true };
@@ -639,6 +658,7 @@ export const candidateRouter = router({
   /**
    * Upload une photo pour un candidat existant.
    * Rate limit : 30 uploads/heure par utilisateur. Formats : JPG, PNG, WebP. Max 2 Mo.
+   * Une photo précédente d'une autre extension est supprimée du Storage.
    */
   uploadPhoto: protectedProcedure
     .input(uploadPhotoSchema)
@@ -691,7 +711,12 @@ export const candidateRouter = router({
         "image/webp": "webp",
       };
       const ext = extMap[input.mimeType];
-      const storagePath = `${ctx.companyId}/candidates/${input.candidateId}/photo.${ext}`;
+      const storagePath = getCandidateFilePath(
+        ctx.companyId,
+        input.candidateId,
+        "photos",
+        ext,
+      );
 
       const supabase = createAdminClient();
       const { error } = await supabase.storage
@@ -717,12 +742,24 @@ export const candidateRouter = router({
         where: { id: input.candidateId },
         data: { photoUrl: publicUrl },
       });
+
+      const cleanupError = await removeCandidateFile(
+        supabase,
+        ctx.companyId,
+        input.candidateId,
+        "photos",
+        ext,
+      );
+      if (cleanupError) {
+        console.warn("[uploadPhoto] Previous photo removal failed:", cleanupError);
+      }
       return updated;
     }),
 
   /**
    * Upload un CV pour un candidat existant.
    * Rate limit : 30 uploads/heure par utilisateur (partagé avec photo). Formats : PDF, DOC, DOCX. Max 5 Mo.
+   * Un CV précédent d'une autre extension est supprimé du Storage.
    */
   uploadCv: protectedProcedure
     .input(uploadCvSchema)
@@ -775,7 +812,12 @@ export const candidateRouter = router({
           "docx",
       };
       const ext = extMap[input.mimeType];
-      const storagePath = `${ctx.companyId}/candidates/${input.candidateId}/cv.${ext}`;
+      const storagePath = getCandidateFilePath(
+        ctx.companyId,
+        input.candidateId,
+        "cvs",
+        ext,
+      );
 
       const supabase = createAdminClient();
       const { error } = await supabase.storage
@@ -801,6 +843,17 @@ export const candidateRouter = router({
         where: { id: input.candidateId },
         data: { cvUrl: publicUrl, cvFileName: input.fileName },
       });
+
+      const cleanupError = await removeCandidateFile(
+        supabase,
+        ctx.companyId,
+        input.candidateId,
+        "cvs",
+        ext,
+      );
+      if (cleanupError) {
+        console.warn("[uploadCv] Previous CV removal failed:", cleanupError);
+      }
       return updated;
     }),
 
@@ -818,14 +871,12 @@ export const candidateRouter = router({
       }
 
       if (candidate.cvUrl || candidate.cvFileName) {
-        const ext =
-          candidate.cvFileName?.split(".").pop()?.toLowerCase();
-        const validExt = ["pdf", "doc", "docx"].includes(ext ?? "")
-          ? ext
-          : "pdf";
-        const storagePath = `${ctx.companyId}/candidates/${input.candidateId}/cv.${validExt}`;
-        const supabase = createAdminClient();
-        const { error } = await supabase.storage.from("cvs").remove([storagePath]);
+        const error = await removeCandidateFile(
+          createAdminClient(),
+          ctx.companyId,
+          input.candidateId,
+          "cvs",
+        );
         if (error) {
           console.warn("[deleteCv] Storage remove failed (continuing):", error);
         }
