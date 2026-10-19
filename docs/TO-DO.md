@@ -23,8 +23,8 @@ Cocher `[x]` une tâche livrée ; les tâches cochées sont retirées à la mise
 - [ ] **Upload de CV probablement refusé au-delà d'environ 3,3 Mo en prod**
   Les fichiers transitent en base64 dans l'input tRPC (+33 %) : un CV de 5 Mo (limite NFR15) fait environ 6,7 Mo de corps de requête, au-delà de la limite de 4,5 Mo des fonctions Vercel. À confirmer en prod ; piste : URL d'upload signée Supabase (upload direct depuis le navigateur).
 
-- [ ] **Fichiers orphelins dans le Storage (RGPD, NFR9)**
-  `candidate.delete` laisse la photo et le CV dans le Storage ; un upload d'une extension différente (`photo.png` après `photo.jpg`) laisse l'ancien fichier. Aucune procédure de suppression pour un client, un lien de partage, un utilisateur ou un cabinet.
+- [ ] **Suppression de données incomplète (RGPD, NFR9)**
+  Aucune procédure de suppression pour un client, un lien de partage, un utilisateur ou un cabinet. La suppression d'un cabinet devra aussi vider son préfixe `{companyId}/` dans les buckets `photos` et `cvs` (la cascade Prisma ne touche pas le Storage) et supprimer les comptes Supabase Auth de ses utilisateurs.
 
 ---
 
@@ -115,6 +115,8 @@ Cocher `[x]` une tâche livrée ; les tâches cochées sont retirées à la mise
   - [ ] Liste candidats : « X candidats trouvés » affiche `items.length` (plafonné à la page, 20) et non le total.
   - [ ] Filtres offres en state local (non présents dans l'URL, perdus au retour arrière), contrairement aux candidats.
   - [ ] `CvDownloadLink` appelle `window.open` après un `await` : bloqué par Safari sans message à l'utilisateur.
+  - [ ] Téléchargement de CV en 404 si le nom d'origine n'a pas l'extension du type MIME (`CV` ou `cv.txt` envoyé en DOCX) : le fichier est stocké en `cv.{ext du MIME}` mais `createCvSignedUrl` déduit l'extension de `cvFileName`. Dériver le chemin de `cvUrl`, ou refuser un `fileName` incohérent dans `uploadCvSchema`.
+  - [ ] Deux uploads de photo (ou de CV) d'extensions différentes qui se chevauchent pour un même candidat (double envoi, deux onglets) : le nettoyage du premier peut supprimer le fichier du second, auquel la base pointe alors. Corriger demande de sérialiser les uploads par candidat ou un nom de fichier unique par upload.
   - [ ] 15 assertions `ctx.user!` restantes (`client.ts` ×5, `offer.ts` ×4, `candidate.ts` ×3, `candidature.ts` ×2, `shareLink.ts` ×1) alors que `protectedProcedure` type déjà `ctx.user`.
   - [ ] Route `/search` non protégée par `src/proxy.ts` (les procédures tRPC restent protégées : pas de fuite, mais pas de redirection vers `/login`).
   - [ ] Fiche anonyme : UUIDs d'expériences/formations présents dans le DTO ; CTA « Contactez [cabinet] » sans `mailto` (pas d'email sur `Company`).

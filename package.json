@@ -23,7 +23,8 @@
     "db:local:start": "supabase start",
     "db:local:stop": "supabase stop",
     "db:local:reset": "supabase db reset --no-seed && prisma migrate deploy",
-    "db:pull:prod": "bash scripts/db-pull-prod.sh"
+    "db:pull:prod": "bash scripts/db-pull-prod.sh",
+    "storage:orphans": "tsx scripts/storage-orphans.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "6.3.1",

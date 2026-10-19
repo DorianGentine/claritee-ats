@@ -10,12 +10,19 @@ import {
 
 const connectionString = process.env.DATABASE_URL;
 
+const { storageRemove } = vi.hoisted(() => ({
+  storageRemove: vi.fn(
+    (_bucket: string, _paths: string[]): Promise<{ error: Error | null }> =>
+      Promise.resolve({ error: null })
+  ),
+}));
+
 vi.mock("@/lib/supabase/admin", () => ({
   createAdminClient: () => ({
     storage: {
       from: (bucket: string) => ({
         upload: () => Promise.resolve({ error: null }),
-        remove: () => Promise.resolve({ error: null }),
+        remove: (paths: string[]) => storageRemove(bucket, paths),
         getPublicUrl: (path: string) => ({
           data: {
             publicUrl: `https://storage.example.com/${bucket}/${path}`,
@@ -486,6 +493,29 @@ describe.runIf(!!connectionString)("candidate", () => {
     });
   });
 
+  it("uploadPhoto: removes a previous photo with another extension, not the new one", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+    storageRemove.mockClear();
+
+    await caller.candidate.uploadPhoto({
+      candidateId: candidateA1Id,
+      fileBase64: minimalJpegBase64,
+      mimeType: "image/jpeg",
+    });
+
+    const prefix = `${companyAId}/candidates/${candidateA1Id}`;
+    expect(storageRemove).toHaveBeenCalledWith("photos", [
+      `${prefix}/photo.png`,
+      `${prefix}/photo.webp`,
+    ]);
+
+    await db.candidate.update({
+      where: { id: candidateA1Id },
+      data: { photoUrl: null },
+    });
+  });
+
   it("uploadPhoto: rejects file exceeding 2 MB with PRD message", async () => {
     const ctx = createContext(companyAId);
     const caller = appRouter.createCaller(ctx);
@@ -613,6 +643,31 @@ describe.runIf(!!connectionString)("candidate", () => {
     });
   });
 
+  it("uploadCv: removes a previous CV with another extension, not the new one", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+    storageRemove.mockClear();
+
+    await caller.candidate.uploadCv({
+      candidateId: candidateA2Id,
+      fileBase64: Buffer.from("docx").toString("base64"),
+      mimeType:
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      fileName: "cv.docx",
+    });
+
+    const prefix = `${companyAId}/candidates/${candidateA2Id}`;
+    expect(storageRemove).toHaveBeenCalledWith("cvs", [
+      `${prefix}/cv.pdf`,
+      `${prefix}/cv.doc`,
+    ]);
+
+    await db.candidate.update({
+      where: { id: candidateA2Id },
+      data: { cvUrl: null, cvFileName: null },
+    });
+  });
+
   it("uploadCv: rejects file exceeding 5 MB with PRD message", async () => {
     const ctx = createContext(companyAId);
     const caller = appRouter.createCaller(ctx);
@@ -691,8 +746,16 @@ describe.runIf(!!connectionString)("candidate", () => {
       fileName: "to-delete.pdf",
     });
 
+    storageRemove.mockClear();
     const result = await caller.candidate.deleteCv({ candidateId: candidateA2Id });
     expect(result.success).toBe(true);
+
+    const prefix = `${companyAId}/candidates/${candidateA2Id}`;
+    expect(storageRemove).toHaveBeenCalledWith("cvs", [
+      `${prefix}/cv.pdf`,
+      `${prefix}/cv.doc`,
+      `${prefix}/cv.docx`,
+    ]);
 
     const inDb = await db.candidate.findUniqueOrThrow({
       where: { id: candidateA2Id },
@@ -863,6 +926,55 @@ describe.runIf(!!connectionString)("candidate", () => {
       where: { id: created.id },
     });
     expect(inDb).toBeNull();
+  });
+
+  it("delete: removes photo and CV from Storage", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+    const created = await caller.candidate.create({
+      firstName: "ToDelete",
+      lastName: "WithFiles",
+    });
+    storageRemove.mockClear();
+
+    await caller.candidate.delete({ id: created.id });
+
+    const prefix = `${companyAId}/candidates/${created.id}`;
+    expect(storageRemove).toHaveBeenCalledWith("photos", [
+      `${prefix}/photo.jpg`,
+      `${prefix}/photo.png`,
+      `${prefix}/photo.webp`,
+    ]);
+    expect(storageRemove).toHaveBeenCalledWith("cvs", [
+      `${prefix}/cv.pdf`,
+      `${prefix}/cv.doc`,
+      `${prefix}/cv.docx`,
+    ]);
+  });
+
+  it("delete: keeps the candidate when Storage removal fails", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+    const created = await caller.candidate.create({
+      firstName: "Kept",
+      lastName: "StorageDown",
+    });
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    storageRemove.mockResolvedValueOnce({ error: new Error("Storage down") });
+
+    try {
+      await expect(
+        caller.candidate.delete({ id: created.id }),
+      ).rejects.toMatchObject({ code: "INTERNAL_SERVER_ERROR" });
+
+      const stillExists = await db.candidate.findUnique({
+        where: { id: created.id },
+      });
+      expect(stillExists).not.toBeNull();
+    } finally {
+      consoleError.mockRestore();
+      await db.candidate.delete({ where: { id: created.id } });
+    }
   });
 
   it("delete: throws NOT_FOUND when candidate belongs to another company", async () => {
