@@ -2,7 +2,11 @@
 
 import { useEffect, useRef, useState } from "react"
 import { api } from "@/lib/trpc/client"
-import { getNoteDisplayTitle, getNoteExcerpt } from "@/lib/note-utils"
+import {
+  getNoteDisplayTitle,
+  getNoteExcerpt,
+  isNoteContentEmpty,
+} from "@/lib/note-utils"
 import { formatDateLong } from "@/lib/format"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -23,10 +27,9 @@ import {
 } from "@/components/ui/select"
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
 import {
-  NoteBlockNoteEditor,
-  type NoteBlockNoteEditorRef,
-  isBlockNoteContentEmpty,
-} from "@/components/shared/NoteBlockNoteEditor"
+  NoteEditor,
+  type NoteEditorRef,
+} from "@/components/shared/NoteEditor"
 import { Pencil, Trash2, Maximize2, Minimize2 } from "lucide-react"
 import type { RouterOutputs } from "@/lib/trpc/client"
 import { toast } from "sonner"
@@ -73,7 +76,7 @@ export default function NotesPage() {
   const [hasChanges, setHasChanges] = useState(false)
   const [unsavedDialogOpen, setUnsavedDialogOpen] = useState(false)
   const [isModalFullscreen, setIsModalFullscreen] = useState(false)
-  const editorRef = useRef<NoteBlockNoteEditorRef>(null)
+  const editorRef = useRef<NoteEditorRef>(null)
   const initialTitleRef = useRef<string>("")
   const initialContentRef = useRef<string>("")
   const currentContentRef = useRef<string>("")
@@ -151,7 +154,7 @@ export default function NotesPage() {
   const handleSaveClick = () => {
     if (!selectedId) return
     const content = editorRef.current?.getContent()
-    if (!content || isBlockNoteContentEmpty(content)) return
+    if (!content || isNoteContentEmpty(content)) return
     updateMutation.mutate({
       id: selectedId,
       content,
@@ -308,7 +311,7 @@ export default function NotesPage() {
               <label className="text-sm font-medium mb-2">Contenu</label>
               <div className="min-h-[200px] overflow-auto rounded-md border border-border bg-white">
                 {selectedNote && (
-                  <NoteBlockNoteEditor
+                  <NoteEditor
                     ref={editorRef}
                     key={selectedNote.id}
                     initialContent={selectedNote.content}

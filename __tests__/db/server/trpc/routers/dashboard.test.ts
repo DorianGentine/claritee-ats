@@ -3,12 +3,11 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import { appRouter } from "@/server/trpc/routers/_app";
 import type { Context } from "@/server/trpc/context";
+import { noteContent } from "../../../../helpers/note-content";
 
 const connectionString = process.env.DATABASE_URL;
 
-const blockNoteContent = JSON.stringify([
-  { id: "b1", type: "paragraph", content: [{ type: "text", text: "test", styles: {} }], children: [] },
-]);
+const defaultNoteContent = noteContent("test");
 
 describe.runIf(!!connectionString)("dashboard.getStats", () => {
   let db: PrismaClient;
@@ -119,7 +118,7 @@ describe.runIf(!!connectionString)("dashboard.getStats", () => {
   it.skip("recentNotes inclut les relations candidate et jobOffer", async () => {
     const note = await db.note.create({
       data: {
-        content: blockNoteContent,
+        content: defaultNoteContent,
         companyId: companyAId,
         candidateId: candidateA1Id,
         authorId: "test-user",
@@ -140,10 +139,10 @@ describe.runIf(!!connectionString)("dashboard.getStats", () => {
   // TODO(db-test-debt): échoue sur base fraîche — skippé temporairement, à corriger (voir docs/TO-DO.md)
   it.skip("recentNotes ne retourne que les notes de la société (isolation tenant)", async () => {
     const noteA = await db.note.create({
-      data: { content: blockNoteContent, companyId: companyAId, authorId: "u1" },
+      data: { content: defaultNoteContent, companyId: companyAId, authorId: "u1" },
     });
     const noteB = await db.note.create({
-      data: { content: blockNoteContent, companyId: companyBId, authorId: "u2" },
+      data: { content: defaultNoteContent, companyId: companyBId, authorId: "u2" },
     });
 
     const caller = appRouter.createCaller(createContext(companyAId));

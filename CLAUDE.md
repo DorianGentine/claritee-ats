@@ -82,7 +82,7 @@ See `prisma/schema.prisma` (source of truth) and `docs/architecture.md` (entity 
 ### Frontend patterns
 
 - Forms use **React Hook Form** + **Zod** resolver from `src/lib/validations/`
-- Rich text fields use **BlockNote**
+- Rich text fields use **Tiptap** (`NoteEditor`, formatting bubble menu on selection)
 - Toast notifications via **Sonner** (`toast.success`, `toast.error`)
 - Loading states use skeleton loaders, not spinners
 - Shared components extracted to `src/components/shared/` after the 2nd usage
