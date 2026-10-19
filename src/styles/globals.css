@@ -1,9 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@blocknote/shadcn/style.css";
-
-@source "../node_modules/@blocknote/shadcn";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -130,5 +127,43 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* Éditeur de notes (Tiptap, sans style par défaut) — voir NoteEditor */
+@layer components {
+  .note-editor .ProseMirror {
+    @apply text-sm outline-none;
+  }
+  .note-editor[data-editable] .ProseMirror {
+    @apply min-h-[7em];
+  }
+  .note-editor .ProseMirror > * + * {
+    @apply mt-2;
+  }
+  .note-editor .ProseMirror h1 {
+    @apply text-2xl font-bold;
+  }
+  .note-editor .ProseMirror h2 {
+    @apply text-xl font-semibold;
+  }
+  .note-editor .ProseMirror h3 {
+    @apply text-lg font-semibold;
+  }
+  .note-editor .ProseMirror ul {
+    @apply list-disc pl-6;
+  }
+  .note-editor .ProseMirror ol {
+    @apply list-decimal pl-6;
+  }
+  .note-editor .ProseMirror blockquote {
+    @apply border-l-2 border-border pl-3 text-muted-foreground;
+  }
+  .note-editor .ProseMirror a {
+    @apply text-primary underline;
+  }
+  .note-editor .ProseMirror p.is-editor-empty:first-child::before {
+    @apply pointer-events-none float-left h-0 text-muted-foreground;
+    content: attr(data-placeholder);
   }
 }

@@ -3,13 +3,11 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import { appRouter } from "@/server/trpc/routers/_app";
 import type { Context } from "@/server/trpc/context";
+import { noteContent } from "../../../../helpers/note-content";
 
 const connectionString = process.env.DATABASE_URL;
 
-/** Minimal BlockNote document (one paragraph) */
-const blockNoteContent = JSON.stringify([
-  { id: "block-1", type: "paragraph", content: [{ type: "text", text: "Note de test", styles: {} }], children: [] },
-]);
+const defaultNoteContent = noteContent("Note de test");
 
 describe.runIf(!!connectionString)("note", () => {
   let db: PrismaClient;
@@ -138,7 +136,7 @@ describe.runIf(!!connectionString)("note", () => {
 
     const created = await caller.note.create({
       candidateId: candidateA1Id,
-      content: blockNoteContent,
+      content: defaultNoteContent,
     });
     expect(created.id).toBeDefined();
 
@@ -146,7 +144,7 @@ describe.runIf(!!connectionString)("note", () => {
     expect(list.length).toBeGreaterThanOrEqual(1);
     expect(list.some((n) => n.id === created.id)).toBe(true);
     expect(list[0]).toMatchObject({
-      content: blockNoteContent,
+      content: defaultNoteContent,
       author: { firstName: "User", lastName: "A" },
     });
 
@@ -176,14 +174,14 @@ describe.runIf(!!connectionString)("note", () => {
 
     const created = await caller.note.create({
       candidateId: candidateA1Id,
-      content: blockNoteContent,
+      content: defaultNoteContent,
     });
 
     expect(created.id).toBeDefined();
     expect(created.authorId).toBe(userAId);
     expect(created.companyId).toBe(companyAId);
     expect(created.candidateId).toBe(candidateA1Id);
-    expect(created.content).toBe(blockNoteContent);
+    expect(created.content).toBe(defaultNoteContent);
     expect(created.author).toEqual({ firstName: "User", lastName: "A" });
 
     await db.note.delete({ where: { id: created.id } });
@@ -196,7 +194,7 @@ describe.runIf(!!connectionString)("note", () => {
     await expect(
       caller.note.create({
         candidateId: candidateB1Id,
-        content: blockNoteContent,
+        content: defaultNoteContent,
       })
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
@@ -207,12 +205,10 @@ describe.runIf(!!connectionString)("note", () => {
 
     const created = await caller.note.create({
       candidateId: candidateA1Id,
-      content: blockNoteContent,
+      content: defaultNoteContent,
     });
 
-    const updatedContent = JSON.stringify([
-      { id: "block-2", type: "paragraph", content: [{ type: "text", text: "Note modifiée", styles: {} }], children: [] },
-    ]);
+    const updatedContent = noteContent("Note modifiée");
     const updated = await caller.note.update({
       id: created.id,
       content: updatedContent,
@@ -228,7 +224,7 @@ describe.runIf(!!connectionString)("note", () => {
     const callerA = appRouter.createCaller(ctxA);
     const created = await callerA.note.create({
       candidateId: candidateA1Id,
-      content: blockNoteContent,
+      content: defaultNoteContent,
     });
 
     const ctxB = createContext(companyAId, userBId);
@@ -237,7 +233,7 @@ describe.runIf(!!connectionString)("note", () => {
     await expect(
       callerB.note.update({
         id: created.id,
-        content: JSON.stringify([{ id: "x", type: "paragraph", content: [], children: [] }]),
+        content: noteContent(""),
       })
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
 
@@ -249,7 +245,7 @@ describe.runIf(!!connectionString)("note", () => {
     const callerA = appRouter.createCaller(ctxA);
     const created = await callerA.note.create({
       candidateId: candidateA1Id,
-      content: blockNoteContent,
+      content: defaultNoteContent,
     });
 
     const ctxC = createContext(companyBId, userCId);
@@ -258,7 +254,7 @@ describe.runIf(!!connectionString)("note", () => {
     await expect(
       callerC.note.update({
         id: created.id,
-        content: blockNoteContent,
+        content: defaultNoteContent,
       })
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
 
@@ -271,7 +267,7 @@ describe.runIf(!!connectionString)("note", () => {
 
     const created = await caller.note.create({
       candidateId: candidateA1Id,
-      content: blockNoteContent,
+      content: defaultNoteContent,
     });
 
     const result = await caller.note.delete({ id: created.id });
@@ -286,7 +282,7 @@ describe.runIf(!!connectionString)("note", () => {
     const callerA = appRouter.createCaller(ctxA);
     const created = await callerA.note.create({
       candidateId: candidateA1Id,
-      content: blockNoteContent,
+      content: defaultNoteContent,
     });
 
     const ctxB = createContext(companyAId, userBId);
@@ -304,7 +300,7 @@ describe.runIf(!!connectionString)("note", () => {
     const callerA = appRouter.createCaller(ctxA);
     const created = await callerA.note.create({
       candidateId: candidateA1Id,
-      content: blockNoteContent,
+      content: defaultNoteContent,
     });
 
     const ctxC = createContext(companyBId, userCId);
@@ -321,8 +317,8 @@ describe.runIf(!!connectionString)("note", () => {
     const ctx = createContext(companyAId, userAId);
     const caller = appRouter.createCaller(ctx);
 
-    const n1 = await caller.note.create({ offerId: offerA1Id, content: blockNoteContent });
-    const n2Content = JSON.stringify([{ id: "b2", type: "paragraph", content: [{ type: "text", text: "Note 2", styles: {} }], children: [] }]);
+    const n1 = await caller.note.create({ offerId: offerA1Id, content: defaultNoteContent });
+    const n2Content = noteContent("Note 2");
     const n2 = await caller.note.create({ offerId: offerA1Id, content: n2Content });
 
     const list = await caller.note.listByOffer({ offerId: offerA1Id });
@@ -357,7 +353,7 @@ describe.runIf(!!connectionString)("note", () => {
     const ctx = createContext(companyAId, userAId);
     const caller = appRouter.createCaller(ctx);
 
-    const created = await caller.note.create({ offerId: offerA1Id, content: blockNoteContent });
+    const created = await caller.note.create({ offerId: offerA1Id, content: defaultNoteContent });
 
     expect(created.id).toBeDefined();
     expect(created.authorId).toBe(userAId);
@@ -374,7 +370,7 @@ describe.runIf(!!connectionString)("note", () => {
     const callerB = appRouter.createCaller(ctxB);
 
     await expect(
-      callerB.note.create({ offerId: offerA1Id, content: blockNoteContent })
+      callerB.note.create({ offerId: offerA1Id, content: defaultNoteContent })
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 
@@ -383,7 +379,7 @@ describe.runIf(!!connectionString)("note", () => {
     const caller = appRouter.createCaller(ctx);
 
     const created = await caller.note.create({
-      content: blockNoteContent,
+      content: defaultNoteContent,
       title: "Ma note libre",
     });
 
@@ -391,7 +387,7 @@ describe.runIf(!!connectionString)("note", () => {
     expect(created.candidateId).toBeNull();
     expect(created.offerId).toBeNull();
     expect(created.title).toBe("Ma note libre");
-    expect(created.content).toBe(blockNoteContent);
+    expect(created.content).toBe(defaultNoteContent);
 
     await db.note.delete({ where: { id: created.id } });
   });
@@ -400,9 +396,9 @@ describe.runIf(!!connectionString)("note", () => {
     const ctx = createContext(companyAId, userAId);
     const caller = appRouter.createCaller(ctx);
 
-    const n1 = await caller.note.create({ content: blockNoteContent, title: "Note 1" });
+    const n1 = await caller.note.create({ content: defaultNoteContent, title: "Note 1" });
     const n2 = await caller.note.create({
-      content: JSON.stringify([{ id: "b2", type: "paragraph", content: [{ type: "text", text: "Note 2", styles: {} }], children: [] }]),
+      content: noteContent("Note 2"),
       title: "Note 2",
     });
 
@@ -419,7 +415,7 @@ describe.runIf(!!connectionString)("note", () => {
     const caller = appRouter.createCaller(ctx);
 
     const created = await caller.note.create({
-      content: blockNoteContent,
+      content: defaultNoteContent,
       title: "Titre initial",
     });
 
@@ -438,7 +434,7 @@ describe.runIf(!!connectionString)("note", () => {
     const caller = appRouter.createCaller(ctx);
 
     const created = await caller.note.create({
-      content: blockNoteContent,
+      content: defaultNoteContent,
       title: "Note à déplacer",
     });
     expect(created.candidateId).toBeNull();
@@ -466,7 +462,7 @@ describe.runIf(!!connectionString)("note", () => {
     const caller = appRouter.createCaller(ctx);
 
     const created = await caller.note.create({
-      content: blockNoteContent,
+      content: defaultNoteContent,
       title: "Note libre",
     });
 
@@ -484,7 +480,7 @@ describe.runIf(!!connectionString)("note", () => {
     const ctxA = createContext(companyAId, userAId);
     const callerA = appRouter.createCaller(ctxA);
     const created = await callerA.note.create({
-      content: blockNoteContent,
+      content: defaultNoteContent,
       title: "Note libre",
     });
 
@@ -506,7 +502,7 @@ describe.runIf(!!connectionString)("note", () => {
     const caller = appRouter.createCaller(ctx);
 
     const created = await caller.note.create({
-      content: blockNoteContent,
+      content: defaultNoteContent,
       title: "Note à déplacer vers offre",
     });
     expect(created.candidateId).toBeNull();
@@ -531,7 +527,7 @@ describe.runIf(!!connectionString)("note", () => {
     const caller = appRouter.createCaller(ctx);
 
     const created = await caller.note.create({
-      content: blockNoteContent,
+      content: defaultNoteContent,
       title: "Note libre B",
     });
 

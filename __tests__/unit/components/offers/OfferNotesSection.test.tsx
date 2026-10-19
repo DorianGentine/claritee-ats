@@ -6,6 +6,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 import { render, screen, fireEvent, waitFor } from "@testing-library/react"
 import { api } from "@/lib/trpc/client"
 import { OfferNotesSection } from "@/components/offers/OfferNotesSection"
+import { noteContent } from "../../../helpers/note-content"
 
 const mockCreateMutate = vi.fn()
 const mockUpdateMutate = vi.fn()
@@ -53,10 +54,9 @@ vi.mock("@/lib/trpc/client", () => ({
   },
 }))
 
-// NoteBlockNoteEditor is not testable in jsdom (uses heavy DOM APIs).
-// We stub it with a simple textarea + forwardRef to support getContent().
-vi.mock("@/components/shared/NoteBlockNoteEditor", () => ({
-  NoteBlockNoteEditor: React.forwardRef(function MockEditor(
+// NoteEditor (Tiptap) is stubbed with a simple textarea + forwardRef to support getContent().
+vi.mock("@/components/shared/NoteEditor", () => ({
+  NoteEditor: React.forwardRef(function MockEditor(
     {
       editable,
       onContentChange,
@@ -68,7 +68,7 @@ vi.mock("@/components/shared/NoteBlockNoteEditor", () => ({
   ) {
     const inputRef = React.useRef<HTMLTextAreaElement>(null)
     React.useImperativeHandle(ref, () => ({
-      getContent: () => inputRef.current?.value || "[]",
+      getContent: () => noteContent(inputRef.current?.value ?? ""),
       focus: () => inputRef.current?.focus(),
     }))
     return (
@@ -79,20 +79,19 @@ vi.mock("@/components/shared/NoteBlockNoteEditor", () => ({
       />
     )
   }),
-  isBlockNoteContentEmpty: (content: string) => !content || content === "[]",
 }))
 
 const mockNotes = [
   {
     id: "n1",
-    content: JSON.stringify([{ id: "b1", type: "paragraph", content: [], children: [] }]),
+    content: noteContent("Note 1"),
     authorId: "user-1",
     createdAt: new Date("2026-01-01T10:00:00Z"),
     author: { firstName: "Alice", lastName: "Dupont" },
   },
   {
     id: "n2",
-    content: JSON.stringify([{ id: "b2", type: "paragraph", content: [], children: [] }]),
+    content: noteContent("Note 2"),
     authorId: "user-2",
     createdAt: new Date("2026-01-02T10:00:00Z"),
     author: { firstName: "Bob", lastName: "Martin" },

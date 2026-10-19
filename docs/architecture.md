@@ -64,7 +64,7 @@ Versions exactes dans `package.json` (pas de `^`/`~`). Gestionnaire de paquets e
 | Zod                                                      | Validation partagée client/serveur                    | 4                                         |
 | React Hook Form (+ `@hookform/resolvers`)                | Formulaires                                           | 7                                         |
 | shadcn/ui (Radix, packages individuels) + Tailwind CSS   | Composants et styles                                  | Tailwind 4                                |
-| BlockNote                                                | Éditeur riche des notes (contenu stocké en JSON)      | 0.46                                      |
+| Tiptap (`@tiptap/react`, `starter-kit`)                  | Éditeur riche des notes (document JSON)               | 3                                         |
 | dnd-kit                                                  | Glisser-déposer (ordre des villes du candidat)        | 6                                         |
 | Sonner                                                   | Toasts                                                | 1                                         |
 | Vitest (+ Testing Library, jsdom, vitest-axe)            | Tests unitaires, composants, DB                       | 4                                         |
@@ -236,7 +236,7 @@ Source : `prisma/schema.prisma` (20 modèles). Toutes les FK vers le tenant sont
 | `ClientContact`                  | Contact chez le client                                                     | via ClientCompany        | Référencé par JobOffer (optionnel)                                                         |
 | `JobOffer`                       | Offre (statut TODO / IN_PROGRESS / DONE, salaire, ville)                   | `companyId`              | ClientCompany, ClientContact, City (optionnels, SetNull), OfferTag, Candidature, Note      |
 | `Candidature`                    | Lien candidat ↔ offre + statut de pipeline (unique par paire)              | via Candidate / JobOffer | —                                                                                          |
-| `Note`                           | Note BlockNote (JSON), liée à un candidat, une offre, ou libre             | `companyId`              | Auteur User                                                                                |
+| `Note`                           | Note Tiptap (JSON), liée à un candidat, une offre, ou libre                | `companyId`              | Auteur User                                                                                |
 | `ShareLink`                      | Lien public NORMAL / ANONYMOUS, expiration optionnelle                     | via Candidate            | —                                                                                          |
 | `City` (table `cities`)          | Référentiel de villes (nom, région, pays, coordonnées), unique (nom, pays) | Global                   | CandidateCity, ClientCompanyCity, JobOffer                                                 |
 | `CandidateCity`                  | Villes d'un candidat (N-N ordonnée)                                        | via Candidate            | City en `Restrict`                                                                         |

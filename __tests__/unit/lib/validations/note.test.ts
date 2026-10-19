@@ -1,9 +1,8 @@
 import { describe, it, expect } from "vitest"
 import { createNoteSchema, updateNoteSchema } from "@/lib/validations/note"
+import { noteContent } from "../../../helpers/note-content"
 
-const validContent = JSON.stringify([
-  { id: "b1", type: "paragraph", content: [{ type: "text", text: "Note", styles: {} }], children: [] },
-])
+const validContent = noteContent("Note")
 
 describe("createNoteSchema", () => {
   it("accepts note with candidateId (Story 3.9)", () => {
@@ -32,6 +31,20 @@ describe("createNoteSchema", () => {
   it("rejects empty content", () => {
     const result = createNoteSchema.safeParse({
       content: "",
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it("rejects a malformed Tiptap document", () => {
+    const result = createNoteSchema.safeParse({
+      content: JSON.stringify({ type: "doc", content: "x" }),
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it("rejects legacy BlockNote content", () => {
+    const result = createNoteSchema.safeParse({
+      content: JSON.stringify([{ type: "paragraph", content: [] }]),
     })
     expect(result.success).toBe(false)
   })

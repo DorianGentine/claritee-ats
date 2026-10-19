@@ -4,10 +4,10 @@ import { useCallback, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
 import {
-  NoteBlockNoteEditor,
-  type NoteBlockNoteEditorRef,
-  isBlockNoteContentEmpty,
-} from "@/components/shared/NoteBlockNoteEditor"
+  NoteEditor,
+  type NoteEditorRef,
+} from "@/components/shared/NoteEditor"
+import { isNoteContentEmpty } from "@/lib/note-utils"
 import { formatDateLong } from "@/lib/format"
 import { Pencil, Trash2, Check, X, Loader } from "lucide-react"
 
@@ -54,16 +54,16 @@ export const NotesSection = ({
   const [deleteNoteId, setDeleteNoteId] = useState<string | null>(null)
   const [formKey, setFormKey] = useState(0)
   const [formHasContent, setFormHasContent] = useState(false)
-  const formEditorRef = useRef<NoteBlockNoteEditorRef>(null)
-  const inlineEditorRef = useRef<NoteBlockNoteEditorRef>(null)
+  const formEditorRef = useRef<NoteEditorRef>(null)
+  const inlineEditorRef = useRef<NoteEditorRef>(null)
 
   const handleFormContentChange = useCallback((isEmpty: boolean) => {
     setFormHasContent(!isEmpty)
   }, [])
 
   const handleCreateSave = () => {
-    const content = formEditorRef.current?.getContent() ?? "[]"
-    if (isBlockNoteContentEmpty(content)) return
+    const content = formEditorRef.current?.getContent() ?? ""
+    if (isNoteContentEmpty(content)) return
     onCreateNote(content, () => {
       setFormKey((k) => k + 1)
       setFormHasContent(false)
@@ -72,8 +72,8 @@ export const NotesSection = ({
 
   const handleEditSave = () => {
     if (!editNoteId) return
-    const content = inlineEditorRef.current?.getContent() ?? "[]"
-    if (isBlockNoteContentEmpty(content)) return
+    const content = inlineEditorRef.current?.getContent() ?? ""
+    if (isNoteContentEmpty(content)) return
     onUpdateNote(editNoteId, content, () => setEditNoteId(null))
   }
 
@@ -151,16 +151,16 @@ export const NotesSection = ({
                     className={`rounded-lg border border-border p-3 ${isOwn ? "bg-accent" : "bg-card"}`}
                   >
                     {isEditing && editingNote ? (
-                      <div className="[&_.bn-editor]:min-h-[80px] [&_.bn-side-menu]:hidden">
-                        <NoteBlockNoteEditor
-                          ref={inlineEditorRef}
-                          initialContent={editingNote.content}
-                          editable
-                        />
-                      </div>
+                      <NoteEditor
+                        ref={inlineEditorRef}
+                        initialContent={editingNote.content}
+                        editable
+                      />
                     ) : (
-                      <div className="note-content [&_.bn-editor]:min-h-0 [&_.bn-editor]:border-0 [&_.bn-editor]:bg-transparent [&_.bn-editor]:p-0">
-                        <NoteBlockNoteEditor
+                      <div className="[&_.note-editor]:bg-transparent [&_.note-editor]:p-0">
+                        <NoteEditor
+                          // Contenu lu au montage : remonter après une modification
+                          key={note.content}
                           initialContent={note.content}
                           editable={false}
                         />
@@ -177,7 +177,7 @@ export const NotesSection = ({
       {/* Formulaire de création */}
       <div className="mt-2 flex w-full flex-col gap-2 rounded-lg border border-border bg-accent p-4">
         <span className="text-sm font-medium text-muted-foreground">Nouvelle note</span>
-        <NoteBlockNoteEditor
+        <NoteEditor
           key={formKey}
           ref={formEditorRef}
           editable

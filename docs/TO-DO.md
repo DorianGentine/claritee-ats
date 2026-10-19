@@ -10,6 +10,9 @@ Cocher `[x]` une tâche livrée ; les tâches cochées sont retirées à la mise
 
 ## 🔥 Urgent — bugs et sécurité
 
+- [ ] **Vider les notes BlockNote après le déploiement de Tiptap**
+  Les notes enregistrées au format BlockNote ne sont pas converties (fonctionnalité non utilisée en prod) : le nouvel éditeur les affiche vides (« Sans titre »). Une fois Tiptap en ligne, sauvegarder la table `Note` puis lancer `DELETE FROM "Note";` dans le SQL editor Supabase (supprime aussi les notes de candidats et d'offres). Même opération sur la base locale.
+
 - [ ] **Limite de débit absente sur des procédures publiques et des mutations**
   `checkMutationRateLimit` ne couvre que 17 mutations sur 41 (NFR14). Les cas exposés sans authentification :
   - `invitation.accept` (`publicProcedure`) crée des comptes Supabase Auth, sans limite ;
@@ -27,8 +30,9 @@ Cocher `[x]` une tâche livrée ; les tâches cochées sont retirées à la mise
 
 ## ⭐ Prioritaire
 
-- [ ] **Remplacer BlockNote par Tiptap**
-  BlockNote (`@blocknote/core|react|shadcn`) n'est utilisé que par l'éditeur de notes (`NoteBlockNoteEditor`) et par l'import de styles dans `src/styles/globals.css` ; il tire `@ungap/structured-clone` (vulnérabilité) et `uuid@8.3.2` (voir dépendances dépréciées). `@tiptap/*` est déjà installé comme dépendance de BlockNote. Les notes sont stockées en JSON de blocs BlockNote (cf. `isBlockNoteContentEmpty`) : prévoir la conversion des notes existantes vers le format Tiptap.
+- [ ] **Page « Mes notes » (`src/app/(dashboard)/notes/page.tsx`)**
+  - [ ] Supprimer une note directement depuis sa carte (aujourd'hui : seulement depuis la modale « Éditer la note »), avec `ConfirmDialog`.
+  - [ ] Modale « Éditer la note » : rendre les selects « Déplacer vers » (candidat, offre) recherchables — `MoveToSelect` repose sur un `Select` simple ; passer sur un combobox (`Popover` + `Command`, comme `CityAutocomplete`).
 
 - [ ] **Refonte design**
 
@@ -100,6 +104,9 @@ Cocher `[x]` une tâche livrée ; les tâches cochées sont retirées à la mise
 - [ ] **Recherche de villes sans index**
   `unaccent(name) ILIKE 'x%'` fait un scan complet de la table `cities` à chaque frappe (l'index trigram a été supprimé par la migration `city_drift_fix`). Créer un index fonctionnel adapté (ex. `unaccent` immutable + `text_pattern_ops`, ou trigram).
 
+- [ ] **Notes en lecture seule rendues par un éditeur complet**
+  `NotesSection` monte un éditeur Tiptap (ProseMirror) par note affichée, qui rend d'abord vide puis décale la mise en page. Rendre ces notes en HTML statique (`generateHTML` de `@tiptap/html` ou `@tiptap/static-renderer`) et garder `NoteEditor` pour l'édition.
+
 - [ ] **Petits défauts vérifiés dans le code**
   - [ ] `candidate.list` : `filter(Boolean)` sans effet — la longueur est testée sur le tableau filtré mais c'est le tableau d'origine qui est passé (`src/server/trpc/routers/candidate.ts`).
   - [ ] `cityIds` / `tagIds` lus dans l'URL et `city.getByIds` ne sont pas dédoublonnés avant `.slice(0, 20)`.
@@ -121,10 +128,8 @@ Cocher `[x]` une tâche livrée ; les tâches cochées sont retirées à la mise
   `candidates/new` et `candidates/[id]/edit` mélangent RHF (champs scalaires) et `useState` (villes, photo, préchargement). Évaluer un simple `useState` + `safeParse(candidateSchema)` au submit. Regarder offre/client avant de généraliser.
 
 - [ ] **Dépendances transitives dépréciées** _(signalées le 2026-10-11)_
-  - `@ungap/structured-clone@1.3.0` (prod, via `@blocknote/core` → `rehype-remark`) — ⚠️ _Potential CWE-502_, corrigé en `1.3.1+`
   - `basic-ftp@5.1.0` (dev, via `pa11y` → `puppeteer`) — ⚠️ vulnérabilité corrigée en `5.2.1+`
-  - `uuid@8.3.2` (prod, via `@blocknote/core`) — plus maintenu ; disparaît avec la migration vers Tiptap
-  - _Pistes :_ monter le parent (`@blocknote/*`, `pa11y`) ; sinon `overrides` (package.json) ciblé en version exacte. Vérifier la chaîne avec `bun why <pkg>`.
+  - _Pistes :_ monter le parent (`pa11y`) ; sinon `overrides` (package.json) ciblé en version exacte. Vérifier la chaîne avec `bun why <pkg>`.
 
 ---
 

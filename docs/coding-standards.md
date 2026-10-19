@@ -106,10 +106,10 @@ export const exampleRouter = router({
 ### Composants
 
 - `src/components/ui/` : composants shadcn générés — **ne pas éditer à la main** (sauf remplacement d'import `radix-ui` → package individuel, §6). Ajout via la CLI shadcn.
-- `src/components/shared/` : composants transverses (`ConfirmDialog`, `CityAutocomplete`, `TagsSection`, `NotesSection`, `NoteBlockNoteEditor`…). `src/components/<domaine>/` : composants métier ; `layout/` : navbar d'en-tête (`SiteNavbar`, pas de sidebar), FAB.
+- `src/components/shared/` : composants transverses (`ConfirmDialog`, `CityAutocomplete`, `TagsSection`, `NotesSection`, `NoteEditor`…). `src/components/<domaine>/` : composants métier ; `layout/` : navbar d'en-tête (`SiteNavbar`, pas de sidebar), FAB.
 - **DRY** : dès la 2ᵉ occurrence d'un bloc JSX ou d'une logique, extraire en composant partagé ou en hook (`src/hooks/`). Helpers purs dans `src/lib/`. Pas de copier-coller de patterns loading / erreur / empty state.
 - Props typées (type exporté `XxxProps`), état interne limité à l'UI (ouverture de modal, onglet). Pas de données serveur recopiées en state local.
-- `Note.content` est du JSON BlockNote : ne jamais l'afficher brut, passer par `NoteBlockNoteEditor`.
+- `Note.content` est un document Tiptap sérialisé (`{ "type": "doc", … }`) : ne jamais l'afficher brut ; l'éditer ou l'afficher via `NoteEditor`, en extraire le texte via `src/lib/note-utils.ts`.
 - Navigation interne : `next/link`. Images : `<img>` / `AvatarImage` (Radix) ; `next/image` n'est pas utilisé (aucun `remotePatterns` dans `next.config.ts` pour les URL Supabase).
 
 ### Styles et tokens
@@ -143,7 +143,7 @@ export const exampleRouter = router({
 - **TanStack Query** (via `api.<router>.<proc>.useQuery/useMutation`, client `@/lib/trpc/client`) est la seule source de vérité des données serveur ; pas de store global. Pas de `fetch` direct vers des endpoints métier.
 - `staleTime` global 5 min (`src/components/providers.tsx`), surchargeable par query.
 - Après chaque mutation : `utils.<router>.<proc>.invalidate()` sur les queries impactées.
-- Skeleton (`@/components/ui/skeleton`) sur **`isLoading`**, jamais `isFetching` (sinon flash à chaque refetch en arrière-plan).
+- Skeleton (`@/components/ui/skeleton`) sur **`isLoading`**, jamais `isFetching` (sinon flash à chaque refetch en arrière-plan). Exception : quand l'élément attendu manque d'une liste déjà en cache mais en cours de rechargement (`isLoading` reste faux), ex. la note sélectionnée dans `NoteChatWidget`.
 - Filtres de liste : URL (query params) si la vue doit être partageable, sinon état local.
 
 ### Mutations optimistes
@@ -257,6 +257,7 @@ Leçons tirées des stories passées, vérifiées contre le code actuel. Sécuri
 | tRPC/API       | Fetch externe : `response.json()` sans vérifier `ok` ni timeout                                        | Vérifier `response.ok`, `AbortSignal.timeout(…)`, logger et renvoyer un résultat vide en cas d'échec.                                                                                              |
 | TanStack Query | Reset de l'état UI avant la fin de la mutation → saisie perdue en cas d'erreur                         | `mutate(input, { onSuccess })` (s'ajoute aux callbacks du hook).                                                                                                                                   |
 | TanStack Query | `placeholderData: keepPreviousData` renvoie les anciennes données même avec `enabled: false`           | Vider explicitement quand la saisie repasse sous le seuil.                                                                                                                                         |
+| Notes (Tiptap) | `useEditor` ne relit pas `initialContent` après le montage : remonter l'éditeur en cours de frappe (nouvelle `key` après une création) perd la saisie ; le monter avant que la note soit chargée l'affiche vide | Changer la `key` pour afficher une autre note, ou pour rafraîchir une note en lecture seule (`key={note.content}`) ; attendre la note avant de monter l'éditeur ; mettre le cache à jour dès l'envoi d'une modification (`setData`) pour ne pas rouvrir sur l'ancien contenu. Dans `NoteChatWidget`, une nouvelle note vit en brouillon local (`src/lib/note-draft.ts`, vidé à la déconnexion) et n'est créée qu'à la fermeture du widget, une création à la fois. |
 | React/forms    | `react-hooks/set-state-in-effect` interdit `setState` dans `useEffect` pour dériver / précharger       | `useMemo` pour dériver ; ajustement pendant le rendu avec garde (ex. `loadedForId`).                                                                                                               |
 | React/forms    | React Compiler + RHF : `watch()` émet un warning                                                       | `useWatch({ control, name })`.                                                                                                                                                                     |
 | React/forms    | dnd-kit : annonces en anglais par défaut ; chips en `flex-wrap` mal triées ; drag déclenché au clic    | Annonces FR ; `rectSortingStrategy` ; `PointerSensor` avec activation à 5 px.                                                                                                                      |
