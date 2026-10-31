@@ -98,16 +98,17 @@ Modèle de données : voir `architecture.md`.
 | Principe                    | Traduction concrète                                                                                                 |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | Simple et rapide            | Peu de clics, quasiment rien à apprendre, aucune fonction superflue                                                 |
-| « Centre de contrôle »      | Barre de navigation en en-tête, toujours visible (Dashboard, Candidats, Offres, Clients, Paramètres)                |
-| Recherche omniprésente      | Barre globale dans l'en-tête, raccourci Cmd/Ctrl+K                                                                  |
+| « Centre de contrôle »      | Menu latéral repliable, toujours visible : Dashboard, Candidats, Offres, Clients ; en bas Mes notes, Paramètres, compte |
+| Recherche omniprésente      | Champ de recherche en haut du menu latéral, raccourci Cmd/Ctrl+K                                                    |
 | Saisie sans rupture         | Widget de note flottant (bouton + Cmd/Ctrl+J), enregistrement automatique, navigation possible pendant la saisie    |
 | Repérage visuel             | Tags colorés, badges de statut pour les offres et les candidatures                                                  |
-| Chaleureux et professionnel | Fond crème, terracotta pour l'action principale, vert sauge pour le secondaire ; à l'opposé des ATS bleus et froids |
+| Chaleureux et professionnel | Charte de claritee.fr : fond crème, terracotta pour l'action principale, vert sauge pour le secondaire, titres Clash Grotesk ; à l'opposé des ATS bleus et froids |
 
 ### Écrans clés
 
 | Écran                    | Rôle                                                                                   |
 | ------------------------ | -------------------------------------------------------------------------------------- |
+| Page d'accueil publique  | Landing minimale : un titre et une phrase de présentation ; connexion et inscription dans l'en-tête |
 | Tableau de bord          | Vue d'ensemble : compteurs et éléments récents                                         |
 | Liste / fiche candidat   | Liste filtrable ; fiche en layout CV avec tags, CV, candidatures, notes et partage     |
 | Liste / fiche offre      | Liste filtrable ; fiche avec client, contact, candidats associés et leur statut, notes |
@@ -141,7 +142,7 @@ Contrastes suffisants, navigation complète au clavier, focus visible, libellés
 | 1.4   | Connexion & déconnexion           | L'utilisateur accède à son espace de façon sécurisée                         |
 | 1.5   | Invitation de collaborateurs      | Le cabinet invite ses collègues par lien, puis le suit ou le révoque         |
 | 1.6   | Tableau de bord d'accueil         | L'utilisateur arrive sur une page d'accueil, même quand elle est encore vide |
-| 1.7   | Structure de navigation           | Navigation cohérente : barre de navigation en en-tête, accessibilité de base |
+| 1.7   | Structure de navigation           | Navigation cohérente : menu latéral repliable, accessibilité de base         |
 
 ### Épic 2 — Gestion des candidats
 
@@ -156,7 +157,7 @@ Contrastes suffisants, navigation complète au clavier, focus visible, libellés
 | 2.7   | Formations                   | Le parcours académique est documenté                            |
 | 2.8   | Tags candidats               | Les candidats sont catégorisés pour être retrouvés              |
 | 2.9   | CV (fichier)                 | Le CV d'origine est conservé et téléchargeable                  |
-| 2.10  | Formulaire d'édition complet | Toutes les informations se modifient en un seul formulaire      |
+| 2.10  | Édition depuis la fiche      | Chaque bloc de la fiche se modifie sur place (modale « Modifier le profil » pour l'en-tête) |
 
 ### Épic 3 — Offres, clients & pipeline
 

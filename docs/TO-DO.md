@@ -2,16 +2,13 @@
 
 Source de vérité pour les prochaines actions de développement, par urgence puis par thème. Les épics 1 à 5 (MVP + villes structurées) sont livrés — voir `prd.md`. L'historique complet des stories, rétros et rapports QA est dans le tag git `docs-archive-2026-10`.
 
-Dernière mise à jour : 2026-10-18
+Dernière mise à jour : 2026-10-31
 
 Cocher `[x]` une tâche livrée ; les tâches cochées sont retirées à la mise à jour suivante.
 
 ---
 
 ## 🔥 Urgent — bugs et sécurité
-
-- [ ] **Vider les notes BlockNote après le déploiement de Tiptap**
-  Les notes enregistrées au format BlockNote ne sont pas converties (fonctionnalité non utilisée en prod) : le nouvel éditeur les affiche vides (« Sans titre »). Une fois Tiptap en ligne, sauvegarder la table `Note` puis lancer `DELETE FROM "Note";` dans le SQL editor Supabase (supprime aussi les notes de candidats et d'offres). Même opération sur la base locale.
 
 - [ ] **Limite de débit absente sur des procédures publiques et des mutations**
   `checkMutationRateLimit` ne couvre que 17 mutations sur 41 (NFR14). Les cas exposés sans authentification :
@@ -30,14 +27,7 @@ Cocher `[x]` une tâche livrée ; les tâches cochées sont retirées à la mise
 
 ## ⭐ Prioritaire
 
-- [ ] **Page « Mes notes » (`src/app/(dashboard)/notes/page.tsx`)**
-  - [ ] Supprimer une note directement depuis sa carte (aujourd'hui : seulement depuis la modale « Éditer la note »), avec `ConfirmDialog`.
-  - [ ] Modale « Éditer la note » : rendre les selects « Déplacer vers » (candidat, offre) recherchables — `MoveToSelect` repose sur un `Select` simple ; passer sur un combobox (`Popover` + `Command`, comme `CityAutocomplete`).
-
-- [ ] **Refonte design**
-
-- [ ] **Générer une page d'accueil**
-  `src/app/page.tsx` n'est qu'un écran minimal : titre, accroche, et boutons « Créer un compte » / connexion (ou « Accéder à mon espace » si connecté).
+_Rien en attente._
 
 ---
 
@@ -89,7 +79,7 @@ Cocher `[x]` une tâche livrée ; les tâches cochées sont retirées à la mise
   `describe.runIf` skippe silencieusement les 14 fichiers de `__tests__/db` si `DATABASE_URL` est absent. `bun run test:db` le définit toujours (`scripts/test-db.sh`) ; le risque ne concerne qu'un `bun run vitest` lancé directement. Faire échouer ces fichiers au lieu de les ignorer.
 
 - [ ] **Avertissements « not wrapped in act » restants**
-  11 avertissements, sans échec : `OfferNotesSection` (×5) met à jour son état après un `supabase.auth.getUser()` asynchrone, hors `act` → attendre cet état dans ses tests (`findBy*` / `waitFor`) ; `SiteNavbar.a11y` (×6) vient de l'état interne de `next/link` (`LinkComponent`) → attendre la fin du rendu ou mocker `next/link`.
+  15 avertissements, sans échec : `OfferNotesSection` (×6) met à jour son état après un `supabase.auth.getUser()` asynchrone, hors `act` → attendre cet état dans ses tests (`findBy*` / `waitFor`) ; `AppSidebar.a11y` (×9) vient de l'état interne de `next/link` (`LinkComponent`) → attendre la fin du rendu ou mocker `next/link`.
 
 ---
 
@@ -103,9 +93,6 @@ Cocher `[x]` une tâche livrée ; les tâches cochées sont retirées à la mise
 
 - [ ] **Recherche de villes sans index**
   `unaccent(name) ILIKE 'x%'` fait un scan complet de la table `cities` à chaque frappe (l'index trigram a été supprimé par la migration `city_drift_fix`). Créer un index fonctionnel adapté (ex. `unaccent` immutable + `text_pattern_ops`, ou trigram).
-
-- [ ] **Notes en lecture seule rendues par un éditeur complet**
-  `NotesSection` monte un éditeur Tiptap (ProseMirror) par note affichée, qui rend d'abord vide puis décale la mise en page. Rendre ces notes en HTML statique (`generateHTML` de `@tiptap/html` ou `@tiptap/static-renderer`) et garder `NoteEditor` pour l'édition.
 
 - [ ] **Petits défauts vérifiés dans le code**
   - [ ] `candidate.list` : `filter(Boolean)` sans effet — la longueur est testée sur le tableau filtré mais c'est le tableau d'origine qui est passé (`src/server/trpc/routers/candidate.ts`).
@@ -125,7 +112,7 @@ Cocher `[x]` une tâche livrée ; les tâches cochées sont retirées à la mise
   - [ ] Commentaire faux dans `src/server/trpc/routers/city.ts` : les bbox de repli ne sont pas interrogées « seulement si l'Europe ne renvoie rien », les 3 le sont en parallèle.
 
 - [ ] **Questionner React Hook Form sur les formulaires candidat** _(story 5.4)_
-  `candidates/new` et `candidates/[id]/edit` mélangent RHF (champs scalaires) et `useState` (villes, photo, préchargement). Évaluer un simple `useState` + `safeParse(candidateSchema)` au submit. Regarder offre/client avant de généraliser.
+  `candidates/new` et `CandidateIdentityDialog` (modale « Modifier le profil » de la fiche) mélangent RHF (champs scalaires) et `useState` (villes, photo, préchargement). Évaluer un simple `useState` + `safeParse(candidateSchema)` au submit. Regarder offre/client avant de généraliser.
 
 - [ ] **Dépendances transitives dépréciées** _(signalées le 2026-10-11)_
   - `basic-ftp@5.1.0` (dev, via `pa11y` → `puppeteer`) — ⚠️ vulnérabilité corrigée en `5.2.1+`

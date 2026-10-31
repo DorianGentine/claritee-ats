@@ -106,10 +106,10 @@ export const exampleRouter = router({
 ### Composants
 
 - `src/components/ui/` : composants shadcn générés — **ne pas éditer à la main** (sauf remplacement d'import `radix-ui` → package individuel, §6). Ajout via la CLI shadcn.
-- `src/components/shared/` : composants transverses (`ConfirmDialog`, `CityAutocomplete`, `TagsSection`, `NotesSection`, `NoteEditor`…). `src/components/<domaine>/` : composants métier ; `layout/` : navbar d'en-tête (`SiteNavbar`, pas de sidebar), FAB.
+- `src/components/shared/` : composants transverses (`ConfirmDialog`, `CityAutocomplete`, `TagsSection`, `NotesSection`, `NoteEditor`…). `src/components/<domaine>/` : composants métier ; `layout/` : menu latéral repliable de l'espace connecté (`AppSidebar`, état replié dans le cookie `sidebar_collapsed`, lu par `DashboardShell`), en-tête des pages publiques (`PublicHeader`), `Logo`, FAB.
 - **DRY** : dès la 2ᵉ occurrence d'un bloc JSX ou d'une logique, extraire en composant partagé ou en hook (`src/hooks/`). Helpers purs dans `src/lib/`. Pas de copier-coller de patterns loading / erreur / empty state.
 - Props typées (type exporté `XxxProps`), état interne limité à l'UI (ouverture de modal, onglet). Pas de données serveur recopiées en state local.
-- `Note.content` est un document Tiptap sérialisé (`{ "type": "doc", … }`) : ne jamais l'afficher brut ; l'éditer ou l'afficher via `NoteEditor`, en extraire le texte via `src/lib/note-utils.ts`.
+- `Note.content` est un document Tiptap sérialisé (`{ "type": "doc", … }`) : ne jamais l'afficher brut ; l'éditer via `NoteEditor`, l'afficher en lecture via `NoteContent` (rendu statique, liens limités à http(s)/mailto/tel ; pas d'éditeur ProseMirror par note affichée), en extraire le texte via `src/lib/note-utils.ts`.
 - Navigation interne : `next/link`. Images : `<img>` / `AvatarImage` (Radix) ; `next/image` n'est pas utilisé (aucun `remotePatterns` dans `next.config.ts` pour les URL Supabase).
 
 ### Styles et tokens
@@ -120,21 +120,25 @@ export const exampleRouter = router({
 
 | Token (classe)                      | Valeur                            | Usage                                          |
 | ----------------------------------- | --------------------------------- | ---------------------------------------------- |
-| `background`                        | `#F5F0E8`                         | Fond de page (beige)                           |
-| `card` / `popover`                  | `#FDFCFA`                         | Cards, surfaces, popovers                      |
-| `foreground`                        | `#1A1A1A`                         | Texte principal                                |
-| `muted` / `muted-foreground`        | `#E8E4DC` / `#4A4A4A`             | Fonds neutres / texte secondaire, labels       |
-| `primary` (+ `-foreground` blanc)   | `#B85A3B`                         | CTA principaux, liens, focus ring (terracotta) |
-| `secondary` (+ `-foreground` blanc) | `#5A7A6E`                         | Actions secondaires, chips (vert sauge)        |
-| `accent` / `accent-foreground`      | `#E3EDE8` / `#2E4A42`             | Hover, surbrillance                            |
+| `background`                        | `#FAF6F1`                         | Fond de page (crème)                           |
+| `card` / `popover`                  | `#FEFBF7`                         | Cards, surfaces, popovers                      |
+| `foreground`                        | `#1C1917`                         | Texte principal                                |
+| `muted` / `muted-foreground`        | `#F1EAE1` / `#554D46`             | Fonds neutres / texte secondaire, labels       |
+| `primary` (+ `-foreground` blanc)   | `#BE5334`                         | CTA principaux, liens, focus ring (terracotta) |
+| `secondary` (+ `-foreground` blanc) | `#587A6B`                         | Actions secondaires, chips (vert sauge)        |
+| `accent` / `accent-foreground`      | `#E3EAE5` / `#2E4A42`             | Hover, surbrillance                            |
 | `success` / `success-foreground`    | `#E8F5EC` / `#2E6B3E`             | Statuts positifs (fond + texte)                |
 | `destructive`                       | `#C44B37`                         | Erreurs, actions destructives                  |
-| `border` / `input` / `ring`         | `#E5DFD6` / `#E5DFD6` / `#B85A3B` | Bordures, champs, focus                        |
+| `border` / `input` / `ring`         | `#E5DCD1` / `#D3C7B8` / `#BE5334` | Bordures, champs, focus                        |
+| `sidebar` / `sidebar-accent`        | `#F1EAE1` / `#E9E0D4`             | Menu latéral, survol de ses liens              |
 
 - **Statuts** : utiliser les mappings existants (`src/lib/candidature-status-style.ts`, `src/lib/offer-status-style.ts`) plutôt que redéfinir des couleurs.
 - **Tags** : couleur auto-assignée `getTagColor(name)` (palette de 8 couleurs, `hash % 8`), rendu en pill (`rounded-full`), 20 tags max par élément.
-- **Typographie** (police système, pas de webfont chargée) : titre de page `text-2xl font-semibold tracking-tight` ; section `text-lg font-semibold` ; texte courant `text-sm`/`text-base` ; métadonnées `text-xs text-muted-foreground`.
-- **Rayons** : `--radius` = 0.5rem (8 px, cards = `rounded-lg`) ; inputs et boutons `rounded-md` (6 px) ; tags et badges `rounded-full`.
+- **Charte** : reprise de claritee.fr (crème, terracotta, sauge ; titres Clash Grotesk, texte Inter).
+- **Typographie** : polices auto-hébergées dans `src/fonts/`, chargées par `next/font/local` (`src/app/fonts.ts`). `font-sans` = Inter (défaut du `body`) ; `font-display` = Clash Grotesk, appliquée d'office à `h1`–`h3`. Titre de page `text-2xl font-semibold tracking-tight` ; section `text-lg font-semibold` ; texte courant `text-sm`/`text-base` ; métadonnées `text-xs text-muted-foreground`.
+- **Rayons** : `--radius` = 0.75rem (12 px, cards = `rounded-lg`) ; inputs et boutons `rounded-md` (10 px) ; tags, badges, liens du menu et CTA des pages publiques `rounded-full`.
+- **Champs posés directement sur le fond quadrillé** (hors card) : `SelectTrigger`, `Input` et assimilés sont transparents par défaut → ajouter `bg-card`.
+- **Fond de l'espace connecté** : utilitaire `bg-grid` (quadrillage 32 px, couleur `border`, fixe au défilement) posé par `DashboardShell` ; les `<main>` des pages n'ont donc pas de `bg-background`.
 - **Espacements** : échelle Tailwind (multiples de 4 px) ; `gap-2`/`p-2` serré, `p-4` sections, `gap-6` entre blocs. Desktop-first, breakpoints Tailwind par défaut (`lg` = cible principale).
 - **Icônes** : `lucide-react`, `size-4` par défaut ; `aria-hidden` si un texte accompagne l'icône.
 
@@ -231,7 +235,7 @@ Diagnostic si CPU/mémoire excessifs ou « Compiling… » en boucle : `bun run 
 - Mock tRPC : `vi.mock("@/lib/trpc/client", () => ({ api: { … } }))`.
 - Routers tRPC unitaires : contexte et `ctx.db` mockés ; routers en DB : `appRouter.createCaller(ctx)` avec données créées par le test.
 - Cas à couvrir en priorité : validation, `UNAUTHORIZED`, `NOT_FOUND`, isolation tenant (un autre cabinet ne voit rien), chemins critiques.
-- **Accessibilité** : `const results = await axe(container, { rules: { "color-contrast": { enabled: false } } }); expect(results.violations).toEqual([]);` (modèle : `__tests__/unit/components/layout/SiteNavbar.a11y.test.tsx`).
+- **Accessibilité** : `const results = await axe(container, { rules: { "color-contrast": { enabled: false } } }); expect(results.violations).toEqual([]);` (modèle : `__tests__/unit/components/layout/AppSidebar.a11y.test.tsx`).
 - Pas d'E2E (Playwright non installé) ni d'objectif de couverture.
 
 ---
@@ -248,10 +252,11 @@ Leçons tirées des stories passées, vérifiées contre le code actuel. Sécuri
 | Prisma/DB      | Objet créé à la main en prod → rejeu des migrations cassé sur base fraîche                             | Aucun DDL manuel en prod ; `DROP … IF EXISTS` dans les migrations correctives ; `bun run db:local:reset` OK avant merge.                                                                              |
 | Prisma/DB      | `$queryRaw` avec `ILIKE` : `%` et `_` non échappés                                                     | Échapper puis `ESCAPE '\'`.                                                                                                                                                                        |
 | RLS/Supabase   | `User.id` / `authorId` sont `TEXT`, `auth.uid()` est `UUID` → `operator does not exist: text = uuid`   | Caster la colonne : `"id"::uuid = auth.uid()`, jamais `auth.uid()::text`.                                                                                                                          |
-| RLS/Supabase   | La navbar lit `user_metadata`, pas la table `User`                                                     | Toute MAJ de profil appelle aussi `auth.admin.updateUserById(id, { user_metadata })`.                                                                                                              |
+| RLS/Supabase   | Le menu latéral lit `user_metadata`, pas la table `User`                                                     | Toute MAJ de profil appelle aussi `auth.admin.updateUserById(id, { user_metadata })`.                                                                                                              |
 | RLS/Supabase   | Un `$` dans le mot de passe de `DATABASE_URL` est corrompu par dotenv-expand côté Next                 | Échapper `\$` ou encoder `%24`.                                                                                                                                                                    |
 | tRPC/API       | Pas d'`errorFormatter` : P2002 / P2003 remontent en 500 brut                                           | Valider en amont : `.refine` d'unicité Zod, `findFirst` avant `connect`, `skipDuplicates`.                                                                                                         |
 | tRPC/API       | Schéma d'update avec tableau de relations `.default([])` → tout est effacé si le champ est absent      | `.optional()` sans défaut ; ne remplacer que si `!== undefined`.                                                                                                                                   |
+| tRPC/API       | Schéma d'update : champ texte optionnel transformé en `null` quand il est absent → effacé à chaque mise à jour partielle | Patch-semantics (`trimToClearable` dans `candidate.ts`) : absent → `undefined` (inchangé), chaîne vide → `null` (effacé). Le client envoie `""` pour effacer. |
 | tRPC/API       | Endpoint public : `z.string()` sans borne                                                              | `.max()` sur tout `z.string()` public, même `maxLength` côté UI.                                                                                                                                   |
 | tRPC/API       | Fichier Storage lié à une ligne (photo, CV) : supprimer la ligne laisse le fichier (la cascade Prisma ne touche pas le Storage) | Supprimer le fichier dans la même procédure, avant la ligne, via les helpers de `src/server/candidateStorage.ts` (toutes extensions). |
 | tRPC/API       | Fetch externe : `response.json()` sans vérifier `ok` ni timeout                                        | Vérifier `response.ok`, `AbortSignal.timeout(…)`, logger et renvoyer un résultat vide en cas d'échec.                                                                                              |
@@ -261,7 +266,7 @@ Leçons tirées des stories passées, vérifiées contre le code actuel. Sécuri
 | React/forms    | `react-hooks/set-state-in-effect` interdit `setState` dans `useEffect` pour dériver / précharger       | `useMemo` pour dériver ; ajustement pendant le rendu avec garde (ex. `loadedForId`).                                                                                                               |
 | React/forms    | React Compiler + RHF : `watch()` émet un warning                                                       | `useWatch({ control, name })`.                                                                                                                                                                     |
 | React/forms    | dnd-kit : annonces en anglais par défaut ; chips en `flex-wrap` mal triées ; drag déclenché au clic    | Annonces FR ; `rectSortingStrategy` ; `PointerSensor` avec activation à 5 px.                                                                                                                      |
-| Next.js        | Next 16 : le middleware s'appelle `src/proxy.ts`                                                       | Toute nouvelle route protégée → liste de `proxy.ts` **et** `isDashboard` dans `SiteNavbar`.                                                                                                        |
+| Next.js        | Next 16 : le middleware s'appelle `src/proxy.ts`                                                       | Toute nouvelle route protégée → liste de `proxy.ts`, et page sous `src/app/(dashboard)/` (menu latéral via `DashboardShell`). Nouvelle entrée de menu → `AppSidebar`.                              |
 | Next.js        | Pages publiques `/share` : risque de fuite                                                             | Server Component + Prisma direct, `select` unique `publicCandidateSelect`, anonymisation côté serveur, même erreur pour token inconnu / mauvais type, `generateMetadata` sans nom en mode anonyme. |
 | tests          | jsdom sans `scrollIntoView`, `ResizeObserver`, `*PointerCapture` (Radix, cmdk)                         | Polyfills dans le fichier de test (modèle : `__tests__/unit/components/shared/CityAutocomplete.test.tsx`).                                                                                         |
 | tests          | Contenu Dialog / AlertDialog rendu en portail, hors `container`                                        | `screen.*` ou `within(document.body)`.                                                                                                                                                             |
