@@ -92,7 +92,7 @@ export default function SettingsTeamPage() {
     `${typeof window !== "undefined" ? window.location.origin : ""}/invite/${token}`;
 
   return (
-    <main className="bg-background p-6">
+    <main className="p-6 lg:p-10">
       <h1 className="text-2xl font-semibold tracking-tight text-foreground">
         Équipe
       </h1>

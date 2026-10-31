@@ -47,7 +47,7 @@ type Props = {
 }
 
 export const PublicCandidateProfile = ({ candidate, companyName }: Props) => (
-  <main className="min-h-[calc(100vh-3.5rem)] bg-background p-6">
+  <main className="bg-background p-6">
     <div className="mx-auto max-w-4xl space-y-6">
       {/* Branding cabinet */}
       <div className="rounded-lg border border-border bg-card px-4 py-3 text-sm text-muted-foreground">

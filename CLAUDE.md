@@ -82,7 +82,7 @@ See `prisma/schema.prisma` (source of truth) and `docs/architecture.md` (entity 
 ### Frontend patterns
 
 - Forms use **React Hook Form** + **Zod** resolver from `src/lib/validations/`
-- Rich text fields use **Tiptap** (`NoteEditor`, formatting bubble menu on selection)
+- Rich text fields use **Tiptap** (`NoteEditor`, formatting bubble menu on selection); read-only notes render with `NoteContent` (static)
 - Toast notifications via **Sonner** (`toast.success`, `toast.error`)
 - Loading states use skeleton loaders, not spinners
 - Shared components extracted to `src/components/shared/` after the 2nd usage
@@ -107,11 +107,11 @@ See `prisma/schema.prisma` (source of truth) and `docs/architecture.md` (entity 
 
 | Token | Hex | Usage |
 |-------|-----|-------|
-| Background | `#F5F0E8` | Page background (beige) |
-| Primary | `#B85A3B` | CTA, links (terracotta) |
-| Secondary | `#5A7A6E` | Accents (sage green) |
+| Background | `#FAF6F1` | Page background (cream) |
+| Primary | `#BE5334` | CTA, links (terracotta) |
+| Secondary | `#587A6B` | Accents (sage green) |
 
-Use Tailwind tokens (`bg-primary`, `text-muted-foreground`) — no raw hex in class attributes.
+Charte inspired by claritee.fr: headings in Clash Grotesk (`font-display`), body in Inter, self-hosted via `next/font/local`. Use Tailwind tokens (`bg-primary`, `text-muted-foreground`) — no raw hex in class attributes.
 
 ## Docs
 

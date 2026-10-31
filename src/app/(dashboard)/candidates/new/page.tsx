@@ -130,7 +130,7 @@ export default function NewCandidatePage() {
   const isPending = isSubmitting || createMutation.isPending || uploadPhotoMutation.isPending;
 
   return (
-    <main className="min-h-[calc(100vh-3.5rem)] bg-background p-6">
+    <main className="p-6 lg:p-10">
       <div className="mx-auto max-w-2xl">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">
           Nouveau candidat

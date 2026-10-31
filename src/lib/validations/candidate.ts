@@ -34,28 +34,41 @@ export type CandidateListInput = z.infer<typeof candidateListInputSchema>;
 const trimToUndefined = (s: string | undefined) =>
   (typeof s === "string" ? s.trim() : s) || undefined;
 
+/**
+ * Mise à jour (patch-semantics) : absent → undefined (champ non modifié),
+ * vide ou espaces → null (champ effacé), sinon la valeur trimée.
+ */
+const trimToClearable = (s: string | undefined) =>
+  s === undefined ? undefined : s.trim() || null;
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const LINKEDIN_URL_PATTERN =
+  /^https?:\/\/(www\.)?linkedin\.com\/in\/[a-zA-Z0-9_-]+\/?(\?[^\s]*)?$/i;
+
+const EMAIL_MESSAGE = "Format d'email invalide";
+const LINKEDIN_MESSAGE = "URL LinkedIn invalide (linkedin.com/in/...)";
+const PHONE_MESSAGE = "Numéro de téléphone invalide";
+
+const isValidPhone = (value: string) => {
+  const digits = value.replace(/\D/g, "");
+  return digits.length >= 10 && /^[\d\s.\-+]+$/.test(value);
+};
+
 /** Optionnel : si fourni, doit être un email valide (espaces seuls → undefined) */
 const optionalEmail = z
   .string()
   .optional()
   .transform(trimToUndefined)
-  .refine((v) => !v || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v), {
-    message: "Format d'email invalide",
-  });
+  .refine((v) => !v || EMAIL_PATTERN.test(v), { message: EMAIL_MESSAGE });
 
 /** Optionnel : si fourni, doit être une URL LinkedIn linkedin.com/in/... */
 const optionalLinkedInUrl = z
   .string()
   .optional()
   .transform(trimToUndefined)
-  .refine(
-    (v) =>
-      !v ||
-      /^https?:\/\/(www\.)?linkedin\.com\/in\/[a-zA-Z0-9_-]+\/?(\?[^\s]*)?$/i.test(
-        v
-      ),
-    { message: "URL LinkedIn invalide (linkedin.com/in/...)" }
-  );
+  .refine((v) => !v || LINKEDIN_URL_PATTERN.test(v), {
+    message: LINKEDIN_MESSAGE,
+  });
 
 /** Un couple ville + position (0-based) tel qu'envoyé par le formulaire. */
 const cityInputSchema = z.object({
@@ -91,14 +104,7 @@ const optionalPhone = z
   .string()
   .optional()
   .transform(trimToUndefined)
-  .refine(
-    (v) => {
-      if (!v) return true;
-      const digits = v.replace(/\D/g, "");
-      return digits.length >= 10 && /^[\d\s.\-+]+$/.test(v);
-    },
-    { message: "Numéro de téléphone invalide" }
-  );
+  .refine((v) => !v || isValidPhone(v), { message: PHONE_MESSAGE });
 
 /** Schéma pour la création d'un candidat (infos de base) */
 export const createCandidateSchema = z.object({
@@ -126,15 +132,29 @@ export const updateCandidateSchema = z.object({
     .min(1, "Le nom est requis")
     .optional()
     .transform(trimToUndefined),
-  email: optionalEmail,
-  phone: optionalPhone,
-  linkedinUrl: optionalLinkedInUrl,
-  title: z.string().optional().transform(trimToUndefined),
+  email: z
+    .string()
+    .optional()
+    .transform(trimToClearable)
+    .refine((v) => !v || EMAIL_PATTERN.test(v), { message: EMAIL_MESSAGE }),
+  phone: z
+    .string()
+    .optional()
+    .transform(trimToClearable)
+    .refine((v) => !v || isValidPhone(v), { message: PHONE_MESSAGE }),
+  linkedinUrl: z
+    .string()
+    .optional()
+    .transform(trimToClearable)
+    .refine((v) => !v || LINKEDIN_URL_PATTERN.test(v), {
+      message: LINKEDIN_MESSAGE,
+    }),
+  title: z.string().optional().transform(trimToClearable),
   summary: z
     .string()
     .max(500, "Le résumé ne peut pas dépasser 500 caractères")
     .optional()
-    .transform((v) => (v?.trim() === "" ? null : v?.trim() ?? null)),
+    .transform(trimToClearable),
   cities: candidateCitiesUpdateSchema,
 });
 

@@ -19,55 +19,149 @@ import {
   DialogClose,
 } from "@/components/ui/dialog"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import {
+  Command,
+  CommandEmpty,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command"
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
 import {
   NoteEditor,
   type NoteEditorRef,
 } from "@/components/shared/NoteEditor"
-import { Pencil, Trash2, Maximize2, Minimize2 } from "lucide-react"
+import {
+  ChevronsUpDown,
+  Pencil,
+  Trash2,
+  Maximize2,
+  Minimize2,
+} from "lucide-react"
+import { useDebounce } from "@/hooks/useDebounce"
 import type { RouterOutputs } from "@/lib/trpc/client"
 import { toast } from "sonner"
 
 type NoteItem = RouterOutputs["note"]["listFree"][number]
 
-function MoveToSelect<T extends { id: string }>({
-  items,
+type MoveTarget = { id: string; label: string; subtitle?: string }
+
+const MIN_SEARCH_LENGTH = 2
+
+/** Combobox recherchable (recherche serveur) pour déplacer une note vers un candidat ou une offre. */
+const MoveToCombobox = ({
+  kind,
   isPending,
   placeholder,
-  getLabel,
+  searchPlaceholder,
   onSelect,
 }: {
-  items: T[]
+  kind: "candidates" | "offers"
   isPending: boolean
   placeholder: string
-  getLabel: (item: T) => string
-  onSelect: (id: string) => void
-}) {
+  searchPlaceholder: string
+  onSelect: (target: MoveTarget) => void
+}) => {
+  const [open, setOpen] = useState(false)
+  const [query, setQuery] = useState("")
+  const debouncedQuery = useDebounce(query.trim(), 300)
+  const hasMinQuery = debouncedQuery.length >= MIN_SEARCH_LENGTH
+
+  const searchQuery = api.search.search.useQuery(
+    { q: debouncedQuery, limit: 20 },
+    { enabled: open && hasMinQuery }
+  )
+
+  const targets: MoveTarget[] =
+    kind === "candidates"
+      ? (searchQuery.data?.candidates ?? []).map((candidate) => ({
+          id: candidate.id,
+          label: getCandidateName(candidate),
+          subtitle: candidate.title ?? undefined,
+        }))
+      : (searchQuery.data?.offers ?? []).map((offer) => ({
+          id: offer.id,
+          label: offer.title,
+          subtitle: offer.clientCompany?.name,
+        }))
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    setOpen(nextOpen)
+    if (!nextOpen) setQuery("")
+  }
+
+  const handleSelect = (target: MoveTarget) => {
+    handleOpenChange(false)
+    onSelect(target)
+  }
+
   return (
-    <Select
-      value=""
-      onValueChange={(v) => { if (v) onSelect(v) }}
-      disabled={isPending || items.length === 0}
-    >
-      <SelectTrigger className="w-(--radix-select-trigger-width) max-w-[240px]">
-        <SelectValue placeholder={placeholder} />
-      </SelectTrigger>
-      <SelectContent>
-        {items.map((item) => (
-          <SelectItem key={item.id} value={item.id}>
-            {getLabel(item)}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <Popover open={open} onOpenChange={handleOpenChange}>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={isPending}
+          aria-expanded={open}
+          aria-haspopup="listbox"
+          className="w-full max-w-60 justify-between font-normal text-muted-foreground sm:w-60"
+        >
+          <span className="truncate">{placeholder}</span>
+          <ChevronsUpDown className="size-4 shrink-0 opacity-50" aria-hidden />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-72 p-0">
+        <Command shouldFilter={false}>
+          <CommandInput
+            value={query}
+            onValueChange={setQuery}
+            maxLength={100}
+            placeholder={searchPlaceholder}
+          />
+          <CommandList>
+            {hasMinQuery && targets.length > 0 ? (
+              targets.map((target) => (
+                <CommandItem
+                  key={target.id}
+                  value={target.id}
+                  onSelect={() => handleSelect(target)}
+                  className="flex flex-col items-start gap-0.5"
+                >
+                  <span className="truncate">{target.label}</span>
+                  {target.subtitle ? (
+                    <span className="truncate text-xs text-muted-foreground">
+                      {target.subtitle}
+                    </span>
+                  ) : null}
+                </CommandItem>
+              ))
+            ) : query.trim().length < MIN_SEARCH_LENGTH ? (
+              <CommandEmpty>Saisir au moins 2 caractères</CommandEmpty>
+            ) : searchQuery.isLoading || query.trim() !== debouncedQuery ? (
+              <CommandEmpty>Recherche…</CommandEmpty>
+            ) : searchQuery.isError ? (
+              <CommandEmpty>Erreur lors de la recherche</CommandEmpty>
+            ) : (
+              <CommandEmpty>Aucun résultat</CommandEmpty>
+            )}
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   )
 }
+
+const getCandidateName = (candidate: {
+  firstName: string | null
+  lastName: string | null
+}) =>
+  [candidate.firstName, candidate.lastName].filter(Boolean).join(" ") ||
+  "Sans nom"
 
 export default function NotesPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -83,14 +177,6 @@ export default function NotesPage() {
 
   const utils = api.useUtils()
   const freeNotesQuery = api.note.listFree.useQuery()
-  const candidatesQuery = api.candidate.list.useQuery(
-    { limit: 100 },
-    { enabled: !!selectedId }
-  )
-  const offersQuery = api.offer.list.useQuery(
-    {},
-    { enabled: !!selectedId }
-  )
   const notes = freeNotesQuery.data ?? []
   const selectedNote = selectedId ? notes.find((n) => n.id === selectedId) : null
 
@@ -107,28 +193,37 @@ export default function NotesPage() {
   const deleteMutation = api.note.delete.useMutation({
     onSuccess: () => {
       setDeleteId(null)
+      toast.success("Note supprimée")
       closeAndRefresh()
+    },
+    onError: () => {
+      toast.error("Impossible de supprimer la note")
     },
   })
   const moveToCandidateMutation = api.note.moveToCandidate.useMutation({
-    onSuccess: (_, variables) => {
-      const candidate = candidateItems.find((c) => c.id === variables.candidateId)
-      if (candidate) {
-        const name = [candidate.firstName, candidate.lastName].filter(Boolean).join(" ") || "Sans nom"
-        toast.success(`Note déplacée vers ${name}`)
-      }
-      closeAndRefresh()
-    },
+    onSuccess: () => closeAndRefresh(),
+    onError: () => toast.error("Impossible de déplacer la note"),
   })
   const moveToOfferMutation = api.note.moveToOffer.useMutation({
-    onSuccess: (_, variables) => {
-      const offer = offerItems.find((o) => o.id === variables.offerId)
-      if (offer) {
-        toast.success(`Note déplacée vers ${offer.title}`)
-      }
-      closeAndRefresh()
-    },
+    onSuccess: () => closeAndRefresh(),
+    onError: () => toast.error("Impossible de déplacer la note"),
   })
+
+  const handleMoveToCandidate = (target: MoveTarget) => {
+    if (!selectedId) return
+    moveToCandidateMutation.mutate(
+      { id: selectedId, candidateId: target.id },
+      { onSuccess: () => toast.success(`Note déplacée vers ${target.label}`) }
+    )
+  }
+
+  const handleMoveToOffer = (target: MoveTarget) => {
+    if (!selectedId) return
+    moveToOfferMutation.mutate(
+      { id: selectedId, offerId: target.id },
+      { onSuccess: () => toast.success(`Note déplacée vers ${target.label}`) }
+    )
+  }
 
   const handleOpenNote = (note: NoteItem) => {
     setSelectedId(note.id)
@@ -209,11 +304,8 @@ export default function NotesPage() {
     }
   }, [hasChanges])
 
-  const candidateItems = candidatesQuery.data?.items ?? []
-  const offerItems = offersQuery.data?.items ?? []
-
   return (
-    <main className="min-h-[calc(100vh-3.5rem)] bg-background p-6">
+    <main className="p-6 lg:p-10">
       <div className="mx-auto max-w-4xl">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">
           Mes notes
@@ -228,11 +320,11 @@ export default function NotesPage() {
         ) : (
           <ul className="mt-6 flex flex-col gap-3" aria-label="Liste des notes">
             {notes.map((note) => (
-              <li key={note.id}>
+              <li key={note.id} className="group relative">
                 <button
                   type="button"
                   onClick={() => handleOpenNote(note)}
-                  className="flex w-full flex-col gap-1 rounded-lg border border-border bg-card p-4 text-left shadow-sm transition-colors hover:border-primary/30 hover:bg-card/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="flex w-full flex-col gap-1 rounded-lg border border-border bg-card p-4 pr-12 text-left shadow-sm transition-colors hover:border-primary/30 hover:bg-card/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   aria-label={`Ouvrir la note : ${getNoteDisplayTitle(note.title, note.content)}`}
                 >
                   <span className="truncate font-medium text-foreground">
@@ -247,6 +339,16 @@ export default function NotesPage() {
                     Modifié le {formatDateLong(note.updatedAt)}
                   </span>
                 </button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={() => setDeleteId(note.id)}
+                  className="absolute top-3 right-3 text-muted-foreground opacity-100 hover:text-destructive focus-visible:opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+                  aria-label={`Supprimer la note : ${getNoteDisplayTitle(note.title, note.content)}`}
+                >
+                  <Trash2 className="size-4" aria-hidden />
+                </Button>
               </li>
             ))}
           </ul>
@@ -323,19 +425,19 @@ export default function NotesPage() {
             </div>
             <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-border">
               <span className="text-sm text-muted-foreground">Déplacer vers :</span>
-              <MoveToSelect
-                items={candidateItems}
+              <MoveToCombobox
+                kind="candidates"
                 isPending={moveToCandidateMutation.isPending}
                 placeholder="Choisir un candidat…"
-                getLabel={(c) => [c.firstName, c.lastName].filter(Boolean).join(" ") || "Sans nom"}
-                onSelect={(candidateId) => selectedId && moveToCandidateMutation.mutate({ id: selectedId, candidateId })}
+                searchPlaceholder="Rechercher un candidat…"
+                onSelect={handleMoveToCandidate}
               />
-              <MoveToSelect
-                items={offerItems}
+              <MoveToCombobox
+                kind="offers"
                 isPending={moveToOfferMutation.isPending}
                 placeholder="Choisir une offre…"
-                getLabel={(o) => o.title}
-                onSelect={(offerId) => selectedId && moveToOfferMutation.mutate({ id: selectedId, offerId })}
+                searchPlaceholder="Rechercher une offre…"
+                onSelect={handleMoveToOffer}
               />
             </div>
           </div>

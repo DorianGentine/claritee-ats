@@ -235,7 +235,7 @@ export default function CandidatesPage() {
   const displayCount = items.length
 
   return (
-    <main className="min-h-[calc(100vh-3.5rem)] bg-background p-6">
+    <main className="p-6 lg:p-10">
       <div className="mx-auto max-w-6xl">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">

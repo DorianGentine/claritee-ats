@@ -340,8 +340,26 @@ describe("candidate validations", () => {
       expect(updateCandidateSchema.parse({ id: validUuid, summary: "   " }).summary).toBeNull();
     });
 
-    it("converts undefined summary to null", () => {
-      expect(updateCandidateSchema.parse({ id: validUuid }).summary).toBeNull();
+    it("leaves summary untouched (undefined) when omitted — patch-semantics", () => {
+      expect(updateCandidateSchema.parse({ id: validUuid }).summary).toBeUndefined();
+    });
+
+    it("clears optional contact fields with an empty string, keeps them when omitted", () => {
+      const cleared = updateCandidateSchema.parse({
+        id: validUuid,
+        email: "",
+        phone: "  ",
+        linkedinUrl: "",
+        title: "",
+      });
+      expect(cleared.email).toBeNull();
+      expect(cleared.phone).toBeNull();
+      expect(cleared.linkedinUrl).toBeNull();
+      expect(cleared.title).toBeNull();
+
+      const omitted = updateCandidateSchema.parse({ id: validUuid });
+      expect(omitted.email).toBeUndefined();
+      expect(omitted.title).toBeUndefined();
     });
 
     it("rejects summary exceeding 500 characters", () => {

@@ -15,6 +15,7 @@ import { CandidateDetailContent } from "./CandidateDetailContent";
 import { CandidateNotesSection } from "./CandidateNotesSection";
 import { CandidateCandidaturesSection } from "./CandidateCandidaturesSection";
 import { ShareLinkDialog } from "./ShareLinkDialog";
+import { CandidateIdentityDialog } from "./CandidateIdentityDialog";
 
 type Props = { candidateId: string };
 
@@ -22,6 +23,7 @@ export const CandidateDetailView = ({ candidateId }: Props) => {
   const router = useRouter();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [identityDialogOpen, setIdentityDialogOpen] = useState(false);
   const utils = api.useUtils();
   const getByIdQuery = api.candidate.getById.useQuery({ id: candidateId });
   const deleteMutation = api.candidate.delete.useMutation({
@@ -38,7 +40,7 @@ export const CandidateDetailView = ({ candidateId }: Props) => {
 
   if (getByIdQuery.isLoading) {
     return (
-      <main className="min-h-[calc(100vh-3.5rem)] bg-background p-6">
+      <main className="p-6 lg:p-10">
         <CandidateDetailSkeleton />
       </main>
     );
@@ -46,7 +48,7 @@ export const CandidateDetailView = ({ candidateId }: Props) => {
 
   if (getByIdQuery.error ?? !getByIdQuery.data) {
     return (
-      <main className="min-h-[calc(100vh-3.5rem)] bg-background p-6">
+      <main className="p-6 lg:p-10">
         <div className="mx-auto max-w-4xl">
           <p className="text-muted-foreground">
             Candidat introuvable ou vous n'avez pas accès à cette fiche.
@@ -63,14 +65,11 @@ export const CandidateDetailView = ({ candidateId }: Props) => {
   const citiesLabel = formatCandidateCities(candidate.cities);
 
   return (
-    <main className="min-h-[calc(100vh-3.5rem)] bg-background p-6 print:bg-white">
+    <main className="p-6 lg:p-10 print:bg-white">
       <div className="mx-auto max-w-4xl space-y-6">
         <div className="flex flex-wrap items-center gap-2 print:hidden">
           <Button variant="outline" size="sm" asChild>
             <Link href="/candidates">Retour</Link>
-          </Button>
-          <Button variant="outline" size="sm" asChild>
-            <Link href={`/candidates/${candidateId}/edit`}>Modifier</Link>
           </Button>
           <Button
             variant="outline"
@@ -99,6 +98,7 @@ export const CandidateDetailView = ({ candidateId }: Props) => {
           email={candidate.email}
           phone={candidate.phone}
           linkedinUrl={candidate.linkedinUrl}
+          onEdit={() => setIdentityDialogOpen(true)}
         />
 
         <div className="grid gap-6 lg:grid-cols-[1fr_2fr]">
@@ -120,6 +120,27 @@ export const CandidateDetailView = ({ candidateId }: Props) => {
         <CandidateCandidaturesSection candidateId={candidateId} candidatures={candidate.candidatures} />
         <CandidateNotesSection candidateId={candidateId} />
       </div>
+
+      <CandidateIdentityDialog
+        open={identityDialogOpen}
+        onOpenChange={setIdentityDialogOpen}
+        candidate={{
+          id: candidate.id,
+          firstName: candidate.firstName,
+          lastName: candidate.lastName,
+          email: candidate.email,
+          phone: candidate.phone,
+          linkedinUrl: candidate.linkedinUrl,
+          title: candidate.title,
+          photoUrl: candidate.photoUrl,
+          cities: candidate.cities.map((candidateCity) => ({
+            id: candidateCity.city.id,
+            name: candidateCity.city.name,
+            region: candidateCity.city.region,
+            country: candidateCity.city.country,
+          })),
+        }}
+      />
 
       <ShareLinkDialog
         open={shareDialogOpen}

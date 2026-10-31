@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Search } from "lucide-react"
 import { api } from "@/lib/trpc/client"
+import { cn } from "@/lib/utils"
 import {
   Command,
   CommandEmpty,
@@ -17,7 +18,6 @@ import {
   DialogContent,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
 
 const DEBOUNCE_MS = 300
 const SEARCH_STALE_TIME_MS = 60 * 1000
@@ -33,7 +33,12 @@ const useDebounce = <T,>(value: T, delay: number): T => {
   return debouncedValue
 }
 
-export const GlobalSearchBar = () => {
+type Props = {
+  /** Sur desktop, réduit le déclencheur à une icône (menu latéral replié). */
+  compact?: boolean
+}
+
+export const GlobalSearchBar = ({ compact = false }: Props) => {
   const router = useRouter()
   const [query, setQuery] = useState("")
   const [open, setOpen] = useState(false)
@@ -82,15 +87,30 @@ export const GlobalSearchBar = () => {
 
   return (
     <>
-      <Button
-        variant="ghost"
-        size="icon-sm"
+      <button
+        type="button"
         onClick={() => setOpen(true)}
         aria-label="Rechercher candidats et offres"
         aria-expanded={open}
+        title={compact ? "Rechercher (⌘K)" : undefined}
+        className={cn(
+          "flex h-10 w-full items-center gap-2 rounded-full border border-border bg-card px-4 text-sm text-muted-foreground transition-colors hover:border-input hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          compact && "lg:justify-center lg:px-0"
+        )}
       >
-        <Search className="size-4" />
-      </Button>
+        <Search className="size-4 shrink-0" aria-hidden />
+        <span className={cn("flex-1 text-left", compact && "lg:hidden")}>
+          Rechercher…
+        </span>
+        <kbd
+          className={cn(
+            "rounded-md border border-border bg-muted px-1.5 font-sans text-[0.7rem] text-muted-foreground",
+            compact && "lg:hidden"
+          )}
+        >
+          ⌘K
+        </kbd>
+      </button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent
           className="top-[20vh] translate-y-0 max-w-[600px] p-0 gap-0 overflow-hidden"

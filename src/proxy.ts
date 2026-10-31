@@ -6,6 +6,7 @@ import {
 } from "@/lib/rate-limit";
 
 const LOGIN_URL = "/login";
+const RATE_LIMIT_ERROR = "rate_limit";
 
 const getIp = (request: NextRequest): string =>
   request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
@@ -15,8 +16,13 @@ const getIp = (request: NextRequest): string =>
 export const proxy = async (request: NextRequest) => {
   const { pathname } = request.nextUrl;
 
-  // Rate limit auth routes (login, register) — Option A: same as Story 1.3
-  if (pathname === "/login" || pathname === "/register") {
+  // Rate limit auth routes (login, register) — Option A: same as Story 1.3.
+  // La page d'erreur elle-même (/login?error=rate_limit) n'est ni comptée ni
+  // redirigée : sinon elle se redirigerait vers elle-même en boucle.
+  const isRateLimitErrorPage =
+    pathname === LOGIN_URL &&
+    request.nextUrl.searchParams.get("error") === RATE_LIMIT_ERROR;
+  if ((pathname === "/login" || pathname === "/register") && !isRateLimitErrorPage) {
     const ip = getIp(request);
     const result = await checkRateLimit(
       `auth:${ip}`,
@@ -25,7 +31,7 @@ export const proxy = async (request: NextRequest) => {
     );
     if (!result.success) {
       const redirectUrl = new URL(LOGIN_URL, request.url);
-      redirectUrl.searchParams.set("error", "rate_limit");
+      redirectUrl.searchParams.set("error", RATE_LIMIT_ERROR);
       return NextResponse.redirect(redirectUrl);
     }
   }

@@ -1,15 +1,17 @@
 "use client"
 
-import { useCallback, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
+import { Pencil, SendHorizontal, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
+import { NoteContent } from "@/components/shared/NoteContent"
 import {
   NoteEditor,
   type NoteEditorRef,
 } from "@/components/shared/NoteEditor"
 import { isNoteContentEmpty } from "@/lib/note-utils"
 import { formatDateLong } from "@/lib/format"
-import { Pencil, Trash2, Check, X, Loader } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 export type NoteItem = {
   id: string
@@ -23,7 +25,7 @@ type Props = {
   notes: NoteItem[]
   isLoading: boolean
   currentUserId: string | null
-  /** Appeler onSuccess() pour déclencher le reset du formulaire après succès */
+  /** Appeler onSuccess() pour vider l'éditeur de saisie après succès */
   onCreateNote: (content: string, onSuccess: () => void) => void
   /** Appeler onSuccess() pour fermer l'éditeur inline après succès */
   onUpdateNote: (id: string, content: string, onSuccess: () => void) => void
@@ -39,6 +41,10 @@ const formatAuthor = (firstName: string, lastName: string): string => {
   return `${firstName} ${initial}.`.trim()
 }
 
+/**
+ * Bloc « Notes » d'une fiche (candidat, offre) : fil de bulles façon chat,
+ * les siennes à droite, et un éditeur Tiptap en bas (⌘/Ctrl+Entrée pour envoyer).
+ */
 export const NotesSection = ({
   notes,
   isLoading,
@@ -50,24 +56,49 @@ export const NotesSection = ({
   updatePending,
   deletePending,
 }: Props) => {
+  // Remonter l'éditeur (nouvelle key) le vide après un envoi réussi
+  const [composerKey, setComposerKey] = useState(0)
+  const [composerHasContent, setComposerHasContent] = useState(false)
+  const composerRef = useRef<NoteEditorRef>(null)
   const [editNoteId, setEditNoteId] = useState<string | null>(null)
   const [deleteNoteId, setDeleteNoteId] = useState<string | null>(null)
-  const [formKey, setFormKey] = useState(0)
-  const [formHasContent, setFormHasContent] = useState(false)
-  const formEditorRef = useRef<NoteEditorRef>(null)
   const inlineEditorRef = useRef<NoteEditorRef>(null)
+  const threadRef = useRef<HTMLDivElement>(null)
 
-  const handleFormContentChange = useCallback((isEmpty: boolean) => {
-    setFormHasContent(!isEmpty)
+  // Fil de discussion : afficher la dernière note (la plus récente est en bas)
+  useEffect(() => {
+    const thread = threadRef.current
+    if (thread) thread.scrollTop = thread.scrollHeight
+  }, [notes.length])
+
+  const canSend = composerHasContent && !createPending
+
+  const handleComposerChange = useCallback((isEmpty: boolean) => {
+    setComposerHasContent(!isEmpty)
   }, [])
 
-  const handleCreateSave = () => {
-    const content = formEditorRef.current?.getContent() ?? ""
+  const sendNote = () => {
+    if (!canSend) return
+    const content = composerRef.current?.getContent() ?? ""
     if (isNoteContentEmpty(content)) return
     onCreateNote(content, () => {
-      setFormKey((k) => k + 1)
-      setFormHasContent(false)
+      setComposerKey((key) => key + 1)
+      setComposerHasContent(false)
     })
+  }
+
+  const handleCreate = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    sendNote()
+  }
+
+  // Phase de capture : intercepter ⌘/Ctrl+Entrée avant ProseMirror (qui y insère un saut de ligne)
+  const handleComposerKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+      event.preventDefault()
+      event.stopPropagation()
+      sendNote()
+    }
   }
 
   const handleEditSave = () => {
@@ -77,125 +108,158 @@ export const NotesSection = ({
     onUpdateNote(editNoteId, content, () => setEditNoteId(null))
   }
 
-  const editingNote = editNoteId ? notes.find((n) => n.id === editNoteId) : null
-
   return (
-    <section className="flex w-full flex-col gap-4">
-      <h2 className="text-lg font-semibold">Notes</h2>
+    <section
+      aria-labelledby="notes-section-title"
+      className="flex flex-col rounded-lg border border-border bg-card shadow-sm print:hidden"
+    >
+      <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
+        <h2 id="notes-section-title" className="text-base font-semibold text-foreground">
+          Notes
+        </h2>
+        {notes.length > 0 && (
+          <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+            {notes.length}
+          </span>
+        )}
+      </div>
 
-      {/* Bulles (style chat) */}
-      <div className="flex w-full max-w-full flex-col gap-3">
+      <div
+        ref={threadRef}
+        className="max-h-[28rem] min-h-28 overflow-y-auto px-4 py-4"
+      >
         {isLoading ? (
-          <p className="text-muted-foreground">Chargement…</p>
+          <p className="py-6 text-center text-sm text-muted-foreground">Chargement…</p>
         ) : notes.length === 0 ? (
-          <p className="text-muted-foreground">Aucune note</p>
+          <p className="py-6 text-center text-sm text-muted-foreground">Aucune note</p>
         ) : (
-          notes.map((note) => {
-            const isOwn = currentUserId === note.authorId
-            const isEditing = editNoteId === note.id
+          <ul className="flex flex-col gap-4" aria-label="Fil des notes">
+            {notes.map((note) => {
+              const isOwn = currentUserId === note.authorId
+              const isEditing = editNoteId === note.id
+              const author = formatAuthor(note.author.firstName, note.author.lastName)
 
-            return (
-              <div
-                key={note.id}
-                className={`flex w-full flex-col ${isOwn ? "items-end" : "items-start"}`}
-              >
-                <div className="flex w-[90%] flex-col gap-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs text-muted-foreground">
-                      {formatAuthor(note.author.firstName, note.author.lastName)} ·{" "}
-                      {formatDateLong(note.createdAt)}
+              return (
+                <li
+                  key={note.id}
+                  className={cn(
+                    "group flex flex-col gap-1",
+                    isOwn ? "items-end" : "items-start"
+                  )}
+                >
+                  <div
+                    className={cn(
+                      "flex items-center gap-1 text-xs text-muted-foreground",
+                      isOwn && "flex-row-reverse"
+                    )}
+                  >
+                    <span>
+                      {author} · {formatDateLong(note.createdAt)}
                     </span>
-                    {isEditing && editingNote && (
-                      <div className="flex justify-end gap-1">
+                    {isOwn && !isEditing && (
+                      <span className="flex gap-0.5 transition-opacity sm:opacity-0 sm:group-focus-within:opacity-100 sm:group-hover:opacity-100">
                         <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-xs"
+                          onClick={() => setEditNoteId(note.id)}
+                          aria-label="Modifier la note"
+                        >
+                          <Pencil aria-hidden />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-xs"
+                          className="hover:text-destructive"
+                          onClick={() => setDeleteNoteId(note.id)}
+                          aria-label="Supprimer la note"
+                        >
+                          <Trash2 aria-hidden />
+                        </Button>
+                      </span>
+                    )}
+                  </div>
+
+                  {isEditing ? (
+                    <div className="w-full max-w-[85%] space-y-2">
+                      <div className="rounded-2xl border border-input bg-background px-2 py-1 [&_.note-editor]:bg-transparent">
+                        <NoteEditor
+                          ref={inlineEditorRef}
+                          initialContent={note.content}
+                          editable
+                          autoFocus
+                        />
+                      </div>
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          type="button"
                           variant="ghost"
                           size="sm"
                           onClick={() => setEditNoteId(null)}
                           disabled={updatePending}
                         >
-                          <X className="size-4" aria-hidden />
+                          Annuler
                         </Button>
                         <Button
+                          type="button"
                           size="sm"
                           onClick={handleEditSave}
                           disabled={updatePending}
                         >
-                          {updatePending ? (
-                            <Loader className="size-4" aria-hidden />
-                          ) : (
-                            <Check className="size-4" aria-hidden />
-                          )}
+                          {updatePending ? "Enregistrement…" : "Enregistrer"}
                         </Button>
                       </div>
-                    )}
-                    {!isEditing && isOwn && (
-                      <div className="flex justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setEditNoteId(note.id)}
-                        >
-                          <Pencil className="size-4" aria-hidden />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setDeleteNoteId(note.id)}
-                        >
-                          <Trash2 className="size-4" aria-hidden />
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                  <div
-                    className={`rounded-lg border border-border p-3 ${isOwn ? "bg-accent" : "bg-card"}`}
-                  >
-                    {isEditing && editingNote ? (
-                      <NoteEditor
-                        ref={inlineEditorRef}
-                        initialContent={editingNote.content}
-                        editable
-                      />
-                    ) : (
-                      <div className="[&_.note-editor]:bg-transparent [&_.note-editor]:p-0">
-                        <NoteEditor
-                          // Contenu lu au montage : remonter après une modification
-                          key={note.content}
-                          initialContent={note.content}
-                          editable={false}
-                        />
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )
-          })
+                    </div>
+                  ) : (
+                    <NoteContent
+                      content={note.content}
+                      className={cn(
+                        "max-w-[85%] rounded-2xl px-4 py-2.5",
+                        isOwn
+                          ? "rounded-br-md bg-primary text-primary-foreground"
+                          : "rounded-bl-md bg-muted text-foreground"
+                      )}
+                    />
+                  )}
+                </li>
+              )
+            })}
+          </ul>
         )}
       </div>
 
-      {/* Formulaire de création */}
-      <div className="mt-2 flex w-full flex-col gap-2 rounded-lg border border-border bg-accent p-4">
-        <span className="text-sm font-medium text-muted-foreground">Nouvelle note</span>
-        <NoteEditor
-          key={formKey}
-          ref={formEditorRef}
-          editable
-          onContentChange={handleFormContentChange}
-        />
-        <div className="flex justify-end">
-          <Button
-            onClick={handleCreateSave}
-            disabled={!formHasContent || createPending}
-          >
-            {createPending ? "Enregistrement…" : "Enregistrer"}
-          </Button>
+      <form
+        onSubmit={handleCreate}
+        className="flex items-end gap-2 border-t border-border p-3"
+      >
+        <div
+          onKeyDownCapture={handleComposerKeyDown}
+          className="max-h-60 min-w-0 flex-1 overflow-y-auto rounded-2xl border border-input bg-background px-2 py-1 focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/30 [&_.note-editor]:bg-transparent [&_.note-editor[data-editable]_.ProseMirror]:min-h-[3em]"
+        >
+          <NoteEditor
+            key={composerKey}
+            ref={composerRef}
+            editable
+            autoFocus={composerKey > 0}
+            onContentChange={handleComposerChange}
+          />
         </div>
-      </div>
+        <Button
+          type="submit"
+          size="icon"
+          className="size-10 shrink-0 rounded-full"
+          disabled={!canSend}
+          aria-label="Envoyer la note"
+          title="Envoyer (⌘/Ctrl+Entrée)"
+        >
+          <SendHorizontal className="size-4" aria-hidden />
+        </Button>
+      </form>
 
       <ConfirmDialog
         open={!!deleteNoteId}
-        onOpenChange={(o) => !o && setDeleteNoteId(null)}
+        onOpenChange={(open) => !open && setDeleteNoteId(null)}
         title="Supprimer cette note ?"
         description="Cette action est irréversible."
         confirmLabel="Supprimer"
