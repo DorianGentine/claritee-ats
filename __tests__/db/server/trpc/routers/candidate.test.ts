@@ -1079,6 +1079,39 @@ describe.runIf(!!connectionString)("candidate", () => {
     expect(result.summary).toBeNull();
   });
 
+  it("update: keeps omitted fields and clears fields sent empty", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    await caller.candidate.update({
+      id: candidateA1Id,
+      summary: "Résumé conservé",
+      email: "garde@example.com",
+    });
+
+    // Mise à jour partielle : le résumé, absent de l'input, ne doit pas être effacé
+    const partial = await caller.candidate.update({
+      id: candidateA1Id,
+      title: "Lead dev",
+    });
+    expect(partial.summary).toBe("Résumé conservé");
+    expect(partial.email).toBe("garde@example.com");
+
+    const cleared = await caller.candidate.update({
+      id: candidateA1Id,
+      email: "",
+      title: "",
+    });
+    expect(cleared.email).toBeNull();
+    expect(cleared.title).toBeNull();
+    expect(cleared.summary).toBe("Résumé conservé");
+
+    await db.candidate.update({
+      where: { id: candidateA1Id },
+      data: { summary: null, title: "Dev" },
+    });
+  });
+
   it("update: throws NOT_FOUND for candidate of another company", async () => {
     const ctx = createContext(companyAId);
     const caller = appRouter.createCaller(ctx);

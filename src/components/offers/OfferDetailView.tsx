@@ -63,7 +63,7 @@ export const OfferDetailView = ({ offerId }: Props) => {
 
   if (getByIdQuery.isLoading) {
     return (
-      <main className="min-h-[calc(100vh-3.5rem)] bg-background p-6">
+      <main className="p-6 lg:p-10">
         <div className="mx-auto max-w-4xl space-y-4">
           <div className="flex gap-2">
             <div className="h-8 w-20 animate-pulse rounded bg-muted" />
@@ -81,7 +81,7 @@ export const OfferDetailView = ({ offerId }: Props) => {
 
   if (getByIdQuery.error ?? !getByIdQuery.data) {
     return (
-      <main className="min-h-[calc(100vh-3.5rem)] bg-background p-6">
+      <main className="p-6 lg:p-10">
         <div className="mx-auto max-w-4xl">
           <p className="text-muted-foreground">
             Offre introuvable ou vous n'avez pas accès à cette fiche.
@@ -98,7 +98,7 @@ export const OfferDetailView = ({ offerId }: Props) => {
   const { label: statusLabel, badgeClassName: statusBadgeClass } = getOfferStatusStyle(offer.status)
 
   return (
-    <main className="min-h-[calc(100vh-3.5rem)] bg-background p-6">
+    <main className="p-6 lg:p-10">
       <div className="mx-auto flex max-w-4xl flex-col gap-6">
         {/* Barre d'actions */}
         <div className="flex flex-wrap items-center gap-2">
@@ -256,10 +256,7 @@ export const OfferDetailView = ({ offerId }: Props) => {
           candidatureCountByStatus={offer.candidatureCountByStatus}
         />
 
-        {/* Section Notes */}
-        <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
-          <OfferNotesSection offerId={offerId} />
-        </section>
+        <OfferNotesSection offerId={offerId} />
       </div>
 
       <ConfirmDialog

@@ -1,6 +1,8 @@
 "use client";
 
+import { Pencil } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 
 export type CandidateDetailHeaderProps = {
   photoUrl: string | null;
@@ -11,6 +13,8 @@ export type CandidateDetailHeaderProps = {
   email?: string | null;
   phone?: string | null;
   linkedinUrl?: string | null;
+  /** Affiche le bouton « Modifier » en haut à droite (absent sur les fiches publiques). */
+  onEdit?: () => void;
 };
 
 export const CandidateDetailHeader = ({
@@ -22,6 +26,7 @@ export const CandidateDetailHeader = ({
   email,
   phone,
   linkedinUrl,
+  onEdit,
 }: CandidateDetailHeaderProps) => {
   const fullName =
     [firstName, lastName].filter(Boolean).join(" ") || "Sans nom";
@@ -29,7 +34,20 @@ export const CandidateDetailHeader = ({
     `${firstName?.[0] ?? ""}${lastName?.[0] ?? ""}`.toUpperCase() || "?";
 
   return (
-    <header className="flex flex-col gap-4 rounded-lg border border-border bg-card p-6 shadow-sm sm:flex-row sm:items-start print:shadow-none">
+    <header className="relative flex flex-col gap-4 rounded-lg border border-border bg-card p-6 shadow-sm sm:flex-row sm:items-start print:shadow-none">
+      {onEdit && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          onClick={onEdit}
+          className="absolute top-4 right-4 rounded-full text-muted-foreground hover:text-foreground print:hidden"
+          aria-label="Modifier le profil"
+          title="Modifier le profil"
+        >
+          <Pencil className="size-4" aria-hidden />
+        </Button>
+      )}
       <Avatar className="size-20 shrink-0 rounded-full border-2 border-border">
         <AvatarImage
           src={photoUrl ?? undefined}
@@ -39,7 +57,7 @@ export const CandidateDetailHeader = ({
           {initials}
         </AvatarFallback>
       </Avatar>
-      <div className="min-w-0 flex-1">
+      <div className={onEdit ? "min-w-0 flex-1 pr-10" : "min-w-0 flex-1"}>
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">
           {fullName}
         </h1>

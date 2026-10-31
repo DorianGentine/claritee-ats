@@ -134,6 +134,18 @@ describe("OfferNotesSection", () => {
     expect(screen.getByText(/Bob M\./)).toBeDefined()
   })
 
+  it("renders note contents as static bubbles", () => {
+    vi.mocked(api.note.listByOffer.useQuery).mockReturnValue({
+      data: mockNotes,
+      isLoading: false,
+    } as ReturnType<typeof api.note.listByOffer.useQuery>)
+
+    render(<OfferNotesSection offerId="offer-1" />)
+    expect(screen.getByText("Note 1")).toBeDefined()
+    expect(screen.getByText("Note 2")).toBeDefined()
+    expect(screen.queryByTestId("note-editor-readonly")).toBeNull()
+  })
+
   it("shows edit/delete buttons only for own notes", async () => {
     vi.mocked(api.note.listByOffer.useQuery).mockReturnValue({
       data: mockNotes,
@@ -142,29 +154,29 @@ describe("OfferNotesSection", () => {
 
     render(<OfferNotesSection offerId="offer-1" />)
 
-    // currentUserId is "user-1" (from supabase mock) — loaded async by a useEffect
-    // n1 belongs to user-1 → edit/delete visible; n2 belongs to user-2 → not visible
+    // currentUserId est "user-1" (mock supabase), chargé de façon asynchrone :
+    // n1 appartient à user-1 → actions visibles ; n2 à user-2 → aucune action
     await waitFor(() => {
-      const pencilButtons = screen.getAllByRole("button").filter(
-        (button) => button.querySelector("svg") !== null,
-      )
-      // Exactly edit + delete of n1 (the form's save button has no icon)
-      expect(pencilButtons.length).toBe(2)
+      expect(screen.getAllByRole("button", { name: "Modifier la note" })).toHaveLength(1)
     })
+    expect(screen.getAllByRole("button", { name: "Supprimer la note" })).toHaveLength(1)
   })
 
-  it("shows the new note form", () => {
+  it("shows a Tiptap composer with a disabled send button when empty", () => {
     vi.mocked(api.note.listByOffer.useQuery).mockReturnValue({
       data: [],
       isLoading: false,
     } as ReturnType<typeof api.note.listByOffer.useQuery>)
 
     render(<OfferNotesSection offerId="offer-1" />)
-    expect(screen.getByText("Nouvelle note")).toBeDefined()
-    expect(screen.getByText("Enregistrer")).toBeDefined()
+    expect(screen.getByTestId("note-editor-editable")).toBeDefined()
+    expect(
+      screen.getByRole("button", { name: "Envoyer la note" }).hasAttribute("disabled")
+    ).toBe(true)
+    expect(screen.queryByText("Nouvelle note")).toBeNull()
   })
 
-  it("calls note.create mutation on save with offerId", () => {
+  it("creates a note from the composer with offerId", () => {
     vi.mocked(api.note.listByOffer.useQuery).mockReturnValue({
       data: [],
       isLoading: false,
@@ -172,16 +184,33 @@ describe("OfferNotesSection", () => {
 
     render(<OfferNotesSection offerId="offer-1" />)
 
-    const editors = screen.getAllByTestId("note-editor-editable")
-    const formEditor = editors[editors.length - 1]
-    fireEvent.change(formEditor, { target: { value: "Mon contenu" } })
+    fireEvent.change(screen.getByTestId("note-editor-editable"), {
+      target: { value: "Mon contenu" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: "Envoyer la note" }))
 
-    fireEvent.click(screen.getByText("Enregistrer"))
-
-    // mutate is called with (input, { onSuccess }) — check the first argument
+    // mutate est appelé avec (input, { onSuccess })
     expect(mockCreateMutate).toHaveBeenCalledWith(
-      expect.objectContaining({ offerId: "offer-1" }),
+      { offerId: "offer-1", content: noteContent("Mon contenu") },
       expect.objectContaining({ onSuccess: expect.any(Function) }),
+    )
+  })
+
+  it("sends the note with Ctrl+Enter from the composer", () => {
+    vi.mocked(api.note.listByOffer.useQuery).mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as ReturnType<typeof api.note.listByOffer.useQuery>)
+
+    render(<OfferNotesSection offerId="offer-1" />)
+
+    const composer = screen.getByTestId("note-editor-editable")
+    fireEvent.change(composer, { target: { value: "Relancer jeudi" } })
+    fireEvent.keyDown(composer, { key: "Enter", ctrlKey: true })
+
+    expect(mockCreateMutate).toHaveBeenCalledWith(
+      { offerId: "offer-1", content: noteContent("Relancer jeudi") },
+      expect.anything(),
     )
   })
 })

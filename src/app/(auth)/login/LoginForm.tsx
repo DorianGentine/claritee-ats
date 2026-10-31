@@ -24,11 +24,11 @@ export const LoginForm = () => {
   const [serverError, setServerError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Le paramètre reste dans l'URL : revenir sur /login (encore limité) relancerait la redirection.
     if (searchParams.get("error") === "rate_limit") {
       queueMicrotask(() => setServerError(RATE_LIMIT_MESSAGE));
-      router.replace("/login", { scroll: false });
     }
-  }, [searchParams, router]);
+  }, [searchParams]);
 
   const {
     register,

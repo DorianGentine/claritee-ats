@@ -51,7 +51,8 @@ export const CandidateSummarySection = ({ candidateId, summary }: Props) => {
   const onSubmit = (values: SummaryFormValues) => {
     updateMutation.mutate({
       id: candidateId,
-      summary: values.summary || undefined,
+      // Chaîne vide → résumé effacé (undefined laisserait le résumé inchangé)
+      summary: values.summary ?? "",
     });
   };
 
