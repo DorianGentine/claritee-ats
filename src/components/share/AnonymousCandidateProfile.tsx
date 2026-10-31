@@ -8,7 +8,7 @@ type Props = {
 }
 
 export const AnonymousCandidateProfile = ({ candidate, companyName }: Props) => (
-  <main className="min-h-[calc(100vh-3.5rem)] bg-background p-6">
+  <main className="bg-background p-6">
     <div className="mx-auto max-w-4xl space-y-6">
       {/* Branding + badge anonyme */}
       <div className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3 text-sm text-muted-foreground">

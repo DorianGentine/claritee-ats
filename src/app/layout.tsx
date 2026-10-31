@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import "@/styles/globals.css";
 import { Providers } from "@/components/providers";
-import { SiteNavbar } from "@/components/layout/SiteNavbar";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { clashGrotesk, inter } from "./fonts";
 
 export const metadata: Metadata = {
   title: "Claritee ATS",
-  description: "Applicant Tracking System",
+  description:
+    "L'ATS simple et gratuit des cabinets de recrutement : candidats, offres, clients et notes au même endroit.",
 };
 
 export default function RootLayout({
@@ -15,12 +16,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="fr">
+    <html lang="fr" className={`${inter.variable} ${clashGrotesk.variable}`}>
       <body className="flex min-h-screen flex-col">
-        <Providers>
-          <SiteNavbar />
-          {children}
-        </Providers>
+        <Providers>{children}</Providers>
         <SpeedInsights />
       </body>
     </html>

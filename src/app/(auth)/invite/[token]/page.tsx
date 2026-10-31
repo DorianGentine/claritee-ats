@@ -235,7 +235,7 @@ export default function InvitePage() {
 
   if (!token) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
+      <main className="flex flex-1 flex-col items-center justify-center bg-background p-4 py-12">
         <div className="w-full max-w-md rounded-lg border border-destructive bg-destructive/10 p-6 text-center">
           <p className="text-destructive">{INVITATION_EXPIRED_MESSAGE}</p>
         </div>
@@ -245,7 +245,7 @@ export default function InvitePage() {
 
   if (status === "loading") {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
+      <main className="flex flex-1 flex-col items-center justify-center bg-background p-4 py-12">
         <p className="text-muted-foreground">Chargement…</p>
       </main>
     );
@@ -258,7 +258,7 @@ export default function InvitePage() {
     status === "revoked"
   ) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
+      <main className="flex flex-1 flex-col items-center justify-center bg-background p-4 py-12">
         <div className="w-full max-w-md space-y-6">
           <div
             role="alert"
@@ -280,7 +280,7 @@ export default function InvitePage() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
+    <main className="flex flex-1 flex-col items-center justify-center bg-background p-4 py-12">
       <div className="w-full max-w-md space-y-6">
         <div className="space-y-2 text-center">
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">

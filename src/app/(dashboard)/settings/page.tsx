@@ -5,7 +5,7 @@ import { ProfileSettings } from "@/components/settings/ProfileSettings";
 
 export default function SettingsPage() {
   return (
-    <main className="bg-background p-6">
+    <main className="p-6 lg:p-10">
       <div className="mx-auto max-w-3xl space-y-10">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">
           Paramètres

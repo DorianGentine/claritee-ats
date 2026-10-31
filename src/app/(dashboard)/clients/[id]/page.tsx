@@ -41,7 +41,7 @@ export default function ClientDetailPage() {
 
   if (!id) {
     return (
-      <main className="min-h-[calc(100vh-3.5rem)] bg-background p-6">
+      <main className="p-6 lg:p-10">
         <div className="mx-auto max-w-4xl">
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">
             Client introuvable
@@ -56,7 +56,7 @@ export default function ClientDetailPage() {
 
   if (isLoading) {
     return (
-      <main className="min-h-[calc(100vh-3.5rem)] bg-background p-6">
+      <main className="p-6 lg:p-10">
         <div className="mx-auto max-w-4xl">
           <div className="h-7 w-48 animate-pulse rounded bg-muted" />
           <div className="mt-4 h-5 w-40 animate-pulse rounded bg-muted" />
@@ -68,7 +68,7 @@ export default function ClientDetailPage() {
 
   if (isError || !data) {
     return (
-      <main className="min-h-[calc(100vh-3.5rem)] bg-background p-6">
+      <main className="p-6 lg:p-10">
         <div className="mx-auto max-w-4xl">
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">
             Client introuvable
@@ -97,7 +97,7 @@ export default function ClientDetailPage() {
   }
 
   return (
-    <main className="min-h-[calc(100vh-3.5rem)] bg-background p-6">
+    <main className="p-6 lg:p-10">
       <div className="mx-auto max-w-4xl space-y-8">
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" size="sm" asChild>

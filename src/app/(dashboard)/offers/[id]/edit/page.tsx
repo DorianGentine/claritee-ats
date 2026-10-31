@@ -38,7 +38,7 @@ const EditOfferPage = () => {
 
   if (offerQuery.isLoading || !id || typeof id !== "string") {
     return (
-      <main className="min-h-[calc(100vh-3.5rem)] bg-background p-6">
+      <main className="p-6 lg:p-10">
         <div className="mx-auto max-w-2xl">
           <p className="text-sm text-muted-foreground">Chargement…</p>
         </div>
@@ -48,7 +48,7 @@ const EditOfferPage = () => {
 
   if (!offerQuery.data) {
     return (
-      <main className="min-h-[calc(100vh-3.5rem)] bg-background p-6">
+      <main className="p-6 lg:p-10">
         <div className="mx-auto max-w-2xl">
           <p className="text-sm text-muted-foreground">
             Offre introuvable ou non accessible.
@@ -68,7 +68,7 @@ const EditOfferPage = () => {
   }
 
   return (
-    <main className="min-h-[calc(100vh-3.5rem)] bg-background p-6">
+    <main className="p-6 lg:p-10">
       <div className="mx-auto max-w-2xl">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">
           Modifier l'offre

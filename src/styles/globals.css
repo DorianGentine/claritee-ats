@@ -5,6 +5,8 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-clash), var(--font-inter), ui-sans-serif, sans-serif;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -47,27 +49,27 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
-/* Claritee ATS Design System — docs/coding-standards.md § Styles et tokens */
+/* Claritee ATS Design System (charte claritee.fr) — docs/coding-standards.md § Styles et tokens */
 :root {
-  --radius: 0.5rem;
-  --background: #f5f0e8;
-  --foreground: #1a1a1a;
-  --card: #fdfcfa;
-  --card-foreground: #1a1a1a;
-  --popover: #fdfcfa;
-  --popover-foreground: #1a1a1a;
-  --primary: #b85a3b;
+  --radius: 0.75rem;
+  --background: #faf6f1;
+  --foreground: #1c1917;
+  --card: #fefbf7;
+  --card-foreground: #1c1917;
+  --popover: #fefbf7;
+  --popover-foreground: #1c1917;
+  --primary: #be5334;
   --primary-foreground: #ffffff;
-  --secondary: #5a7a6e;
+  --secondary: #587a6b;
   --secondary-foreground: #ffffff;
-  --muted: #e8e4dc;
-  --muted-foreground: #4a4a4a;
-  --accent: #e3ede8;
+  --muted: #f1eae1;
+  --muted-foreground: #554d46;
+  --accent: #e3eae5;
   --accent-foreground: #2e4a42;
   --destructive: #c44b37;
-  --border: #e5dfd6;
-  --input: #e5dfd6;
-  --ring: #b85a3b;
+  --border: #e5dcd1;
+  --input: #d3c7b8;
+  --ring: #be5334;
   --success: #e8f5ec;
   --success-foreground: #2e6b3e;
   --chart-1: #d4a5a5;
@@ -75,14 +77,14 @@
   --chart-3: #c9b896;
   --chart-4: #9b8ba8;
   --chart-5: #e8c4a8;
-  --sidebar: #fdfcfa;
-  --sidebar-foreground: #1a1a1a;
-  --sidebar-primary: #b85a3b;
+  --sidebar: #f1eae1;
+  --sidebar-foreground: #1c1917;
+  --sidebar-primary: #be5334;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #e3ede8;
-  --sidebar-accent-foreground: #2e4a42;
-  --sidebar-border: #e5dfd6;
-  --sidebar-ring: #b85a3b;
+  --sidebar-accent: #e9e0d4;
+  --sidebar-accent-foreground: #1c1917;
+  --sidebar-border: #e5dcd1;
+  --sidebar-ring: #be5334;
 }
 
 .dark {
@@ -126,8 +128,23 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background font-sans text-foreground antialiased;
   }
+  h1,
+  h2,
+  h3 {
+    @apply font-display tracking-tight;
+  }
+}
+
+/* Fond quadrillé léger de l'espace connecté (DashboardShell) ; fixe au défilement pour l'effet de profondeur */
+@utility bg-grid {
+  background-color: var(--background);
+  background-image:
+    linear-gradient(to right, color-mix(in oklab, var(--border) 55%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in oklab, var(--border) 55%, transparent) 1px, transparent 1px);
+  background-size: 32px 32px;
+  background-attachment: fixed;
 }
 
 /* Éditeur de notes (Tiptap, sans style par défaut) — voir NoteEditor */

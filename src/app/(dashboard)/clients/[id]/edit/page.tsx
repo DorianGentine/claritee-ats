@@ -15,7 +15,7 @@ export default function EditClientPage() {
 
   if (isLoading) {
     return (
-      <main className="min-h-[calc(100vh-3.5rem)] bg-background p-6">
+      <main className="p-6 lg:p-10">
         <div className="mx-auto max-w-xl">
           <div className="h-7 w-48 animate-pulse rounded bg-muted" />
           <div className="mt-4 h-40 animate-pulse rounded-lg border border-border bg-card" />
@@ -26,7 +26,7 @@ export default function EditClientPage() {
 
   if (isError || !data) {
     return (
-      <main className="min-h-[calc(100vh-3.5rem)] bg-background p-6">
+      <main className="p-6 lg:p-10">
         <div className="mx-auto max-w-xl">
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">
             Client introuvable
@@ -40,7 +40,7 @@ export default function EditClientPage() {
   }
 
   return (
-    <main className="min-h-[calc(100vh-3.5rem)] bg-background p-6">
+    <main className="p-6 lg:p-10">
       <div className="mx-auto max-w-xl">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">
           Modifier le client
