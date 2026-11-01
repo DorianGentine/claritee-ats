@@ -39,6 +39,10 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Check LinkedIn import
+        # `shell: bash` explicite → bash -eo pipefail : sans lui, le code de sortie
+        # du pipe est celui de `tee` (toujours 0), le step passe au vert et l'email
+        # d'alerte n'est jamais envoyé.
+        shell: bash
         env:
           APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
           APIFY_LINKEDIN_ACTOR: ${{ vars.APIFY_LINKEDIN_ACTOR }}
