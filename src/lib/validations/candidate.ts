@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { MAX_TAGS_PER_CANDIDATE, tagNameSchema } from "./tag";
 
 const LIST_PAGE_SIZE = 20;
 
@@ -106,7 +107,44 @@ const optionalPhone = z
   .transform(trimToUndefined)
   .refine((v) => !v || isValidPhone(v), { message: PHONE_MESSAGE });
 
-/** Schéma pour la création d'un candidat (infos de base) */
+/** Niveaux de langue (mirroir de l'enum Prisma LanguageLevel) */
+export const LANGUAGE_LEVELS = [
+  "NOTION",
+  "INTERMEDIATE",
+  "FLUENT",
+  "BILINGUAL",
+  "NATIVE",
+] as const;
+
+export const languageLevelSchema = z.enum(LANGUAGE_LEVELS, {
+  message: "Le niveau de langue est requis",
+});
+
+/** Résumé : 500 caractères maximum (création et mise à jour) */
+const SUMMARY_MAX_MESSAGE = "Le résumé ne peut pas dépasser 500 caractères";
+
+/** Expérience fournie à la création (import LinkedIn) */
+const initialExperienceSchema = z.object({
+  title: z.string().trim().min(1, "Le titre est requis"),
+  company: z.string().trim().min(1, "L'entreprise est requise"),
+  startDate: z.coerce.date(),
+  endDate: z.coerce.date().optional().nullable(),
+  description: z.string().max(2000).optional().nullable(),
+});
+
+/** Formation fournie à la création (import LinkedIn) */
+const initialFormationSchema = z.object({
+  degree: z.string().trim().min(1, "Le diplôme est requis"),
+  field: z.string().max(200).optional().nullable(),
+  school: z.string().trim().min(1, "L'établissement est requis"),
+  startDate: z.coerce.date().optional().nullable(),
+  endDate: z.coerce.date().optional().nullable(),
+});
+
+/**
+ * Schéma pour la création d'un candidat : infos de base, et optionnellement
+ * le parcours (résumé, expériences, formations, langues) issu d'un import LinkedIn.
+ */
 export const createCandidateSchema = z.object({
   firstName: z.string().min(1, "Le prénom est requis"),
   lastName: z.string().min(1, "Le nom est requis"),
@@ -115,9 +153,40 @@ export const createCandidateSchema = z.object({
   linkedinUrl: optionalLinkedInUrl,
   title: z.string().optional().transform(trimToUndefined),
   cities: candidateCitiesSchema,
+  summary: z
+    .string()
+    .max(500, SUMMARY_MAX_MESSAGE)
+    .optional()
+    .transform(trimToUndefined),
+  experiences: z.array(initialExperienceSchema).max(50).default([]),
+  formations: z.array(initialFormationSchema).max(30).default([]),
+  languages: z
+    .array(
+      z.object({
+        name: z.string().trim().min(1, "Le nom de la langue est requis").max(50),
+        level: languageLevelSchema,
+      })
+    )
+    .max(20)
+    .default([]),
+  /** Noms de tags (compétences LinkedIn) : tag du cabinet réutilisé ou créé */
+  tags: z.array(tagNameSchema).max(MAX_TAGS_PER_CANDIDATE).default([]),
 });
 
 export type CreateCandidateInput = z.infer<typeof createCandidateSchema>;
+
+/**
+ * Champs de base saisis dans les formulaires candidat (création, modale d'identité) :
+ * villes et parcours sont gérés hors React Hook Form.
+ */
+export const candidateBasicFieldsSchema = createCandidateSchema.pick({
+  firstName: true,
+  lastName: true,
+  email: true,
+  phone: true,
+  linkedinUrl: true,
+  title: true,
+});
 
 /** Schéma pour la mise à jour partielle d'un candidat (champs de base) */
 export const updateCandidateSchema = z.object({
@@ -152,26 +221,13 @@ export const updateCandidateSchema = z.object({
   title: z.string().optional().transform(trimToClearable),
   summary: z
     .string()
-    .max(500, "Le résumé ne peut pas dépasser 500 caractères")
+    .max(500, SUMMARY_MAX_MESSAGE)
     .optional()
     .transform(trimToClearable),
   cities: candidateCitiesUpdateSchema,
 });
 
 export type UpdateCandidateInput = z.infer<typeof updateCandidateSchema>;
-
-/** Niveaux de langue (mirroir de l'enum Prisma LanguageLevel) */
-export const LANGUAGE_LEVELS = [
-  "NOTION",
-  "INTERMEDIATE",
-  "FLUENT",
-  "BILINGUAL",
-  "NATIVE",
-] as const;
-
-export const languageLevelSchema = z.enum(LANGUAGE_LEVELS, {
-  message: "Le niveau de langue est requis",
-});
 
 /** Schéma pour l'ajout d'une langue à un candidat */
 export const addLanguageSchema = z.object({
@@ -308,5 +364,16 @@ export const deleteFormationSchema = z.object({
 });
 
 export type DeleteFormationInput = z.infer<typeof deleteFormationSchema>;
+
+/** Prévisualisation d'un import LinkedIn (URL de profil obligatoire) */
+export const linkedinPreviewInputSchema = z.object({
+  linkedinUrl: z
+    .string()
+    .trim()
+    .min(1, "L'URL LinkedIn est requise")
+    .regex(LINKEDIN_URL_PATTERN, LINKEDIN_MESSAGE),
+});
+
+export type LinkedinPreviewInput = z.infer<typeof linkedinPreviewInputSchema>;
 
 export { LIST_PAGE_SIZE };

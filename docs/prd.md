@@ -27,7 +27,7 @@ Un ATS web gratuit, simple et chaleureux qui centralise candidats, offres, clien
 | Développeur unique, projet personnel, sans échéance | Monolithe simple, pas de microservices, livraison itérative par épics            |
 | Budget 0 €                                          | Uniquement les offres gratuites de Supabase (500 Mo DB, 1 Go stockage) et Vercel |
 | Marché français                                     | Interface et messages en français, SIREN, hébergement UE                         |
-| Pas de scraping LinkedIn (CGU)                      | Saisie manuelle, qui doit donc être rapide                                       |
+| Pas de scraping LinkedIn maison (CGU)               | Saisie manuelle rapide ; import LinkedIn optionnel via un prestataire tiers (Apify), activé seulement si un jeton est configuré, relu avant enregistrement |
 
 ### Indicateurs de succès
 
@@ -58,6 +58,7 @@ Un ATS web gratuit, simple et chaleureux qui centralise candidats, offres, clien
 | FR18 / FR19  | Notes partagées dans le cabinet, en éditeur riche, sur les candidats et sur les offres                                                                             |
 | FR20         | Widget de note rapide, non bloquant, accessible depuis toutes les pages                                                                                            |
 | FR21         | Notes libres et page « Mes notes » pour les organiser et les rattacher à un candidat ou une offre                                                                  |
+| FR22         | Import d'un profil LinkedIn par son URL à la création d'un candidat : identité, titre, résumé, ville, expériences, formations, langues et compétences (en tags, 20 max dans l'ordre du profil) pré-remplis, relus avant enregistrement (un niveau de langue absent de LinkedIn n'est jamais deviné : le recruteur le choisit, sinon la langue n'est pas ajoutée) ; alerte si le profil existe déjà dans le cabinet |
 | FR22 / FR23  | Recherche globale sur candidats (identité, titre, résumé, tags, expériences, formations, langues) et offres (titre, description)                                   |
 | FR24 / FR25  | Filtres : candidats par tags, villes et langues ; offres par statut, salaire, ville, tags et client                                                                |
 | FR26         | Lien de partage d'une fiche candidat en version complète                                                                                                           |
@@ -131,6 +132,7 @@ Contrastes suffisants, navigation complète au clavier, focus visible, libellés
 | 3. Offres, clients & pipeline    | Clients et contacts, offres, candidatures avec statuts, notes partagées et rapides                    | Livré  |
 | 4. Recherche, filtres & partage  | Recherche globale, filtres, partage public complet ou anonymisé, tableau de bord, paramètres          | Livré  |
 | 5. Villes structurées            | Remplacer les villes en texte libre par un référentiel commun, autocomplété et filtrable              | Livré  |
+| 6. Import LinkedIn               | Créer une fiche candidat complète depuis l'URL d'un profil LinkedIn (FR22), service surveillé chaque jour | En test |
 
 ### Épic 1 — Fondations & authentification
 
@@ -202,6 +204,14 @@ Contrastes suffisants, navigation complète au clavier, focus visible, libellés
 | 5.7   | Filtres par ville                    | Candidats et offres se filtrent par ville                                                             |
 | 5.8   | Réordonnancement par glisser-déposer | Les villes d'un candidat se priorisent naturellement                                                  |
 
+### Épic 6 — Import LinkedIn
+
+| Story | Titre                        | Résultat utilisateur                                                                        |
+| ----- | ---------------------------- | ------------------------------------------------------------------------------------------- |
+| 6.1   | Import par URL               | Le recruteur colle l'URL d'un profil et obtient une fiche pré-remplie, qu'il relit avant de l'enregistrer |
+| 6.2   | Alerte de doublon            | Il est prévenu si le profil existe déjà dans son cabinet                                    |
+| 6.3   | Surveillance du prestataire  | L'admin reçoit un email si le service d'import ne renvoie plus de profil exploitable (contrôle quotidien) |
+
 ## 5. Hors périmètre / post-MVP
 
-Exclus du MVP : parsing de CV et de LinkedIn, vue Kanban, envoi d'emails, matching par IA, API publique, extension navigateur. Les évolutions prévues (rôles et permissions, etc.) sont suivies dans `TO-DO.md`.
+Exclus du MVP : parsing de CV (l'import LinkedIn par URL relève de l'épic 6), vue Kanban, envoi d'emails, matching par IA, API publique, extension navigateur. Les évolutions prévues (rôles et permissions, etc.) sont suivies dans `TO-DO.md`.

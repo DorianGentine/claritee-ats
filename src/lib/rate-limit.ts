@@ -62,6 +62,8 @@ export const RATE_LIMITS = {
   UPLOAD_PER_USER: { limit: 30, windowMs: 60 * 60 * 1000 },
   /** Téléchargement CV par token de partage : 30 req / minute par IP */
   CV_DOWNLOAD_SHARE_PER_IP: { limit: 30, windowMs: 60 * 1000 },
+  /** Import LinkedIn (appel Apify payant) par utilisateur : 20 / heure */
+  LINKEDIN_IMPORT_PER_USER: { limit: 20, windowMs: 60 * 60 * 1000 },
   /** Mutations métier générales par utilisateur : 60 / minute */
   GENERAL_MUTATION: { limit: 60, windowMs: 60 * 1000 },
 } as const;

@@ -1,14 +1,8 @@
 import type { LanguageLevel } from "@prisma/client"
 import { Badge } from "@/components/ui/badge"
 import { formatDate } from "@/lib/format"
+import { LANGUAGE_LEVEL_LABELS } from "@/lib/candidate-utils"
 
-const LANGUAGE_LEVEL_LABELS: Record<LanguageLevel, string> = {
-  NOTION: "Notions",
-  INTERMEDIATE: "Intermédiaire",
-  FLUENT: "Courant",
-  BILINGUAL: "Bilingue",
-  NATIVE: "Natif",
-}
 
 type Props = {
   summary: string | null

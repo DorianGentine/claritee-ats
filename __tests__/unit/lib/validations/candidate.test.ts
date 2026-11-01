@@ -101,9 +101,17 @@ describe("candidate validations", () => {
       firstName: "Jean",
       lastName: "Dupont",
     };
+    /** Valeurs par défaut ajoutées par le schéma (villes et parcours vides) */
+    const emptyDefaults = {
+      cities: [],
+      experiences: [],
+      formations: [],
+      languages: [],
+      tags: [],
+    };
 
     it("accepts only required fields", () => {
-      expect(createCandidateSchema.parse(base)).toEqual({ ...base, cities: [] });
+      expect(createCandidateSchema.parse(base)).toEqual({ ...base, ...emptyDefaults });
     });
 
     it("accepts all optional fields", () => {
@@ -114,7 +122,7 @@ describe("candidate validations", () => {
         linkedinUrl: "https://linkedin.com/in/jeandupont",
         title: "Développeur",
       };
-      expect(createCandidateSchema.parse(data)).toEqual({ ...data, cities: [] });
+      expect(createCandidateSchema.parse(data)).toEqual({ ...data, ...emptyDefaults });
     });
 
     it("rejects invalid email when provided", () => {
@@ -146,7 +154,7 @@ describe("candidate validations", () => {
         ...base,
         linkedinUrl: "https://www.linkedin.com/in/jeandupont",
       };
-      expect(createCandidateSchema.parse(data)).toEqual({ ...data, cities: [] });
+      expect(createCandidateSchema.parse(data)).toEqual({ ...data, ...emptyDefaults });
     });
 
     it("accepts LinkedIn URL with trailing slash and query params", () => {
@@ -155,7 +163,7 @@ describe("candidate validations", () => {
         linkedinUrl:
           "https://www.linkedin.com/in/john-doe/?originalSubdomain=fr",
       };
-      expect(createCandidateSchema.parse(data)).toEqual({ ...data, cities: [] });
+      expect(createCandidateSchema.parse(data)).toEqual({ ...data, ...emptyDefaults });
     });
 
     it("accepts flexible French phone formats", () => {
@@ -237,6 +245,53 @@ describe("candidate validations", () => {
           ],
         }),
       ).toThrow();
+    });
+
+    it("accepts an imported background and coerces its dates", () => {
+      const parsed = createCandidateSchema.parse({
+        ...base,
+        summary: "  Recruteuse tech.  ",
+        experiences: [
+          { title: "Lead", company: "Acme", startDate: "2022-11-01", endDate: null },
+        ],
+        formations: [{ degree: "Master", school: "Lyon 2", startDate: null }],
+        languages: [{ name: "Anglais", level: "FLUENT" }],
+      });
+      expect(parsed.summary).toBe("Recruteuse tech.");
+      expect(parsed.experiences[0]!.startDate).toEqual(new Date("2022-11-01"));
+      expect(parsed.formations[0]!.school).toBe("Lyon 2");
+      expect(parsed.languages).toEqual([{ name: "Anglais", level: "FLUENT" }]);
+    });
+
+    it("rejects an imported experience without company or with an invalid level", () => {
+      expect(() =>
+        createCandidateSchema.parse({
+          ...base,
+          experiences: [{ title: "Lead", company: " ", startDate: "2022-11-01" }],
+        })
+      ).toThrow(/L'entreprise est requise/);
+      expect(() =>
+        createCandidateSchema.parse({
+          ...base,
+          languages: [{ name: "Anglais", level: "EXPERT" }],
+        })
+      ).toThrow();
+    });
+
+    it("accepts up to 20 trimmed tag names", () => {
+      expect(createCandidateSchema.parse({ ...base, tags: [" React "] }).tags).toEqual(["React"]);
+      expect(() =>
+        createCandidateSchema.parse({
+          ...base,
+          tags: Array.from({ length: 21 }, (_unused, index) => `Tag ${index}`),
+        })
+      ).toThrow();
+    });
+
+    it("rejects a summary over 500 characters", () => {
+      expect(() =>
+        createCandidateSchema.parse({ ...base, summary: "a".repeat(501) })
+      ).toThrow(/500 caractères/);
     });
   });
 

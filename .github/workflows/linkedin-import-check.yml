@@ -1,0 +1,80 @@
+name: LinkedIn Import Check
+
+# Vérifie chaque soir que l'acteur Apify de l'import LinkedIn répond toujours
+# avec un profil exploitable (bun run linkedin:check). En cas d'échec, un email
+# est envoyé à l'admin de la plateforme via le SMTP (OVH).
+# Chaque exécution consomme un run Apify (~0,005 $ avec supreme_coder).
+on:
+  schedule:
+    - cron: "53 23 * * *" # tous les jours à 23:53, heure de Paris
+      timezone: "Europe/Paris"
+  workflow_dispatch: {} # déclenchement manuel possible
+
+# Secrets requis (Settings → Secrets and variables → Actions) :
+#   APIFY_TOKEN                → même jeton que sur Vercel
+#   ADMIN_EMAIL                → destinataire de l'alerte
+#   SMTP_HOST, SMTP_PORT       → ex. ssl0.ovh.net / 465
+#   SMTP_USER, SMTP_PASSWORD   → compte d'envoi (aussi utilisé comme expéditeur)
+# Variables optionnelles (onglet Variables) : APIFY_LINKEDIN_ACTOR, LINKEDIN_CHECK_PROFILE_URL
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      # Requis par le postinstall `prisma generate` (aucune connexion n'est ouverte)
+      DATABASE_URL: "postgresql://placeholder:placeholder@localhost:5432/placeholder"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: "package.json"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Check LinkedIn import
+        env:
+          APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
+          APIFY_LINKEDIN_ACTOR: ${{ vars.APIFY_LINKEDIN_ACTOR }}
+          LINKEDIN_CHECK_PROFILE_URL: ${{ vars.LINKEDIN_CHECK_PROFILE_URL }}
+        run: bun run linkedin:check 2>&1 | tee check.log
+
+      - name: Email admin on failure
+        if: failure()
+        env:
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          # 465 = SMTPS (TLS implicite) ; sinon STARTTLS imposé par --ssl-reqd
+          if [ "$SMTP_PORT" = "465" ]; then scheme="smtps"; else scheme="smtp"; fi
+          {
+            echo "From: Claritee ATS <$SMTP_USER>"
+            echo "To: $ADMIN_EMAIL"
+            echo "Subject: [Claritee ATS] L'import LinkedIn (Apify) est en panne"
+            echo "Content-Type: text/plain; charset=UTF-8"
+            echo
+            echo "La vérification quotidienne de l'import LinkedIn a échoué."
+            echo "L'acteur Apify ne renvoie plus un profil exploitable : changer d'acteur"
+            echo "(variable APIFY_LINKEDIN_ACTOR, acteurs gérés dans src/server/linkedin/apify.ts) ou vérifier le crédit Apify."
+            echo
+            echo "Exécution : $RUN_URL"
+            echo
+            echo "--- Sortie ---"
+            tail -n 60 check.log 2>/dev/null || echo "(pas de sortie)"
+          } > mail.txt
+          curl -sS --ssl-reqd \
+            --url "$scheme://$SMTP_HOST:$SMTP_PORT" \
+            --user "$SMTP_USER:$SMTP_PASSWORD" \
+            --mail-from "$SMTP_USER" \
+            --mail-rcpt "$ADMIN_EMAIL" \
+            --upload-file mail.txt

@@ -454,6 +454,84 @@ describe.runIf(!!connectionString)("candidate", () => {
     await db.candidate.delete({ where: { id: result.id } });
   });
 
+  it("create: creates the imported background (summary, experiences, formations, languages)", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+
+    const result = await caller.candidate.create({
+      firstName: "Imported",
+      lastName: "Profile",
+      linkedinUrl: "https://www.linkedin.com/in/imported-profile",
+      summary: "  Développeuse full-stack.  ",
+      experiences: [
+        {
+          title: "Lead dev",
+          company: "Acme",
+          startDate: "2022-11-01",
+          endDate: null,
+          description: "Équipe de 5",
+        },
+        { title: "Dev", company: "Initech", startDate: "2019-02-01", endDate: "2022-10-01" },
+      ],
+      formations: [
+        { degree: "Master", field: "Informatique", school: "INSA Lyon", startDate: null, endDate: "2018-06-01" },
+      ],
+      languages: [
+        { name: "Anglais", level: "FLUENT" },
+        { name: "Français", level: "NATIVE" },
+      ],
+    });
+
+    const inDb = await db.candidate.findUniqueOrThrow({
+      where: { id: result.id },
+      include: {
+        experiences: { orderBy: { order: "asc" } },
+        formations: true,
+        languages: { orderBy: { name: "asc" } },
+      },
+    });
+    expect(inDb.summary).toBe("Développeuse full-stack.");
+    expect(inDb.experiences.map((experience) => [experience.company, experience.order])).toEqual([
+      ["Acme", 0],
+      ["Initech", 1],
+    ]);
+    expect(inDb.experiences[0]!.startDate.toISOString()).toBe("2022-11-01T00:00:00.000Z");
+    expect(inDb.experiences[0]!.endDate).toBeNull();
+    expect(inDb.formations).toHaveLength(1);
+    expect(inDb.formations[0]!.school).toBe("INSA Lyon");
+    expect(inDb.languages.map((language) => language.level)).toEqual(["FLUENT", "NATIVE"]);
+
+    await db.candidate.delete({ where: { id: result.id } });
+  });
+
+  it("create: attaches tags by name, reusing an existing company tag regardless of case", async () => {
+    const ctx = createContext(companyAId);
+    const caller = appRouter.createCaller(ctx);
+    const existingTag = await db.tag.create({
+      data: { name: `React-${Date.now()}`, color: "#000000", companyId: companyAId },
+    });
+    const newTagName = `Sourcing-${Date.now()}`;
+
+    const result = await caller.candidate.create({
+      firstName: "Tagged",
+      lastName: "Import",
+      tags: [existingTag.name.toLowerCase(), newTagName, newTagName.toUpperCase()],
+    });
+
+    const links = await db.candidateTag.findMany({
+      where: { candidateId: result.id },
+      include: { tag: true },
+    });
+    expect(links.map((link) => link.tag.name).sort()).toEqual(
+      [existingTag.name, newTagName].sort()
+    );
+    const createdTag = links.find((link) => link.tag.name === newTagName)!.tag;
+    expect(createdTag.companyId).toBe(companyAId);
+
+    await db.candidate.delete({ where: { id: result.id } });
+    await db.tag.deleteMany({ where: { id: { in: [existingTag.id, createdTag.id] } } });
+  });
+
   it("create: throws UNAUTHORIZED when not authenticated", async () => {
     const ctx = createContext(null);
     const caller = appRouter.createCaller(ctx);

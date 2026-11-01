@@ -1,4 +1,5 @@
 import { TRPCError } from "@trpc/server";
+import type { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { router, protectedProcedure, publicProcedure } from "../trpc";
 import {
@@ -69,6 +70,52 @@ const IMAGE_SIGNATURES: Record<
     buf[9] === 0x45 &&
     buf[10] === 0x42 &&
     buf[11] === 0x50,
+};
+
+
+/**
+ * Rattache des tags à un candidat par leur nom : un tag existant du cabinet est
+ * réutilisé sans tenir compte de la casse (« react » → « React »), sinon il est créé.
+ */
+const attachTagsByName = async (
+  tx: Prisma.TransactionClient,
+  companyId: string,
+  candidateId: string,
+  tagNames: string[]
+) => {
+  // Dédoublonnage sans tenir compte de la casse, en gardant la première graphie
+  const uniqueNames = tagNames.filter(
+    (name, index) =>
+      tagNames.findIndex(
+        (otherName) => otherName.toLowerCase() === name.toLowerCase()
+      ) === index
+  );
+  const existingTags = await tx.tag.findMany({
+    where: {
+      companyId,
+      OR: uniqueNames.map((name) => ({
+        name: { equals: name, mode: "insensitive" as const },
+      })),
+    },
+  });
+  const tagIds: string[] = [];
+  for (const name of uniqueNames) {
+    const existing = existingTags.find(
+      (tag) => tag.name.toLowerCase() === name.toLowerCase()
+    );
+    if (existing) {
+      tagIds.push(existing.id);
+      continue;
+    }
+    const created = await tx.tag.create({
+      data: { name, color: getTagColor(name), companyId },
+    });
+    tagIds.push(created.id);
+  }
+  await tx.candidateTag.createMany({
+    data: tagIds.map((tagId) => ({ candidateId, tagId })),
+    skipDuplicates: true,
+  });
 };
 
 /** Génère une URL signée (15 min) pour le CV dans le bucket cvs */
@@ -324,8 +371,8 @@ export const candidateRouter = router({
     }),
 
   /**
-   * Crée un candidat pour le cabinet de l'utilisateur connecté.
-   * companyId dérivé du contexte uniquement.
+   * Crée un candidat pour le cabinet de l'utilisateur connecté, avec son
+   * parcours éventuel (import LinkedIn). companyId dérivé du contexte uniquement.
    */
   create: protectedProcedure
     .input(createCandidateSchema)
@@ -342,9 +389,49 @@ export const candidateRouter = router({
             phone: input.phone || null,
             linkedinUrl: input.linkedinUrl || null,
             title: input.title || null,
+            summary: input.summary || null,
             companyId: ctx.companyId,
           },
         });
+        // Parcours optionnel (import LinkedIn) : l'ordre suit celui du profil
+        if (input.experiences.length > 0) {
+          await tx.experience.createMany({
+            data: input.experiences.map((experience, index) => ({
+              candidateId: candidate.id,
+              title: experience.title,
+              company: experience.company,
+              startDate: experience.startDate,
+              endDate: experience.endDate ?? null,
+              description: experience.description?.trim() || null,
+              order: index,
+            })),
+          });
+        }
+        if (input.formations.length > 0) {
+          await tx.formation.createMany({
+            data: input.formations.map((formation, index) => ({
+              candidateId: candidate.id,
+              degree: formation.degree,
+              field: formation.field?.trim() || null,
+              school: formation.school,
+              startDate: formation.startDate ?? null,
+              endDate: formation.endDate ?? null,
+              order: index,
+            })),
+          });
+        }
+        if (input.languages.length > 0) {
+          await tx.language.createMany({
+            data: input.languages.map((language) => ({
+              candidateId: candidate.id,
+              name: language.name,
+              level: language.level,
+            })),
+          });
+        }
+        if (input.tags.length > 0) {
+          await attachTagsByName(tx, ctx.companyId, candidate.id, input.tags);
+        }
         if (input.cities.length > 0) {
           await tx.candidateCity.createMany({
             data: input.cities.map((cityInput) => ({

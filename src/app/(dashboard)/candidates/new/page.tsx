@@ -7,7 +7,7 @@ import type { FieldErrors, UseFormRegister } from "react-hook-form";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  createCandidateSchema,
+  candidateBasicFieldsSchema,
   PHOTO_ACCEPTED_MIMES,
 } from "@/lib/validations/candidate";
 import { api } from "@/lib/trpc/client";
@@ -24,6 +24,12 @@ import {
 import { type CityOption } from "@/components/shared/CityAutocomplete";
 import { CandidateCitiesField } from "@/components/candidates/CandidateCitiesField";
 import { fileToBase64 } from "@/lib/file-utils";
+import type { LinkedInProfileDraft } from "@/lib/linkedin/profile";
+import { LinkedInImportPanel } from "@/components/candidates/LinkedInImportPanel";
+import {
+  LinkedInImportPreview,
+  type ImportedBackground,
+} from "@/components/candidates/LinkedInImportPreview";
 
 /** Type du formulaire : champs optionnels pour compatibilité avec useForm + zodResolver */
 type NewCandidateFormValues = {
@@ -38,6 +44,10 @@ type NewCandidateFormValues = {
 const GENERIC_ERROR_MESSAGE = "Une erreur est survenue. Réessayez.";
 const PHOTO_INPUT_ID = "candidate-photo";
 
+/** Comparaison de noms de ville insensible à la casse et aux accents */
+const normalizeCityName = (name: string) =>
+  name.normalize("NFD").replace(/\p{Diacritic}/gu, "").trim().toLowerCase();
+
 export default function NewCandidatePage() {
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
@@ -48,6 +58,9 @@ export default function NewCandidatePage() {
   const [createdCandidateId, setCreatedCandidateId] = useState<string | null>(
     null,
   );
+  const [importedBackground, setImportedBackground] =
+    useState<ImportedBackground | null>(null);
+  const utils = api.useUtils();
 
   const handlePhotoChange = createPhotoChangeHandler(
     setPhotoFile,
@@ -70,10 +83,11 @@ export default function NewCandidatePage() {
     register,
     handleSubmit,
     control,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<NewCandidateFormValues>({
-    // `cities` est géré hors RHF (state local + CityAutocomplete) → retiré du schéma du formulaire.
-    resolver: zodResolver(createCandidateSchema.omit({ cities: true })),
+    // Villes (CityAutocomplete) et parcours importé (aperçu LinkedIn) sont gérés hors RHF.
+    resolver: zodResolver(candidateBasicFieldsSchema),
     defaultValues: {
       firstName: "",
       lastName: "",
@@ -87,6 +101,41 @@ export default function NewCandidatePage() {
   const firstName = useWatch({ control, name: "firstName" });
   const lastName = useWatch({ control, name: "lastName" });
   const displayInitials = getCandidateInitials(firstName || "?", lastName || "?");
+
+  /** Associe la ville LinkedIn à une ville connue (même nom), sinon on laisse saisir. */
+  const resolveImportedCity = async (cityName: string) => {
+    try {
+      const results = await utils.city.autocomplete.fetch({ q: cityName });
+      const match = results.find(
+        (city) => normalizeCityName(city.name) === normalizeCityName(cityName),
+      );
+      if (match) {
+        setCities((current) =>
+          current.some((city) => city.id === match.id)
+            ? current
+            : [...current, match],
+        );
+      }
+    } catch {
+      // Ville non résolue : le recruteur la choisit dans le champ Villes
+    }
+  };
+
+  const handleLinkedInImported = (draft: LinkedInProfileDraft) => {
+    const fieldOptions = { shouldDirty: true, shouldValidate: true };
+    setValue("firstName", draft.firstName, fieldOptions);
+    setValue("lastName", draft.lastName, fieldOptions);
+    setValue("linkedinUrl", draft.linkedinUrl, fieldOptions);
+    setValue("title", draft.title ?? "", fieldOptions);
+    setImportedBackground({
+      summary: draft.summary,
+      experiences: draft.experiences,
+      formations: draft.formations,
+      languages: draft.languages,
+      skills: draft.skills,
+    });
+    if (draft.cityName) void resolveImportedCity(draft.cityName);
+  };
 
   const onSubmit = async (data: NewCandidateFormValues) => {
     setServerError(null);
@@ -105,6 +154,14 @@ export default function NewCandidatePage() {
             cityId: city.id,
             order: index,
           })),
+          summary: importedBackground?.summary ?? undefined,
+          experiences: importedBackground?.experiences ?? [],
+          formations: importedBackground?.formations ?? [],
+          // Une langue sans niveau (non précisé sur LinkedIn ni choisi) n'est pas créée
+          languages: (importedBackground?.languages ?? []).flatMap((language) =>
+            language.level ? [{ name: language.name, level: language.level }] : [],
+          ),
+          tags: importedBackground?.skills ?? [],
         });
         candidateId = candidate.id;
         setCreatedCandidateId(candidate.id);
@@ -139,6 +196,13 @@ export default function NewCandidatePage() {
           Saisissez les informations de base du candidat.
         </p>
 
+        <div className="mt-6">
+          <LinkedInImportPanel
+            onImported={handleLinkedInImported}
+            disabled={isPending}
+          />
+        </div>
+
         <form
           onSubmit={handleSubmit(onSubmit)}
           className="mt-6 flex flex-col gap-4 rounded-lg border border-border bg-card p-6 shadow-sm"
@@ -169,6 +233,14 @@ export default function NewCandidatePage() {
           />
 
           <CandidateCitiesField value={cities} onChange={setCities} />
+
+          {importedBackground && (
+            <LinkedInImportPreview
+              value={importedBackground}
+              onChange={setImportedBackground}
+              disabled={isPending}
+            />
+          )}
 
           <div className="mt-4 flex flex-wrap gap-3">
             <Button
