@@ -72,6 +72,7 @@ Versions exactes dans `package.json` (pas de `^`/`~`). Gestionnaire de paquets e
 | Vercel (+ Speed Insights)                                | Hébergement front + API serverless                    | —                                         |
 | Supabase CLI (Docker)                                    | Stack locale dev + tests + CI                         | —                                         |
 | Photon (Komoot)                                          | API externe d'autocomplétion de villes (fallback)     | —                                         |
+| Apify (acteur `supreme_coder/linkedin-profile-scraper`, secours `harvestapi/linkedin-profile-scraper`) | Import d'un profil LinkedIn par URL (optionnel, ~5 $ / 1 000 profils, crédit gratuit de 5 $/mois) | API v2 `run-sync-get-dataset-items` |
 
 ---
 
@@ -90,6 +91,8 @@ Alias `@/` → `src/`. Tests sous `__tests__/` à la racine (voir §10).
 | `src/server/trpc/`             | `context.ts` (session + companyId), `trpc.ts` (`router`, `publicProcedure`, `protectedProcedure`), `index.ts`                                             |
 | `src/server/trpc/routers/`     | Un router par domaine, agrégés dans `_app.ts`                                                                                                             |
 | `src/server/*.ts`              | Code serveur partagé entre routers et pages SSR (ex. `publicCandidateSelect.ts`)                                                                          |
+| `src/server/linkedin/`         | Client Apify de l'import LinkedIn (`apify.ts`) : registre `LINKEDIN_ACTORS` (input + mapping par acteur), sans dépendance à Next ni Prisma, réutilisé par `scripts/check-linkedin-import.ts` |
+| `src/lib/linkedin/`            | Conversion pure d'un profil Apify en brouillon de fiche (`profile.ts`) : un schéma Zod par acteur vers un profil normalisé, puis nettoyage commun (dates, niveaux et noms de langues, ville, troncatures) et contrôle du profil de référence |
 | `src/lib/validations/`         | Schémas Zod par domaine, partagés formulaires ↔ inputs tRPC                                                                                               |
 | `src/lib/supabase/`            | `client.ts` (navigateur), `server.ts` (cookies, RSC/tRPC), `admin.ts` (secret key, serveur uniquement)                                                    |
 | `src/lib/trpc/`                | Client tRPC React (`api`) et fabrique du client HTTP                                                                                                      |
@@ -101,7 +104,7 @@ Alias `@/` → `src/`. Tests sous `__tests__/` à la racine (voir §10).
 | `src/components/providers.tsx` | QueryClient + provider tRPC + Toaster                                                                                                                     |
 | `src/styles/`                  | CSS global / tokens Tailwind                                                                                                                              |
 
-Hors `src/` : `prisma/` (schéma, migrations, seed), `supabase/` (config de la stack locale), `scripts/` (scripts shell/TS d'exploitation), `.github/workflows/` (CI, keep-alive).
+Hors `src/` : `prisma/` (schéma, migrations, seed), `supabase/` (config de la stack locale), `scripts/` (scripts shell/TS d'exploitation), `.github/workflows/` (CI, keep-alive, vérification de l'import LinkedIn).
 
 ---
 
@@ -167,6 +170,7 @@ Implémentation : `src/lib/rate-limit.ts`, store **in-memory par instance** (non
 | Création de lien de partage                | `share-link:<userId>` | 20 / h   | `shareLink.create`                                      |
 | Upload photo / CV                          | `upload:<userId>`     | 30 / h   | `candidate.uploadPhoto`, `candidate.uploadCv`           |
 | Téléchargement CV depuis une page partagée | `cv-share:<ip>`       | 30 / min | `candidate.getCvDownloadUrlByShareToken`                |
+| Import LinkedIn (run Apify payant)         | `linkedin-import:<userId>` | 20 / h | `linkedinImport.preview`                              |
 | Mutations métier générales                 | `mutation:<userId>`   | 60 / min | `checkMutationRateLimit` : appliqué à 17 mutations sur 41 (candidate, note, offer, client, candidature) ; absent d'`auth`, `company` et `invitation` (voir `TO-DO.md`) |
 
 Évolution si besoin d'une limite globale : store externe (Upstash Redis / Vercel KV).
@@ -193,6 +197,7 @@ Un router par domaine dans `src/server/trpc/routers/`, enregistré dans `_app.ts
 | `tag`                | `tag.ts`         | Tags du cabinet                                                                                  | —                              |
 | `search`             | `search.ts`      | Recherche globale (ilike/contains, cf. ADR 0004)                                                 | —                              |
 | `dashboard`          | `dashboard.ts`   | Statistiques d'accueil                                                                           | —                              |
+| `linkedinImport`     | `linkedinImport.ts` | Import LinkedIn : `status` (activé si `APIFY_TOKEN`), `preview` (run Apify → brouillon + doublon éventuel, rien n'est enregistré). La création passe par `candidate.create`, qui accepte résumé, expériences, formations, langues et noms de tags (tag du cabinet réutilisé sans tenir compte de la casse, sinon créé) | —            |
 | `city`               | `city.ts`        | Autocomplétion de villes (local puis Photon, cf. ADR 0005). Procédure **publique** : les résultats Photon sont persistés (upsert) dans `cities`, partagée entre cabinets | `autocomplete`, `getByIds`     |
 
 ### Règles
@@ -288,6 +293,9 @@ Modèle : `.env.example`.
 | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` | Supabase (§5)                                                                                                                                                                                                 |
 | `KEEPALIVE_SECRET`                                                                        | Bearer protégeant `/api/keep-alive` (même valeur sur Vercel et dans les secrets GitHub). Si vide, l'endpoint n'est **pas** protégé.                                                                           |
 | `KEEPALIVE_URL` (secret GitHub uniquement)                                                | URL appelée par `keep-alive.yml`                                                                                                                                                                              |
+| `APIFY_TOKEN`                                                                             | Jeton Apify (serveur uniquement). Absent → l'import LinkedIn est masqué. Aussi en secret GitHub pour `linkedin-import-check.yml`                                                                               |
+| `APIFY_LINKEDIN_ACTOR`                                                                    | Optionnel : un acteur de `LINKEDIN_ACTORS`, défaut `supreme_coder~linkedin-profile-scraper` ; `harvestapi~linkedin-profile-scraper` en secours (plafonné à 50 runs au total en plan Apify gratuit). Un autre acteur demande son schéma dans `profile.ts` |
+| `ADMIN_EMAIL`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` (secrets GitHub uniquement) | Alerte email de `linkedin-import-check.yml` (SMTP OVH, port 465 en SMTPS, sinon STARTTLS)                                                                                                     |
 
 ### Base locale
 
@@ -297,6 +305,7 @@ Modèle : `.env.example`.
 | `bun run db:local:reset`                   | Base locale vierge puis `prisma migrate deploy` (sans données)                                                                             |
 | `bun run db:pull:prod`                     | Copie les données prod (`public` + `auth.users`/`auth.identities`) vers la base locale, après confirmation ; refuse toute cible non locale |
 | `bun run storage:orphans [--env-file .env.prod.local] [--apply]` | Liste les fichiers des buckets `photos` / `cvs` non référencés par un candidat (candidat supprimé, fichier remplacé ou retiré) ; `--apply` les supprime après confirmation. Les chemins hors convention sont listés, jamais supprimés. Cible par défaut : `.env.local` |
+| `bun run linkedin:check`                | Importe un profil public de référence via Apify et contrôle le brouillon (titre, expériences, formations) ; code 1 si le service est cassé. Consomme un run Apify |
 | `bun run prisma db seed`                | Seed de dev (`prisma/seed.ts`) : cabinet, utilisateur et invitation de démo, puis pré-remplissage de `cities` via Photon (`scripts/seed-cities.ts`, réseau) |
 
 ### Migrations
@@ -323,6 +332,7 @@ Node 20 (runtime) et bun (`oven-sh/setup-bun`, version lue dans `packageManager`
 | Élément                            | Rôle                                                                                                                                                                                                                                                                                                                 |
 | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `.github/workflows/keep-alive.yml` | Cron quotidien (~06:17 UTC) qui appelle `GET /api/keep-alive` avec le bearer : upsert de la ligne `_keepalive` → empêche la pause de la DB Supabase gratuite. `_keepalive.lastPingAt` permet de vérifier que le cron tourne encore. Limite connue : GitHub désactive les crons après 60 j sans activité sur le repo. |
+| `.github/workflows/linkedin-import-check.yml` | Tous les jours à 23:53 (Europe/Paris, clé `timezone`) et à la demande : `bun run linkedin:check` (un run Apify, ~0,005 $). En cas d'échec, email à `ADMIN_EMAIL` via le SMTP (curl, sans action tierce) avec la sortie et le lien du run. Si l'acteur principal casse : basculer `APIFY_LINKEDIN_ACTOR` sur l'acteur de secours |
 | `GET /api/health`                  | `SELECT 1` → 200 `{ ok, db }` ou 503 ; public, sans donnée sensible.                                                                                                                                                                                                                                                 |
 | Logs                               | stdout/stderr récupérés par Vercel ; jamais de mot de passe, token ni donnée personnelle. Vercel Speed Insights pour les métriques front.                                                                                                                                                                            |
 | Sauvegardes                        | Pas de backup garanti en offre gratuite : `pg_dump` manuel avant changement important ; fichiers Storage à exporter séparément.                                                                                                                                                                                      |

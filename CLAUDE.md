@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Claritee ATS** — lightweight recruitment management platform for small French recruitment agencies. Centralises candidates, job offers, clients, and collaboration. Built solo, deployed free (Supabase + Vercel). All UI text is in **French**.
 
-Epics 1–5 delivered (MVP + structured cities). Product scope in `docs/prd.md`; next actions in `docs/TO-DO.md`.
+Epics 1–5 delivered (MVP + structured cities); epic 6 (LinkedIn import via Apify, optional) in test. Product scope in `docs/prd.md`; next actions in `docs/TO-DO.md`.
 
 ## Commands
 

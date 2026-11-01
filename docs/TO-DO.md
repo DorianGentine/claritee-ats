@@ -2,7 +2,7 @@
 
 Source de vérité pour les prochaines actions de développement, par urgence puis par thème. Les épics 1 à 5 (MVP + villes structurées) sont livrés — voir `prd.md`. L'historique complet des stories, rétros et rapports QA est dans le tag git `docs-archive-2026-10`.
 
-Dernière mise à jour : 2026-10-31
+Dernière mise à jour : 2026-11-01
 
 Cocher `[x]` une tâche livrée ; les tâches cochées sont retirées à la mise à jour suivante.
 
@@ -27,7 +27,10 @@ Cocher `[x]` une tâche livrée ; les tâches cochées sont retirées à la mise
 
 ## ⭐ Prioritaire
 
-_Rien en attente._
+- [ ] **Import LinkedIn (épic 6) : valider puis mettre en production**
+  - Tester l'import sur quelques profils de candidats réels (acteur `supreme_coder`).
+  - Prod : `APIFY_TOKEN` sur Vercel ; secrets GitHub `APIFY_TOKEN`, `ADMIN_EMAIL`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` pour `linkedin-import-check.yml` ; lancer le workflow à la main une fois (y compris un échec simulé pour recevoir l'email).
+  - RGPD : un profil importé n'est pas collecté auprès du candidat (art. 14) ; prévoir l'information du candidat et citer Apify comme sous-traitant.
 
 ---
 
@@ -126,4 +129,6 @@ _Rien en attente._
 - [ ] **Rôles et permissions** — champ `role: "ADMIN" | "MEMBER"` sur `User`, migration, `adminProcedure` tRPC ; restreindre `/settings/team` et les invitations aux admins.
 - [ ] **Changement d'adresse email** — l'email est en lecture seule dans le profil ; implémenter le flow de confirmation Supabase vers la nouvelle adresse.
 - [ ] **Historique de recherche (style Notion)** — recherches récentes dans la modal Cmd+K avant saisie (table `SearchHistory`, API par utilisateur/cabinet).
-- **Exclusions MVP** (Kanban, parsing CV/LinkedIn, emails, IA, API publique, extension) — voir `prd.md`.
+- [ ] **Import LinkedIn : photo** — l'URL `photo` renvoyée par Apify (media.licdn.com) expire ; la télécharger côté serveur vers le bucket `photos` à la création.
+- [ ] **Import LinkedIn : doublon non détecté si l'URL enregistrée est encodée** (`/in/j%C3%A9r%C3%B4me`) : le pré-filtre `contains` compare l'identifiant décodé.
+- **Exclusions MVP** (Kanban, parsing CV, emails, IA, API publique, extension) — voir `prd.md`.
