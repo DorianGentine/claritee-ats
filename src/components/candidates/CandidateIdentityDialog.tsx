@@ -9,7 +9,7 @@ import type { z } from "zod";
 import { api } from "@/lib/trpc/client";
 import { fileToBase64 } from "@/lib/file-utils";
 import {
-  createCandidateSchema,
+  candidateBasicFieldsSchema,
   PHOTO_ACCEPTED_MIMES,
 } from "@/lib/validations/candidate";
 import { Button } from "@/components/ui/button";
@@ -33,7 +33,7 @@ import {
   getCandidateInitials,
 } from "./CandidatePhotoUpload";
 
-const identitySchema = createCandidateSchema.omit({ cities: true });
+const identitySchema = candidateBasicFieldsSchema;
 type IdentityFormValues = z.infer<typeof identitySchema>;
 
 export type CandidateIdentity = {

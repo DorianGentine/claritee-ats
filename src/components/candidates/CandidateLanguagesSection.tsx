@@ -18,14 +18,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { LANGUAGE_LEVELS, languageLevelSchema } from "@/lib/validations/candidate";
+import { LANGUAGE_LEVEL_LABELS } from "@/lib/candidate-utils";
 
-const LANGUAGE_LEVEL_LABELS: Record<(typeof LANGUAGE_LEVELS)[number], string> = {
-  NOTION: "Notions",
-  INTERMEDIATE: "Intermédiaire",
-  FLUENT: "Courant",
-  BILINGUAL: "Bilingue",
-  NATIVE: "Natif",
-};
 
 const SUGGESTED_LANGUAGES = [
   "Français",

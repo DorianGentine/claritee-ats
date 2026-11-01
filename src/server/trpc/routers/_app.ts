@@ -6,6 +6,7 @@ import { cityRouter } from "./city"
 import { companyRouter } from "./company"
 import { dashboardRouter } from "./dashboard"
 import { invitationRouter } from "./invitation"
+import { linkedinImportRouter } from "./linkedinImport"
 import { noteRouter } from "./note"
 import { searchRouter } from "./search"
 import { tagRouter } from "./tag"
@@ -22,6 +23,7 @@ export const appRouter = router({
   company: companyRouter,
   dashboard: dashboardRouter,
   invitation: invitationRouter,
+  linkedinImport: linkedinImportRouter,
   note: noteRouter,
   offer: offerRouter,
   search: searchRouter,
