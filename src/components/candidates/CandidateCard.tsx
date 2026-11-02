@@ -26,7 +26,7 @@ export const CandidateCard = ({ c }: { c: CandidateCardItem }) => {
       aria-label={`Voir la fiche de ${fullName}`}
       className="flex h-[130px] overflow-hidden rounded-lg border border-border bg-card p-4 shadow-sm transition-colors hover:border-primary/30 hover:bg-card/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
-      <div className="flex min-h-0 flex-1 gap-4">
+      <div className="flex min-h-0 min-w-0 flex-1 gap-4">
         <Avatar className="size-12 shrink-0">
           <AvatarImage src={c.photoUrl ?? undefined} alt="" />
           <AvatarFallback className="bg-secondary/80 text-secondary-foreground text-sm">
@@ -36,7 +36,9 @@ export const CandidateCard = ({ c }: { c: CandidateCardItem }) => {
         <div className="min-w-0 flex-1 overflow-hidden">
           <p className="truncate font-medium text-foreground">{fullName}</p>
           {c.title ? (
-            <p className="truncate text-sm text-muted-foreground">{c.title}</p>
+            <p className="truncate text-sm text-muted-foreground" title={c.title}>
+              {c.title}
+            </p>
           ) : null}
           {c.city ? (
             <p className="truncate text-sm text-muted-foreground">{c.city}</p>
