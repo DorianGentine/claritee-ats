@@ -321,7 +321,7 @@ export default function CandidatesPage() {
               aria-busy={isFetching}
             >
               {items.map((c) => (
-                <li key={c.id}>
+                <li key={c.id} className="min-w-0">
                   <CandidateCard c={c} />
                 </li>
               ))}
