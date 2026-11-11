@@ -9,3 +9,6 @@ supabase/.temp
 
 # Prose rédigée à la main (tableaux alignés) : hors Prettier
 *.md
+
+# Généré par Next.js (régénéré à chaque dev / build)
+next-env.d.ts
