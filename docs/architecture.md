@@ -337,7 +337,7 @@ Modèle : `.env.example`.
 
 | Job                  | Contenu                                       |
 | -------------------- | --------------------------------------------- |
-| `lint-typecheck`     | `bun run lint` + `tsc --noEmit`                  |
+| `lint-typecheck`     | `bun run lint` + `bun run format:check` + `tsc --noEmit` |
 | `test` (après lint)  | `supabase start` (CLI figée en `2.119.0`, alignée sur la version locale) puis `bun run test` (unit + DB) |
 | `build` (après lint) | `bun run build` avec variables factices          |
 

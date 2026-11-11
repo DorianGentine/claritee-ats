@@ -42,9 +42,6 @@ _Aucun sujet ouvert._
 
 ## 🧹 Dette technique — code
 
-- [ ] **Formatage : `;` incohérents**
-  `.prettierrc` impose `semi: true` mais ~45 % des fichiers n'ont pas de `;` ; `bun run format:check` échoue sur ~195 fichiers et tout `prettier --write` reformate des fichiers entiers (diffs illisibles). Faire un commit de reformatage global unique (`bun run format`), puis ajouter `format:check` à la CI.
-
 - [ ] **Erreurs Prisma brutes côté client**
   Pas d'`errorFormatter` tRPC : un `connect` sur un `cityId` invalide (offres) ou un `createMany` de `CandidateCity` / `ClientCompanyCity` en erreur remonte en 500 brut. Ajouter un `errorFormatter` qui mappe P2002/P2003/P2025 vers des codes tRPC et des messages génériques.
 
