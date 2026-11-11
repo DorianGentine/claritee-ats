@@ -3,6 +3,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import { appRouter } from "@/server/trpc/routers/_app";
 import type { Context } from "@/server/trpc/context";
+import { idsNewestFirst } from "../../../helpers/order";
 
 const connectionString = process.env.DATABASE_URL;
 
@@ -93,8 +94,7 @@ describe.runIf(!!connectionString)("client", () => {
     expect(result.some((c) => c.id === clientB1Id)).toBe(false);
   });
 
-  // TODO(db-test-debt): échoue sur base fraîche — skippé temporairement, à corriger (voir docs/TO-DO.md)
-  it.skip("list: returns items sorted by createdAt desc", async () => {
+  it("list: returns items sorted by createdAt desc", async () => {
     const ctx = createContext(companyAId);
     const caller = appRouter.createCaller(ctx);
 
@@ -105,10 +105,7 @@ describe.runIf(!!connectionString)("client", () => {
       db.clientCompany.findUniqueOrThrow({ where: { id: clientA1Id } }),
       db.clientCompany.findUniqueOrThrow({ where: { id: clientA2Id } }),
     ]);
-    const expectedOrder =
-      cA1.createdAt.getTime() >= cA2.createdAt.getTime()
-        ? [cA1.id, cA2.id]
-        : [cA2.id, cA1.id];
+    const expectedOrder = idsNewestFirst([cA1, cA2]);
     expect(result[0].id).toBe(expectedOrder[0]);
     expect(result[1].id).toBe(expectedOrder[1]);
   });

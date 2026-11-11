@@ -212,7 +212,8 @@ export const candidateRouter = router({
 
       const candidates = await ctx.db.candidate.findMany({
         where: { AND: whereConditions },
-        orderBy: { createdAt: "desc" },
+        // id en départage : sans lui, le curseur saute des candidats créés à la même milliseconde
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
         take,
         ...(input.cursor ? { cursor: { id: input.cursor }, skip: 1 } : {}),
         select: {

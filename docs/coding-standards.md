@@ -76,7 +76,7 @@ export const exampleRouter = router({
   list: protectedProcedure.query(({ ctx }) =>
     ctx.db.example.findMany({
       where: { companyId: ctx.companyId },
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     })
   ),
 
@@ -235,6 +235,8 @@ Diagnostic si CPU/mémoire excessifs ou « Compiling… » en boucle : `bun run 
 - Mock tRPC : `vi.mock("@/lib/trpc/client", () => ({ api: { … } }))`.
 - Routers tRPC unitaires : contexte et `ctx.db` mockés ; routers en DB : `appRouter.createCaller(ctx)` avec données créées par le test.
 - Cas à couvrir en priorité : validation, `UNAUTHORIZED`, `NOT_FOUND`, isolation tenant (un autre cabinet ne voit rien), chemins critiques.
+- **Tests DB** : données uniques par test (`randomUUID`), lignes liées réelles (un `authorId` doit exister en `User`), contexte avec `user` non nul pour une procédure protégée. Aucun `it.skip` : un test instable se corrige.
+- **API REST Supabase** : `__tests__/db/supabase-data-api.test.ts` échoue si une migration accorde un droit à `anon` / `authenticated` sur `public`, oublie la RLS ou rouvre les droits par défaut. `scripts/test-db.sh` reproduit les droits par défaut d'un projet Supabase avant les migrations.
 - **Accessibilité** : `const results = await axe(container, { rules: { "color-contrast": { enabled: false } } }); expect(results.violations).toEqual([]);` (modèle : `__tests__/unit/components/layout/AppSidebar.a11y.test.tsx`).
 - Pas d'E2E (Playwright non installé) ni d'objectif de couverture.
 
@@ -246,6 +248,8 @@ Leçons tirées des stories passées, vérifiées contre le code actuel. Sécuri
 
 | Domaine        | Piège                                                                                                  | Règle                                                                                                                                                                                              |
 | -------------- | ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Prisma/DB      | Tri sur une colonne à égalités (`createdAt` de lignes créées à la même milliseconde, `status`) : ordre indéterminé, la pagination (curseur ou page) saute ou répète des lignes | Toujours un départage unique en dernier : `orderBy: [{ createdAt: "desc" }, { id: "desc" }]`. Côté tests : `idsNewestFirst` (`__tests__/db/helpers/order.ts`). |
+| Prisma/DB      | Enum Postgres trié dans son ordre de déclaration (`TODO` → `IN_PROGRESS` → `DONE`), pas alphabétiquement | Attendre cet ordre dans les tests, jamais un `.sort()` JS sur les valeurs.                                                                                                                          |
 | Prisma/DB      | Prisma 7 : l'URL n'est plus dans `schema.prisma`, `directUrl` n'existe plus                            | URL dans `prisma.config.ts` (`DIRECT_DATABASE_URL ?? DATABASE_URL`) ; `@prisma/adapter-pg` obligatoire dans `db.ts`.                                                                               |
 | Prisma/DB      | Mélanger FK scalaire (`cityId`) et relation `connect` dans un même `data` → TS2322 (Checked/Unchecked) | Tout en `connect` / `disconnect`.                                                                                                                                                                  |
 | Prisma/DB      | `deleteMany` + `createMany` de relations hors transaction                                              | `$transaction` (seul `groupBy` y est incompatible → `Promise.all`).                                                                                                                                |
