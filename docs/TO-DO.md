@@ -19,11 +19,6 @@ _Aucun sujet ouvert._
 - [ ] **Vérifier la connexion DB avant le build Vercel** _(optionnel)_
   `scripts/vercel-build.sh` rejette les formats d'URL connus comme invalides, mais un mauvais mot de passe ou un projet en pause n'échoue qu'après `next build`. Piste : `echo "select 1" | bun run prisma db execute --stdin` avant le build (teste la connexion sans dépendre de l'état des migrations ; `prisma migrate status` ne convient pas, il échoue dès qu'une migration est en attente).
 
-- [ ] **Fiabiliser le keep-alive DB (cron GitHub Actions)**
-  `.github/workflows/keep-alive.yml` ping `/api/keep-alive` 1×/jour pour éviter la pause hebdomadaire de Supabase (plan gratuit). GitHub désactive les workflows planifiés après **60 jours sans activité** sur le repo, et les crons peuvent être retardés/sautés.
-  - _Pistes :_ Vercel Cron (Hobby : 1 exécution/jour, suffisant), UptimeRobot ou cron-job.org ; à défaut une 2ᵉ ligne `cron`.
-  - _Observabilité :_ `_keepalive.lastPingAt` en base indique le dernier ping réel.
-
 - [ ] **Base de staging dédiée (Supabase)**
   Les migrations ont déjà été testées contre la prod (coupure de service). Créer un projet Supabase de staging (`DATABASE_URL` / `DIRECT_DATABASE_URL` dans `.env.local`, prod uniquement dans Vercel).
   - _Déjà en place :_ Supabase local (`bun run db:local:start`), migrations rejouables from scratch, job CI qui rejoue migrations + tests.
