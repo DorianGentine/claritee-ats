@@ -1,10 +1,10 @@
-"use client";
+"use client"
 
-import { useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { api } from "@/lib/trpc/client";
-import { Button } from "@/components/ui/button";
+import { useEffect } from "react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { api } from "@/lib/trpc/client"
+import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
@@ -12,14 +12,14 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { createClientContactSchema } from "@/lib/validations/client";
-import type { z } from "zod";
-import { toast } from "sonner";
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { createClientContactSchema } from "@/lib/validations/client"
+import type { z } from "zod"
+import { toast } from "sonner"
 
-type ClientContactFormInput = z.input<typeof createClientContactSchema>;
+type ClientContactFormInput = z.input<typeof createClientContactSchema>
 
 const defaultFormValues: ClientContactFormInput = {
   firstName: "",
@@ -28,23 +28,23 @@ const defaultFormValues: ClientContactFormInput = {
   phone: "",
   position: "",
   linkedinUrl: "",
-};
+}
 
 type Props = {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  clientCompanyId: string;
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  clientCompanyId: string
   contact?: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string | null;
-    phone: string | null;
-    position: string | null;
-    linkedinUrl: string | null;
-  } | null;
-  onSuccess?: () => void;
-};
+    id: string
+    firstName: string
+    lastName: string
+    email: string | null
+    phone: string | null
+    position: string | null
+    linkedinUrl: string | null
+  } | null
+  onSuccess?: () => void
+}
 
 export const ClientContactFormModal = ({
   open,
@@ -53,8 +53,8 @@ export const ClientContactFormModal = ({
   contact,
   onSuccess,
 }: Props) => {
-  const utils = api.useUtils();
-  const isEdit = Boolean(contact?.id);
+  const utils = api.useUtils()
+  const isEdit = Boolean(contact?.id)
 
   const {
     register,
@@ -64,7 +64,7 @@ export const ClientContactFormModal = ({
   } = useForm<ClientContactFormInput>({
     resolver: zodResolver(createClientContactSchema),
     defaultValues: defaultFormValues,
-  });
+  })
 
   useEffect(() => {
     if (open) {
@@ -76,32 +76,32 @@ export const ClientContactFormModal = ({
           phone: contact.phone ?? "",
           position: contact.position ?? "",
           linkedinUrl: contact.linkedinUrl ?? "",
-        });
+        })
       } else {
-        reset(defaultFormValues);
+        reset(defaultFormValues)
       }
     }
-  }, [open, contact, reset]);
+  }, [open, contact, reset])
 
   const createMutation = api.clientCompany.createContact.useMutation({
     onSuccess: () => {
-      void utils.clientCompany.getById.invalidate({ id: clientCompanyId });
-      onSuccess?.();
-      onOpenChange(false);
-      reset(defaultFormValues);
+      void utils.clientCompany.getById.invalidate({ id: clientCompanyId })
+      onSuccess?.()
+      onOpenChange(false)
+      reset(defaultFormValues)
       toast.success("Contact créé.")
     },
-  });
+  })
 
   const updateMutation = api.clientCompany.updateContact.useMutation({
     onSuccess: () => {
-      void utils.clientCompany.getById.invalidate({ id: clientCompanyId });
-      onSuccess?.();
-      onOpenChange(false);
-      reset(defaultFormValues);
+      void utils.clientCompany.getById.invalidate({ id: clientCompanyId })
+      onSuccess?.()
+      onOpenChange(false)
+      reset(defaultFormValues)
       toast.success("Contact modifié.")
     },
-  });
+  })
 
   const onSubmit = (values: ClientContactFormInput) => {
     if (isEdit && contact) {
@@ -115,7 +115,7 @@ export const ClientContactFormModal = ({
         phone: values.phone ?? null,
         position: values.position ?? null,
         linkedinUrl: values.linkedinUrl ?? null,
-      });
+      })
     } else {
       createMutation.mutate({
         clientCompanyId,
@@ -125,12 +125,12 @@ export const ClientContactFormModal = ({
         phone: values.phone ?? undefined,
         position: values.position ?? undefined,
         linkedinUrl: values.linkedinUrl ?? undefined,
-      });
+      })
     }
-  };
+  }
 
-  const pending = createMutation.isPending || updateMutation.isPending;
-  const error = createMutation.error ?? updateMutation.error;
+  const pending = createMutation.isPending || updateMutation.isPending
+  const error = createMutation.error ?? updateMutation.error
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -244,5 +244,5 @@ export const ClientContactFormModal = ({
         </form>
       </DialogContent>
     </Dialog>
-  );
-};
+  )
+}

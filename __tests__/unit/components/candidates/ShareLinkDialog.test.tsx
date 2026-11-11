@@ -2,7 +2,13 @@
  * @vitest-environment jsdom
  */
 import { describe, it, expect, vi, afterEach } from "vitest"
-import { render, screen, fireEvent, cleanup, waitFor } from "@testing-library/react"
+import {
+  render,
+  screen,
+  fireEvent,
+  cleanup,
+  waitFor,
+} from "@testing-library/react"
 import { ShareLinkDialog } from "@/components/candidates/ShareLinkDialog"
 
 const mockCreate = vi.fn()
@@ -35,10 +41,23 @@ vi.mock("@/lib/trpc/client", () => ({
         useQuery: () => ({ data: existingLinks }),
       },
       create: {
-        useMutation: ({ onSuccess, onError: _onError }: { onSuccess?: (link: { token: string; [key: string]: unknown }) => void; onError?: (err: { message?: string }) => void }) => ({
+        useMutation: ({
+          onSuccess,
+          onError: _onError,
+        }: {
+          onSuccess?: (link: { token: string; [key: string]: unknown }) => void
+          onError?: (err: { message?: string }) => void
+        }) => ({
           mutate: (input: unknown) => {
             mockCreate(input)
-            onSuccess?.({ token: "newtoken123", candidateId: "cand-1", id: "new-id", type: "NORMAL", expiresAt: null, createdAt: new Date() })
+            onSuccess?.({
+              token: "newtoken123",
+              candidateId: "cand-1",
+              id: "new-id",
+              type: "NORMAL",
+              expiresAt: null,
+              createdAt: new Date(),
+            })
           },
           isPending: false,
           error: null,
@@ -126,7 +145,8 @@ describe("ShareLinkDialog", () => {
     await waitFor(() => {
       expect(screen.getByLabelText("URL de partage générée")).toBeDefined()
       expect(
-        (screen.getByLabelText("URL de partage générée") as HTMLElement).textContent
+        (screen.getByLabelText("URL de partage générée") as HTMLElement)
+          .textContent
       ).toContain("newtoken123")
     })
   })
@@ -146,7 +166,9 @@ describe("ShareLinkDialog", () => {
 
     expect(screen.getByText("Liens existants")).toBeDefined()
     // First link: NORMAL
-    expect(screen.getAllByText("Fiche complète").length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText("Fiche complète").length).toBeGreaterThanOrEqual(
+      1
+    )
     // Second link: ANONYMOUS
     expect(screen.getByText("Fiche anonymisée")).toBeDefined()
     // Never expiration label (text split across nodes: "Expire : " + "Jamais")

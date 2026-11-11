@@ -1,17 +1,17 @@
-"use client";
+"use client"
 
-import { useParams } from "next/navigation";
-import { api } from "@/lib/trpc/client";
-import { ClientCompanyForm } from "@/components/clients/ClientCompanyForm";
+import { useParams } from "next/navigation"
+import { api } from "@/lib/trpc/client"
+import { ClientCompanyForm } from "@/components/clients/ClientCompanyForm"
 
 export default function EditClientPage() {
-  const params = useParams<{ id: string }>();
-  const id = params?.id;
+  const params = useParams<{ id: string }>()
+  const id = params?.id
 
   const { data, isLoading, isError } = api.clientCompany.getById.useQuery(
     { id: id ?? "" },
-    { enabled: !!id },
-  );
+    { enabled: !!id }
+  )
 
   if (isLoading) {
     return (
@@ -21,7 +21,7 @@ export default function EditClientPage() {
           <div className="mt-4 h-40 animate-pulse rounded-lg border border-border bg-card" />
         </div>
       </main>
-    );
+    )
   }
 
   if (isError || !data) {
@@ -36,7 +36,7 @@ export default function EditClientPage() {
           </p>
         </div>
       </main>
-    );
+    )
   }
 
   return (
@@ -59,5 +59,5 @@ export default function EditClientPage() {
         />
       </div>
     </main>
-  );
+  )
 }

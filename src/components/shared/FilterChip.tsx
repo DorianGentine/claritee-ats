@@ -9,7 +9,11 @@ type FilterChipProps = {
   removeAriaLabel?: string
 }
 
-export const FilterChip = ({ label, onRemove, removeAriaLabel }: FilterChipProps) => (
+export const FilterChip = ({
+  label,
+  onRemove,
+  removeAriaLabel,
+}: FilterChipProps) => (
   <Badge variant="secondary" className="gap-1 py-1 pl-2 pr-1" role="listitem">
     <span className="truncate">{label}</span>
     <button

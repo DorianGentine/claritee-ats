@@ -1,6 +1,6 @@
-"use client";
+"use client"
 
-import { ClientCompanyForm } from "@/components/clients/ClientCompanyForm";
+import { ClientCompanyForm } from "@/components/clients/ClientCompanyForm"
 
 export default function NewClientPage() {
   return (
@@ -15,5 +15,5 @@ export default function NewClientPage() {
         <ClientCompanyForm mode="create" />
       </div>
     </main>
-  );
+  )
 }

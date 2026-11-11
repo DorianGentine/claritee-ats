@@ -31,10 +31,7 @@ import {
   CommandList,
 } from "@/components/ui/command"
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
-import {
-  NoteEditor,
-  type NoteEditorRef,
-} from "@/components/shared/NoteEditor"
+import { NoteEditor, type NoteEditorRef } from "@/components/shared/NoteEditor"
 import {
   ChevronsUpDown,
   Pencil,
@@ -178,7 +175,9 @@ export default function NotesPage() {
   const utils = api.useUtils()
   const freeNotesQuery = api.note.listFree.useQuery()
   const notes = freeNotesQuery.data ?? []
-  const selectedNote = selectedId ? notes.find((n) => n.id === selectedId) : null
+  const selectedNote = selectedId
+    ? notes.find((n) => n.id === selectedId)
+    : null
 
   const closeAndRefresh = () => {
     setSelectedId(null)
@@ -268,8 +267,7 @@ export default function NotesPage() {
 
   const handleContentChange = (content: string) => {
     currentContentRef.current = content
-    const titleChanged =
-      editTitle.trim() !== (initialTitleRef.current || "")
+    const titleChanged = editTitle.trim() !== (initialTitleRef.current || "")
     const contentChanged = content !== (initialContentRef.current || "")
     setHasChanges(titleChanged || contentChanged)
   }
@@ -296,7 +294,8 @@ export default function NotesPage() {
     if (!hasChanges) return
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
       event.preventDefault()
-      ;(event as unknown as { returnValue: string }).returnValue = ""
+      const legacyEvent = event as unknown as { returnValue: string }
+      legacyEvent.returnValue = ""
     }
     window.addEventListener("beforeunload", handleBeforeUnload)
     return () => {
@@ -355,7 +354,10 @@ export default function NotesPage() {
         )}
       </div>
 
-      <Dialog open={!!selectedNote} onOpenChange={(open) => !open && handleCloseDetail()}>
+      <Dialog
+        open={!!selectedNote}
+        onOpenChange={(open) => !open && handleCloseDetail()}
+      >
         <DialogContent
           className={
             isModalFullscreen
@@ -374,7 +376,9 @@ export default function NotesPage() {
                   size="icon-sm"
                   onClick={() => setIsModalFullscreen((v) => !v)}
                   aria-label={
-                    isModalFullscreen ? "Réduire la fenêtre" : "Agrandir en plein écran"
+                    isModalFullscreen
+                      ? "Réduire la fenêtre"
+                      : "Agrandir en plein écran"
                   }
                 >
                   {isModalFullscreen ? (
@@ -424,7 +428,9 @@ export default function NotesPage() {
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-border">
-              <span className="text-sm text-muted-foreground">Déplacer vers :</span>
+              <span className="text-sm text-muted-foreground">
+                Déplacer vers :
+              </span>
               <MoveToCombobox
                 kind="candidates"
                 isPending={moveToCandidateMutation.isPending}

@@ -1,11 +1,11 @@
-"use client";
+"use client"
 
-import { useEffect } from "react";
-import { useForm, useWatch, Controller } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { api } from "@/lib/trpc/client";
-import { Button } from "@/components/ui/button";
+import { useEffect } from "react"
+import { useForm, useWatch, Controller } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
+import { api } from "@/lib/trpc/client"
+import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
@@ -13,18 +13,18 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { MONTHS, YEARS } from "@/lib/date-constants";
+} from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
+import { MONTHS, YEARS } from "@/lib/date-constants"
 
 const experienceFormSchema = z
   .object({
@@ -39,40 +39,43 @@ const experienceFormSchema = z
   })
   .refine(
     (data) => {
-      if (data.isCurrentJob) return true;
-      return data.endMonth != null && data.endYear != null;
+      if (data.isCurrentJob) return true
+      return data.endMonth != null && data.endYear != null
     },
     { message: "La date de fin est requise", path: ["endYear"] }
   )
   .refine(
     (data) => {
-      if (data.isCurrentJob) return true;
-      if (data.endMonth == null || data.endYear == null) return true;
-      const start = new Date(data.startYear, data.startMonth - 1, 1).getTime();
-      const end = new Date(data.endYear, data.endMonth - 1, 1).getTime();
-      return end >= start;
+      if (data.isCurrentJob) return true
+      if (data.endMonth == null || data.endYear == null) return true
+      const start = new Date(data.startYear, data.startMonth - 1, 1).getTime()
+      const end = new Date(data.endYear, data.endMonth - 1, 1).getTime()
+      return end >= start
     },
-    { message: "La date de fin doit être après la date de début", path: ["endYear"] }
-  );
+    {
+      message: "La date de fin doit être après la date de début",
+      path: ["endYear"],
+    }
+  )
 
-type ExperienceFormValues = z.infer<typeof experienceFormSchema>;
+type ExperienceFormValues = z.infer<typeof experienceFormSchema>
 
 export type ExperienceItem = {
-  id: string;
-  title: string;
-  company: string;
-  startDate: Date | string;
-  endDate: Date | string | null;
-  description: string | null;
-};
+  id: string
+  title: string
+  company: string
+  startDate: Date | string
+  endDate: Date | string | null
+  description: string | null
+}
 
 type Props = {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  candidateId: string;
-  experience?: ExperienceItem | null;
-  onSuccess?: () => void;
-};
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  candidateId: string
+  experience?: ExperienceItem | null
+  onSuccess?: () => void
+}
 
 const defaultValues: ExperienceFormValues = {
   title: "",
@@ -83,7 +86,7 @@ const defaultValues: ExperienceFormValues = {
   endMonth: undefined,
   endYear: undefined,
   description: "",
-};
+}
 
 export const ExperienceFormDialog = ({
   open,
@@ -92,8 +95,8 @@ export const ExperienceFormDialog = ({
   experience,
   onSuccess,
 }: Props) => {
-  const utils = api.useUtils();
-  const isEdit = Boolean(experience?.id);
+  const utils = api.useUtils()
+  const isEdit = Boolean(experience?.id)
 
   const {
     register,
@@ -105,22 +108,26 @@ export const ExperienceFormDialog = ({
   } = useForm<ExperienceFormValues>({
     resolver: zodResolver(experienceFormSchema),
     defaultValues,
-  });
+  })
 
-  const isCurrentJob = useWatch({ control, name: "isCurrentJob", defaultValue: true });
+  const isCurrentJob = useWatch({
+    control,
+    name: "isCurrentJob",
+    defaultValue: true,
+  })
 
   useEffect(() => {
     if (isCurrentJob) {
-      setValue("endMonth", undefined);
-      setValue("endYear", undefined);
+      setValue("endMonth", undefined)
+      setValue("endYear", undefined)
     }
-  }, [isCurrentJob, setValue]);
+  }, [isCurrentJob, setValue])
 
   useEffect(() => {
     if (open) {
       if (experience) {
-        const start = new Date(experience.startDate);
-        const end = experience.endDate ? new Date(experience.endDate) : null;
+        const start = new Date(experience.startDate)
+        const end = experience.endDate ? new Date(experience.endDate) : null
         reset({
           title: experience.title,
           company: experience.company,
@@ -130,38 +137,38 @@ export const ExperienceFormDialog = ({
           endMonth: end ? end.getMonth() + 1 : undefined,
           endYear: end ? end.getFullYear() : undefined,
           description: experience.description ?? "",
-        });
+        })
       } else {
-        reset(defaultValues);
+        reset(defaultValues)
       }
     }
-  }, [open, experience, reset]);
+  }, [open, experience, reset])
 
   const addMutation = api.candidate.addExperience.useMutation({
     onSuccess: () => {
-      void utils.candidate.getById.invalidate({ id: candidateId });
-      onSuccess?.();
-      onOpenChange(false);
-      reset(defaultValues);
+      void utils.candidate.getById.invalidate({ id: candidateId })
+      onSuccess?.()
+      onOpenChange(false)
+      reset(defaultValues)
     },
-  });
+  })
 
   const updateMutation = api.candidate.updateExperience.useMutation({
     onSuccess: () => {
-      void utils.candidate.getById.invalidate({ id: candidateId });
-      onSuccess?.();
-      onOpenChange(false);
-      reset(defaultValues);
+      void utils.candidate.getById.invalidate({ id: candidateId })
+      onSuccess?.()
+      onOpenChange(false)
+      reset(defaultValues)
     },
-  });
+  })
 
   const onSubmit = (values: ExperienceFormValues) => {
-    const startDate = new Date(values.startYear, values.startMonth - 1, 1);
+    const startDate = new Date(values.startYear, values.startMonth - 1, 1)
     const endDate = values.isCurrentJob
       ? null
       : values.endMonth != null && values.endYear != null
         ? new Date(values.endYear, values.endMonth - 1, 1)
-        : null;
+        : null
 
     if (isEdit && experience) {
       updateMutation.mutate({
@@ -172,7 +179,7 @@ export const ExperienceFormDialog = ({
         startDate,
         endDate,
         description: values.description || null,
-      });
+      })
     } else {
       addMutation.mutate({
         candidateId,
@@ -181,12 +188,12 @@ export const ExperienceFormDialog = ({
         startDate,
         endDate,
         description: values.description || null,
-      });
+      })
     }
-  };
+  }
 
-  const pending = addMutation.isPending || updateMutation.isPending;
-  const error = addMutation.error ?? updateMutation.error;
+  const pending = addMutation.isPending || updateMutation.isPending
+  const error = addMutation.error ?? updateMutation.error
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -210,7 +217,9 @@ export const ExperienceFormDialog = ({
               placeholder="Ex. Développeur full stack"
             />
             {errors.title && (
-              <p className="mt-1 text-xs text-destructive">{errors.title.message}</p>
+              <p className="mt-1 text-xs text-destructive">
+                {errors.title.message}
+              </p>
             )}
           </div>
 
@@ -222,7 +231,9 @@ export const ExperienceFormDialog = ({
               placeholder="Ex. Acme Inc."
             />
             {errors.company && (
-              <p className="mt-1 text-xs text-destructive">{errors.company.message}</p>
+              <p className="mt-1 text-xs text-destructive">
+                {errors.company.message}
+              </p>
             )}
           </div>
 
@@ -343,7 +354,9 @@ export const ExperienceFormDialog = ({
                 />
               </div>
               {errors.endYear && (
-                <p className="mt-1 text-xs text-destructive">{errors.endYear.message}</p>
+                <p className="mt-1 text-xs text-destructive">
+                  {errors.endYear.message}
+                </p>
               )}
             </div>
           )}
@@ -360,7 +373,9 @@ export const ExperienceFormDialog = ({
           </div>
 
           {error && (
-            <p className="text-xs text-destructive">Une erreur est survenue. Réessayez.</p>
+            <p className="text-xs text-destructive">
+              Une erreur est survenue. Réessayez.
+            </p>
           )}
 
           <DialogFooter>
@@ -379,5 +394,5 @@ export const ExperienceFormDialog = ({
         </form>
       </DialogContent>
     </Dialog>
-  );
-};
+  )
+}

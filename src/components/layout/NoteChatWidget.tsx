@@ -3,10 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { api } from "@/lib/trpc/client"
-import {
-  NoteEditor,
-  type NoteEditorRef,
-} from "@/components/shared/NoteEditor"
+import { NoteEditor, type NoteEditorRef } from "@/components/shared/NoteEditor"
 import { getNoteDisplayTitle, isNoteContentEmpty } from "@/lib/note-utils"
 import { clearNoteDraft, readNoteDraft, writeNoteDraft } from "@/lib/note-draft"
 import { Button } from "@/components/ui/button"
@@ -16,7 +13,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { StickyNote, X, ChevronDown, FileText, Maximize2, Minimize2 } from "lucide-react"
+import {
+  StickyNote,
+  X,
+  ChevronDown,
+  FileText,
+  Maximize2,
+  Minimize2,
+} from "lucide-react"
 
 const DEBOUNCE_MS = 2000
 const SAVE_ERROR_MESSAGE = "Impossible d'enregistrer la note"
@@ -50,7 +54,9 @@ export const NoteChatWidget = () => {
   const meQuery = api.auth.getMe.useQuery(undefined, { enabled: isOpen })
   /** Propriétaire du brouillon local ; repli si l'utilisateur n'a pas pu être chargé */
   const draftOwnerId = meQuery.data?.id ?? "current"
-  const freeNotesQuery = api.note.listFree.useQuery(undefined, { enabled: isOpen })
+  const freeNotesQuery = api.note.listFree.useQuery(undefined, {
+    enabled: isOpen,
+  })
   const notes = freeNotesQuery.data ?? []
   const selectedNote = selectedNoteId
     ? notes.find((note) => note.id === selectedNoteId)
@@ -112,7 +118,10 @@ export const NoteChatWidget = () => {
           : note
       )
     )
-    updateMutation.mutate({ id: pendingUpdate.noteId, content: pendingUpdate.content })
+    updateMutation.mutate({
+      id: pendingUpdate.noteId,
+      content: pendingUpdate.content,
+    })
   }, [updateMutation, utils])
 
   const savePendingRef = useRef(savePending)
@@ -198,10 +207,13 @@ export const NoteChatWidget = () => {
 
   const isNewNote = selectedNoteId === null
   /** Nouvelle note : attendre l'utilisateur (clé du brouillon) et la fin d'une création en cours */
-  const isNewNoteBlocked = isNewNote && (meQuery.isLoading || createMutation.isPending)
+  const isNewNoteBlocked =
+    isNewNote && (meQuery.isLoading || createMutation.isPending)
   /** Note sélectionnée absente de la liste : en cours de rechargement, ou supprimée / déplacée */
   const isSelectedNoteMissing = !isNewNote && !selectedNote
-  const toggleLabel = isOpen ? "Fermer les notes rapides" : "Ouvrir les notes rapides"
+  const toggleLabel = isOpen
+    ? "Fermer les notes rapides"
+    : "Ouvrir les notes rapides"
   const selectorLabel = selectedNote
     ? getNoteDisplayTitle(selectedNote.title, selectedNote.content)
     : isNewNote
@@ -251,7 +263,9 @@ export const NoteChatWidget = () => {
               className="hidden min-[500px]:inline-flex"
               onClick={() => setIsFullscreen((v) => !v)}
               aria-label={
-                isFullscreen ? "Réduire le panneau de notes" : "Agrandir le panneau de notes"
+                isFullscreen
+                  ? "Réduire le panneau de notes"
+                  : "Agrandir le panneau de notes"
               }
             >
               {isFullscreen ? (

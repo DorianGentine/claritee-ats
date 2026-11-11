@@ -4,58 +4,63 @@
  *
  * Référence : docs/architecture.md § Rate limiting
  */
-import { TRPCError } from "@trpc/server";
+import { TRPCError } from "@trpc/server"
 
 export type RateLimitResult = {
-  success: boolean;
-  remaining: number;
-  resetAt: number;
-};
+  success: boolean
+  remaining: number
+  resetAt: number
+}
 
 type RateLimitStore = {
-  check: (key: string, limit: number, windowMs: number) => Promise<RateLimitResult>;
-};
+  check: (
+    key: string,
+    limit: number,
+    windowMs: number
+  ) => Promise<RateLimitResult>
+}
 
 /** Entrée par clé : nombre de requêtes dans la fenêtre + fin de fenêtre (timestamp) */
-const entries = new Map<
-  string,
-  { count: number; windowEndMs: number }
->();
+const entries = new Map<string, { count: number; windowEndMs: number }>()
 
 /**
  * Rate limiter in-memory (dev et prod). En prod Vercel, la limite est par instance.
  */
 const inMemoryStore: RateLimitStore = {
-  check: async (key: string, limit: number, windowMs: number): Promise<RateLimitResult> => {
-    const now = Date.now();
-    const entry = entries.get(key);
+  check: async (
+    key: string,
+    limit: number,
+    windowMs: number
+  ): Promise<RateLimitResult> => {
+    const now = Date.now()
+    const entry = entries.get(key)
 
     if (!entry) {
-      entries.set(key, { count: 1, windowEndMs: now + windowMs });
-      return { success: true, remaining: limit - 1, resetAt: now + windowMs };
+      entries.set(key, { count: 1, windowEndMs: now + windowMs })
+      return { success: true, remaining: limit - 1, resetAt: now + windowMs }
     }
 
     if (now >= entry.windowEndMs) {
-      entries.set(key, { count: 1, windowEndMs: now + windowMs });
-      return { success: true, remaining: limit - 1, resetAt: now + windowMs };
+      entries.set(key, { count: 1, windowEndMs: now + windowMs })
+      return { success: true, remaining: limit - 1, resetAt: now + windowMs }
     }
 
-    entry.count += 1;
+    entry.count += 1
     if (entry.count > limit) {
-      return { success: false, remaining: 0, resetAt: entry.windowEndMs };
+      return { success: false, remaining: 0, resetAt: entry.windowEndMs }
     }
     return {
       success: true,
       remaining: limit - entry.count,
       resetAt: entry.windowEndMs,
-    };
+    }
   },
-};
+}
 
 /** Vide tous les compteurs. Réservé aux tests (isolation entre tests). */
 export const resetRateLimits = (): void => {
-  entries.clear();
-};
+  entries.clear()
+}
 
 /** Seuils recommandés (docs/architecture.md § Rate limiting) */
 export const RATE_LIMITS = {
@@ -73,16 +78,16 @@ export const RATE_LIMITS = {
   CITY_AUTOCOMPLETE_PER_USER: { limit: 60, windowMs: 60 * 1000 },
   /** Mutations par utilisateur (toutes les mutations protégées, cf. `protectedProcedure`) : 60 / minute */
   GENERAL_MUTATION: { limit: 60, windowMs: 60 * 1000 },
-} as const;
+} as const
 
 export const RATE_LIMIT_MESSAGE =
-  "Trop de requêtes. Réessayez dans quelques minutes.";
+  "Trop de requêtes. Réessayez dans quelques minutes."
 
 /** IP du client (premier élément de `x-forwarded-for`, sinon `x-real-ip`). */
 export const getClientIp = (headers: Headers | null | undefined): string =>
   headers?.get("x-forwarded-for")?.split(",")[0]?.trim() ||
   headers?.get("x-real-ip") ||
-  "unknown";
+  "unknown"
 
 /**
  * Vérifie la limite pour une clé ; si dépassée, retourne success: false.
@@ -92,7 +97,7 @@ export const checkRateLimit = async (
   key: string,
   limit: number,
   windowMs: number
-): Promise<RateLimitResult> => inMemoryStore.check(key, limit, windowMs);
+): Promise<RateLimitResult> => inMemoryStore.check(key, limit, windowMs)
 
 /**
  * Comme `checkRateLimit`, mais lance une TRPCError TOO_MANY_REQUESTS si la
@@ -102,14 +107,14 @@ export const enforceRateLimit = async (
   key: string,
   { limit, windowMs }: { limit: number; windowMs: number }
 ): Promise<void> => {
-  const result = await checkRateLimit(key, limit, windowMs);
+  const result = await checkRateLimit(key, limit, windowMs)
   if (!result.success) {
     throw new TRPCError({
       code: "TOO_MANY_REQUESTS",
       message: RATE_LIMIT_MESSAGE,
-    });
+    })
   }
-};
+}
 
 /**
  * Limite GENERAL_MUTATION d'un utilisateur authentifié, appliquée à toutes les
@@ -117,4 +122,4 @@ export const enforceRateLimit = async (
  * Clé : `mutation:${userId}` — partagée par toutes les mutations.
  */
 export const checkMutationRateLimit = (userId: string): Promise<void> =>
-  enforceRateLimit(`mutation:${userId}`, RATE_LIMITS.GENERAL_MUTATION);
+  enforceRateLimit(`mutation:${userId}`, RATE_LIMITS.GENERAL_MUTATION)

@@ -1,48 +1,49 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { formatDate } from "@/lib/format";
-import { api } from "@/lib/trpc/client";
-import { Button } from "@/components/ui/button";
-import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { useState } from "react"
+import { formatDate } from "@/lib/format"
+import { api } from "@/lib/trpc/client"
+import { Button } from "@/components/ui/button"
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
 import {
   ExperienceFormDialog,
   type ExperienceItem,
-} from "@/components/candidates/ExperienceFormDialog";
+} from "@/components/candidates/ExperienceFormDialog"
 
 type Props = {
-  candidateId?: string;
-  experiences: ExperienceItem[];
-};
+  candidateId?: string
+  experiences: ExperienceItem[]
+}
 
 export const CandidateExperiencesSection = ({
   candidateId,
   experiences,
 }: Props) => {
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editing, setEditing] = useState<ExperienceItem | null>(null);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [editing, setEditing] = useState<ExperienceItem | null>(null)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
 
-  const utils = api.useUtils();
+  const utils = api.useUtils()
   const deleteMutation = api.candidate.deleteExperience.useMutation({
     onSuccess: () => {
-      if (candidateId) void utils.candidate.getById.invalidate({ id: candidateId });
-      setDeleteId(null);
+      if (candidateId)
+        void utils.candidate.getById.invalidate({ id: candidateId })
+      setDeleteId(null)
     },
-  });
+  })
 
   const openAdd = () => {
-    setEditing(null);
-    setDialogOpen(true);
-  };
+    setEditing(null)
+    setDialogOpen(true)
+  }
   const openEdit = (exp: ExperienceItem) => {
-    setEditing(exp);
-    setDialogOpen(true);
-  };
+    setEditing(exp)
+    setDialogOpen(true)
+  }
   const closeDialog = (open: boolean) => {
-    setDialogOpen(open);
-    if (!open) setEditing(null);
-  };
+    setDialogOpen(open)
+    if (!open) setEditing(null)
+  }
 
   return (
     <section>
@@ -60,7 +61,9 @@ export const CandidateExperiencesSection = ({
         )}
       </div>
       {experiences.length === 0 ? (
-        <p className="mt-2 text-sm text-muted-foreground">Aucune expérience ajoutée</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Aucune expérience ajoutée
+        </p>
       ) : (
         <ul className="mt-6 space-y-4">
           {experiences.map((exp) => (
@@ -127,7 +130,7 @@ export const CandidateExperiencesSection = ({
             pendingLabel="Suppression…"
             onConfirm={() => {
               if (deleteId && candidateId)
-                deleteMutation.mutate({ candidateId, experienceId: deleteId });
+                deleteMutation.mutate({ candidateId, experienceId: deleteId })
             }}
             pending={deleteMutation.isPending}
             confirmVariant="destructive"
@@ -135,5 +138,5 @@ export const CandidateExperiencesSection = ({
         </>
       )}
     </section>
-  );
-};
+  )
+}

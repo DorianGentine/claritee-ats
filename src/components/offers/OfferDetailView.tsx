@@ -17,7 +17,13 @@ import { OfferNotesSection } from "@/components/offers/OfferNotesSection"
 
 type Props = { offerId: string }
 
-const DetailField = ({ label, children }: { label: string; children: ReactNode }) => (
+const DetailField = ({
+  label,
+  children,
+}: {
+  label: string
+  children: ReactNode
+}) => (
   <div>
     <h2 className="mb-2 text-lg font-semibold text-foreground">{label}</h2>
     {children}
@@ -95,7 +101,8 @@ export const OfferDetailView = ({ offerId }: Props) => {
   }
 
   const offer = getByIdQuery.data
-  const { label: statusLabel, badgeClassName: statusBadgeClass } = getOfferStatusStyle(offer.status)
+  const { label: statusLabel, badgeClassName: statusBadgeClass } =
+    getOfferStatusStyle(offer.status)
 
   return (
     <main className="p-6 lg:p-10">
@@ -141,9 +148,13 @@ export const OfferDetailView = ({ offerId }: Props) => {
             )}
             {offer.clientContact && (
               <span>
-                Contact : {offer.clientContact.firstName} {offer.clientContact.lastName}
+                Contact : {offer.clientContact.firstName}{" "}
+                {offer.clientContact.lastName}
                 {offer.clientContact.position && (
-                  <span className="text-muted-foreground"> — {offer.clientContact.position}</span>
+                  <span className="text-muted-foreground">
+                    {" "}
+                    — {offer.clientContact.position}
+                  </span>
                 )}
               </span>
             )}
@@ -152,14 +163,17 @@ export const OfferDetailView = ({ offerId }: Props) => {
 
         {/* Section Détails */}
         <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
-
           <div className="space-y-4">
             {/* Description */}
             <DetailField label="Description">
               {offer.description ? (
-                <p className="whitespace-pre-wrap text-sm text-foreground">{offer.description}</p>
+                <p className="whitespace-pre-wrap text-sm text-foreground">
+                  {offer.description}
+                </p>
               ) : (
-                <p className="text-sm text-muted-foreground">Aucune description</p>
+                <p className="text-sm text-muted-foreground">
+                  Aucune description
+                </p>
               )}
             </DetailField>
 
@@ -196,7 +210,8 @@ export const OfferDetailView = ({ offerId }: Props) => {
               <DetailField label="Contact référent">
                 <div className="space-y-1 text-sm">
                   <p className="font-medium text-foreground">
-                    {offer.clientContact.firstName} {offer.clientContact.lastName}
+                    {offer.clientContact.firstName}{" "}
+                    {offer.clientContact.lastName}
                     {offer.clientContact.position && (
                       <span className="ml-1 font-normal text-muted-foreground">
                         — {offer.clientContact.position}
@@ -216,7 +231,9 @@ export const OfferDetailView = ({ offerId }: Props) => {
                         variant="ghost"
                         size="icon-xs"
                         aria-label="Copier l'email"
-                        onClick={() => copyToClipboard(offer.clientContact!.email!, "Email")}
+                        onClick={() =>
+                          copyToClipboard(offer.clientContact!.email!, "Email")
+                        }
                         className="shrink-0"
                       >
                         <Copy className="size-3" />
@@ -236,7 +253,9 @@ export const OfferDetailView = ({ offerId }: Props) => {
                         variant="ghost"
                         size="icon-xs"
                         aria-label="Copier le numéro"
-                        onClick={() => copyToClipboard(offer.clientContact!.phone!, "Numéro")}
+                        onClick={() =>
+                          copyToClipboard(offer.clientContact!.phone!, "Numéro")
+                        }
                         className="shrink-0"
                       >
                         <Copy className="size-3" />

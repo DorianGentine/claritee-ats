@@ -55,7 +55,9 @@ export const MultiSelectPopover = ({
         aria-expanded={open}
         aria-haspopup="listbox"
       >
-        {selectedValues.length > 0 ? selectedLabel(selectedValues.length) : placeholder}
+        {selectedValues.length > 0
+          ? selectedLabel(selectedValues.length)
+          : placeholder}
       </Button>
     </PopoverTrigger>
     <PopoverContent align="start" className="w-56 p-2">

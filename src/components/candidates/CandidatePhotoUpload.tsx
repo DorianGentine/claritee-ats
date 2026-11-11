@@ -1,32 +1,33 @@
-"use client";
+"use client"
 
-import { useRef, useEffect } from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+import { useRef, useEffect } from "react"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Button } from "@/components/ui/button"
+import { Label } from "@/components/ui/label"
 import {
   FILE_TOO_LARGE_MESSAGE,
   PHOTO_ACCEPTED_MIMES,
   PHOTO_FORMAT_MESSAGE,
   PHOTO_MAX_BYTES,
-} from "@/lib/validations/candidate";
+} from "@/lib/validations/candidate"
 
-export const PHOTO_ACCEPT_ATTR = ".jpg,.jpeg,.png,.webp";
+export const PHOTO_ACCEPT_ATTR = ".jpg,.jpeg,.png,.webp"
 
 export const getCandidateInitials = (firstName: string, lastName: string) =>
-  `${firstName?.charAt(0) ?? ""}${lastName?.charAt(0) ?? ""}`.toUpperCase() || "?";
+  `${firstName?.charAt(0) ?? ""}${lastName?.charAt(0) ?? ""}`.toUpperCase() ||
+  "?"
 
 type Props = {
-  inputId: string;
-  photoFile: File | null;
-  photoPreviewUrl: string | null;
-  photoError: string | null;
-  onPhotoChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onRemovePhoto: () => void;
-  displayInitials: string;
-  existingPhotoUrl?: string | null;
-  avatarSize?: "sm" | "lg";
-};
+  inputId: string
+  photoFile: File | null
+  photoPreviewUrl: string | null
+  photoError: string | null
+  onPhotoChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+  onRemovePhoto: () => void
+  displayInitials: string
+  existingPhotoUrl?: string | null
+  avatarSize?: "sm" | "lg"
+}
 
 export const CandidatePhotoUpload = ({
   inputId,
@@ -39,24 +40,22 @@ export const CandidatePhotoUpload = ({
   existingPhotoUrl,
   avatarSize = "lg",
 }: Props) => {
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     return () => {
-      if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl);
-    };
-  }, [photoPreviewUrl]);
+      if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl)
+    }
+  }, [photoPreviewUrl])
 
-  const photoSrc = photoPreviewUrl ?? existingPhotoUrl ?? undefined;
-  const sizeClass = avatarSize === "sm" ? "size-16" : "size-20 shrink-0";
+  const photoSrc = photoPreviewUrl ?? existingPhotoUrl ?? undefined
+  const sizeClass = avatarSize === "sm" ? "size-16" : "size-20 shrink-0"
 
   return (
     <div className="space-y-2">
       <Label htmlFor={inputId}>Photo</Label>
       <div className="flex items-center gap-4">
-        <Avatar
-          className={`${sizeClass} rounded-full border-2 border-border`}
-        >
+        <Avatar className={`${sizeClass} rounded-full border-2 border-border`}>
           <AvatarImage
             src={photoSrc}
             alt={
@@ -85,8 +84,8 @@ export const CandidatePhotoUpload = ({
               variant="outline"
               size="sm"
               onClick={() => {
-                onRemovePhoto();
-                if (fileInputRef.current) fileInputRef.current.value = "";
+                onRemovePhoto()
+                if (fileInputRef.current) fileInputRef.current.value = ""
               }}
             >
               Supprimer / Remplacer
@@ -100,32 +99,34 @@ export const CandidatePhotoUpload = ({
         </p>
       )}
     </div>
-  );
-};
+  )
+}
 
-export const createPhotoChangeHandler = (
-  setPhotoFile: (f: File | null) => void,
-  setPhotoPreviewUrl: (url: string | null) => void,
-  setPhotoError: (err: string | null) => void,
-  photoPreviewUrl: string | null
-) => (e: React.ChangeEvent<HTMLInputElement>) => {
-  setPhotoError(null);
-  const file = e.target.files?.[0];
-  if (!file) {
-    setPhotoFile(null);
-    setPhotoPreviewUrl(null);
-    return;
+export const createPhotoChangeHandler =
+  (
+    setPhotoFile: (f: File | null) => void,
+    setPhotoPreviewUrl: (url: string | null) => void,
+    setPhotoError: (err: string | null) => void,
+    photoPreviewUrl: string | null
+  ) =>
+  (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPhotoError(null)
+    const file = e.target.files?.[0]
+    if (!file) {
+      setPhotoFile(null)
+      setPhotoPreviewUrl(null)
+      return
+    }
+    const mime = file.type as (typeof PHOTO_ACCEPTED_MIMES)[number]
+    if (!PHOTO_ACCEPTED_MIMES.includes(mime)) {
+      setPhotoError(PHOTO_FORMAT_MESSAGE)
+      return
+    }
+    if (file.size > PHOTO_MAX_BYTES) {
+      setPhotoError(FILE_TOO_LARGE_MESSAGE)
+      return
+    }
+    if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl)
+    setPhotoFile(file)
+    setPhotoPreviewUrl(URL.createObjectURL(file))
   }
-  const mime = file.type as (typeof PHOTO_ACCEPTED_MIMES)[number];
-  if (!PHOTO_ACCEPTED_MIMES.includes(mime)) {
-    setPhotoError(PHOTO_FORMAT_MESSAGE);
-    return;
-  }
-  if (file.size > PHOTO_MAX_BYTES) {
-    setPhotoError(FILE_TOO_LARGE_MESSAGE);
-    return;
-  }
-  if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl);
-  setPhotoFile(file);
-  setPhotoPreviewUrl(URL.createObjectURL(file));
-};

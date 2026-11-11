@@ -43,11 +43,14 @@ export const CandidateSelectDialog = ({
   const [search, setSearch] = useState("")
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
-  const existingSet = useMemo(() => new Set(existingCandidateIds), [existingCandidateIds])
+  const existingSet = useMemo(
+    () => new Set(existingCandidateIds),
+    [existingCandidateIds]
+  )
 
   const listQuery = api.candidate.list.useQuery(
     { limit: 100 },
-    { enabled: open, staleTime: 30_000 },
+    { enabled: open, staleTime: 30_000 }
   )
 
   const filtered = useMemo(() => {
@@ -66,7 +69,7 @@ export const CandidateSelectDialog = ({
       toast.success(
         data.count === 1
           ? "1 candidat associé avec succès."
-          : `${data.count} candidats associés avec succès.`,
+          : `${data.count} candidats associés avec succès.`
       )
       onOpenChange(false)
       setSelectedIds(new Set())
@@ -116,7 +119,8 @@ export const CandidateSelectDialog = ({
             Associer des candidats
           </DialogTitle>
           <DialogDescription className="sr-only">
-            Recherchez et sélectionnez un ou plusieurs candidats à associer à cette offre.
+            Recherchez et sélectionnez un ou plusieurs candidats à associer à
+            cette offre.
           </DialogDescription>
         </DialogHeader>
 
@@ -152,10 +156,16 @@ export const CandidateSelectDialog = ({
             </p>
           ) : filtered.length === 0 ? (
             <p className="px-4 py-6 text-center text-sm text-muted-foreground">
-              {search ? "Aucun résultat pour cette recherche." : "Aucun candidat dans votre cabinet."}
+              {search
+                ? "Aucun résultat pour cette recherche."
+                : "Aucun candidat dans votre cabinet."}
             </p>
           ) : (
-            <ul role="listbox" aria-multiselectable="true" aria-label="Liste des candidats">
+            <ul
+              role="listbox"
+              aria-multiselectable="true"
+              aria-label="Liste des candidats"
+            >
               {filtered.map((candidate) => {
                 const isExisting = existingSet.has(candidate.id)
                 const isSelected = selectedIds.has(candidate.id)
@@ -181,7 +191,10 @@ export const CandidateSelectDialog = ({
                     >
                       <Avatar className="size-9 shrink-0">
                         {candidate.photoUrl && (
-                          <AvatarImage src={candidate.photoUrl} alt={fullName} />
+                          <AvatarImage
+                            src={candidate.photoUrl}
+                            alt={fullName}
+                          />
                         )}
                         <AvatarFallback>
                           {getInitials(candidate.firstName, candidate.lastName)}
@@ -189,17 +202,26 @@ export const CandidateSelectDialog = ({
                       </Avatar>
 
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-foreground">{fullName}</p>
+                        <p className="truncate text-sm font-medium text-foreground">
+                          {fullName}
+                        </p>
                         {candidate.title && (
-                          <p className="truncate text-xs text-muted-foreground">{candidate.title}</p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {candidate.title}
+                          </p>
                         )}
                         {isExisting && (
-                          <p className="text-xs text-muted-foreground">Déjà associé</p>
+                          <p className="text-xs text-muted-foreground">
+                            Déjà associé
+                          </p>
                         )}
                       </div>
 
                       {isSelected && (
-                        <Check className="size-4 shrink-0 text-primary" aria-hidden="true" />
+                        <Check
+                          className="size-4 shrink-0 text-primary"
+                          aria-hidden="true"
+                        />
                       )}
                     </button>
                   </li>

@@ -48,9 +48,7 @@ export const TagsSection = ({
   // Reconcile optimistic state when real tags arrive
   useEffect(() => {
     setPendingTags((prev) => {
-      const next = prev.filter(
-        (pt) => !tags.some((t) => t.name === pt.name),
-      )
+      const next = prev.filter((pt) => !tags.some((t) => t.name === pt.name))
       return next.length !== prev.length ? next : prev
     })
     setRemovingIds((prev) => {

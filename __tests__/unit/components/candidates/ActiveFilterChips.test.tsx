@@ -4,7 +4,10 @@
 import { describe, it, expect, vi, afterEach } from "vitest"
 import { render, within, fireEvent, cleanup } from "@testing-library/react"
 import { ActiveFilterChips } from "@/components/candidates/ActiveFilterChips"
-import { EMPTY_CANDIDATE_FILTERS, type CandidateFilters } from "@/components/candidates/CandidateListFilters"
+import {
+  EMPTY_CANDIDATE_FILTERS,
+  type CandidateFilters,
+} from "@/components/candidates/CandidateListFilters"
 
 vi.mock("@/lib/trpc/client", () => ({
   api: {

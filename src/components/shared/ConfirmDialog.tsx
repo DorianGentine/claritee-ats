@@ -1,6 +1,6 @@
-"use client";
+"use client"
 
-import * as React from "react";
+import * as React from "react"
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -9,21 +9,21 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
+} from "@/components/ui/alert-dialog"
+import { Button } from "@/components/ui/button"
 
 export type ConfirmDialogProps = {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  title: string;
-  description: string;
-  confirmLabel?: string;
-  cancelLabel?: string;
-  pendingLabel?: string;
-  onConfirm: () => void;
-  pending?: boolean;
-  confirmVariant?: React.ComponentProps<typeof Button>["variant"];
-};
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  title: string
+  description: string
+  confirmLabel?: string
+  cancelLabel?: string
+  pendingLabel?: string
+  onConfirm: () => void
+  pending?: boolean
+  confirmVariant?: React.ComponentProps<typeof Button>["variant"]
+}
 
 export const ConfirmDialog = ({
   open,
@@ -51,4 +51,4 @@ export const ConfirmDialog = ({
       </AlertDialogFooter>
     </AlertDialogContent>
   </AlertDialog>
-);
+)

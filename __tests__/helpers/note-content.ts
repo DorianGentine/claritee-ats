@@ -8,4 +8,4 @@ export const noteContent = (text: string): string =>
         content: text ? [{ type: "text", text }] : undefined,
       },
     ],
-  });
+  })

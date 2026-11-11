@@ -1,10 +1,10 @@
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "@prisma/client"
 
 /** Placeholder UUID for dev seed (User.id = Supabase Auth uid in production) */
-export const DEV_USER_ID = "00000000-0000-0000-0000-000000000001";
+export const DEV_USER_ID = "00000000-0000-0000-0000-000000000001"
 
 /** UUID valide pour l'invitation de seed (getByToken attend un UUID) */
-export const DEV_INVITATION_TOKEN = "00000000-0000-0000-0000-000000000002";
+export const DEV_INVITATION_TOKEN = "00000000-0000-0000-0000-000000000002"
 
 /**
  * Données de démo du seed : cabinet, utilisateur et invitation. Idempotent
@@ -18,7 +18,7 @@ export const seedDevData = async (prisma: PrismaClient) => {
       siren: "123456789",
     },
     update: {},
-  });
+  })
 
   await prisma.user.upsert({
     where: { id: DEV_USER_ID },
@@ -30,7 +30,7 @@ export const seedDevData = async (prisma: PrismaClient) => {
       companyId: company.id,
     },
     update: { companyId: company.id },
-  });
+  })
 
   await prisma.invitation.upsert({
     where: { token: DEV_INVITATION_TOKEN },
@@ -41,5 +41,5 @@ export const seedDevData = async (prisma: PrismaClient) => {
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     },
     update: {},
-  });
-};
+  })
+}

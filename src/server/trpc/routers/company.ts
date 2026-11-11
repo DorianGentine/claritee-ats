@@ -1,19 +1,19 @@
-import { TRPCError } from "@trpc/server";
-import type { SupabaseClient } from "@supabase/supabase-js";
-import { router, protectedProcedure } from "../trpc";
+import { TRPCError } from "@trpc/server"
+import type { SupabaseClient } from "@supabase/supabase-js"
+import { router, protectedProcedure } from "../trpc"
 import {
   deleteCompanySchema,
   deleteCompanyUserSchema,
   updateCompanySchema,
-} from "@/lib/validations/company";
-import { createAdminClient } from "@/lib/supabase/admin";
+} from "@/lib/validations/company"
+import { createAdminClient } from "@/lib/supabase/admin"
 import {
   CANDIDATE_BUCKETS,
   removeCompanyFiles,
-} from "@/server/candidateStorage";
-import type { Context } from "../context";
+} from "@/server/candidateStorage"
+import type { Context } from "../context"
 
-const GENERIC_ERROR_MESSAGE = "Une erreur est survenue. Réessayez.";
+const GENERIC_ERROR_MESSAGE = "Une erreur est survenue. Réessayez."
 
 /**
  * Créateur du cabinet : son premier utilisateur. Sans système de rôles, c'est lui
@@ -28,15 +28,15 @@ const getCompanyOwnerId = async (
     where: { companyId },
     orderBy: [{ createdAt: "asc" }, { id: "asc" }],
     select: { id: true },
-  });
-  return owner?.id ?? null;
-};
+  })
+  return owner?.id ?? null
+}
 
 /** Supprime un compte Supabase Auth ; un compte déjà absent n'est pas une erreur. */
 const deleteAuthUser = async (supabase: SupabaseClient, userId: string) => {
-  const { error } = await supabase.auth.admin.deleteUser(userId);
-  return error && error.status !== 404 ? error : null;
-};
+  const { error } = await supabase.auth.admin.deleteUser(userId)
+  return error && error.status !== 404 ? error : null
+}
 
 export const companyRouter = router({
   /**
@@ -47,12 +47,12 @@ export const companyRouter = router({
     const company = await ctx.db.company.findFirst({
       where: { id: ctx.companyId },
       select: { id: true, name: true, siren: true },
-    });
+    })
     if (!company) {
-      throw new TRPCError({ code: "NOT_FOUND" });
+      throw new TRPCError({ code: "NOT_FOUND" })
     }
-    const ownerId = await getCompanyOwnerId(ctx.db, ctx.companyId);
-    return { ...company, ownerId };
+    const ownerId = await getCompanyOwnerId(ctx.db, ctx.companyId)
+    return { ...company, ownerId }
   }),
 
   updateCompany: protectedProcedure
@@ -62,7 +62,7 @@ export const companyRouter = router({
         where: { id: ctx.companyId },
         data: { name: input.name },
         select: { id: true, name: true, siren: true },
-      });
+      })
     }),
 
   listUsers: protectedProcedure.query(async ({ ctx }) => {
@@ -76,7 +76,7 @@ export const companyRouter = router({
         createdAt: true,
       },
       orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-    });
+    })
   }),
 
   /**
@@ -91,44 +91,44 @@ export const companyRouter = router({
       const target = await ctx.db.user.findFirst({
         where: { id: input.userId, companyId: ctx.companyId },
         select: { id: true },
-      });
+      })
       if (!target) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND" })
       }
 
-      const isSelf = input.userId === ctx.user.id;
-      const ownerId = await getCompanyOwnerId(ctx.db, ctx.companyId);
+      const isSelf = input.userId === ctx.user.id
+      const ownerId = await getCompanyOwnerId(ctx.db, ctx.companyId)
       if (!isSelf && ctx.user.id !== ownerId) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "Seul le créateur du cabinet peut retirer un membre.",
-        });
+        })
       }
 
       const memberCount = await ctx.db.user.count({
         where: { companyId: ctx.companyId },
-      });
+      })
       if (memberCount <= 1) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message:
             "Vous êtes le dernier membre du cabinet : supprimez le cabinet depuis les paramètres.",
-        });
+        })
       }
 
       // Compte Auth d'abord : en cas d'échec, rien n'est supprimé et l'action peut
       // être relancée ; l'inverse laisserait un compte capable de se connecter.
-      const authError = await deleteAuthUser(createAdminClient(), input.userId);
+      const authError = await deleteAuthUser(createAdminClient(), input.userId)
       if (authError) {
-        console.error("[company.deleteUser] Auth deletion failed:", authError);
+        console.error("[company.deleteUser] Auth deletion failed:", authError)
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: GENERIC_ERROR_MESSAGE,
-        });
+        })
       }
 
-      await ctx.db.user.delete({ where: { id: input.userId } });
-      return { success: true, isSelf };
+      await ctx.db.user.delete({ where: { id: input.userId } })
+      return { success: true, isSelf }
     }),
 
   /**
@@ -139,46 +139,46 @@ export const companyRouter = router({
   deleteCompany: protectedProcedure
     .input(deleteCompanySchema)
     .mutation(async ({ ctx, input }) => {
-      const ownerId = await getCompanyOwnerId(ctx.db, ctx.companyId);
+      const ownerId = await getCompanyOwnerId(ctx.db, ctx.companyId)
       if (ctx.user.id !== ownerId) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "Seul le créateur du cabinet peut le supprimer.",
-        });
+        })
       }
 
       const company = await ctx.db.company.findUniqueOrThrow({
         where: { id: ctx.companyId },
         select: { name: true, users: { select: { id: true } } },
-      });
+      })
       if (input.confirmName !== company.name.trim()) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Le nom saisi ne correspond pas au nom du cabinet.",
-        });
+        })
       }
 
       // Fichiers d'abord : en cas d'échec, le cabinet est conservé (pas d'orphelin).
-      const supabase = createAdminClient();
+      const supabase = createAdminClient()
       const storageErrors = (
         await Promise.all(
           CANDIDATE_BUCKETS.map((bucket) =>
             removeCompanyFiles(supabase, ctx.companyId, bucket)
           )
         )
-      ).filter((error) => error !== null);
+      ).filter((error) => error !== null)
       if (storageErrors.length > 0) {
         console.error(
           "[company.deleteCompany] Storage removal failed:",
           storageErrors
-        );
+        )
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: GENERIC_ERROR_MESSAGE,
-        });
+        })
       }
 
-      await ctx.db.company.delete({ where: { id: ctx.companyId } });
+      await ctx.db.company.delete({ where: { id: ctx.companyId } })
 
       // Les données ont disparu : un compte Auth restant ne donne plus accès à rien,
       // mais conserve un email. Les échecs sont logués pour suppression manuelle.
@@ -187,16 +187,14 @@ export const companyRouter = router({
           userId: user.id,
           error: await deleteAuthUser(supabase, user.id),
         }))
-      );
-      const authFailures = authResults.filter(
-        (result) => result.error !== null
-      );
+      )
+      const authFailures = authResults.filter((result) => result.error !== null)
       if (authFailures.length > 0) {
         console.error(
           "[company.deleteCompany] Auth deletion failed, delete manually:",
           authFailures
-        );
+        )
       }
-      return { success: true };
+      return { success: true }
     }),
-});
+})

@@ -26,7 +26,10 @@ const CommandInput = React.forwardRef<
   React.ComponentRef<typeof CommandPrimitive.Input>,
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.Input>
 >(({ className, ...props }, ref) => (
-  <div className="flex items-center border-b border-border px-3" cmdk-input-wrapper="">
+  <div
+    className="flex items-center border-b border-border px-3"
+    cmdk-input-wrapper=""
+  >
     <Search className="mr-2 size-4 shrink-0 opacity-50" />
     <CommandPrimitive.Input
       ref={ref}
@@ -104,7 +107,8 @@ const CommandSeparator = React.forwardRef<
     {...props}
   />
 ))
-CommandSeparator.displayName = CommandPrimitive.Separator.displayName ?? "CommandSeparator"
+CommandSeparator.displayName =
+  CommandPrimitive.Separator.displayName ?? "CommandSeparator"
 
 const CommandDialog = ({ children, ...props }: DialogProps) => (
   <Dialog {...props}>

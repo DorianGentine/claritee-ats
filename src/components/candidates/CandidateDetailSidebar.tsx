@@ -32,7 +32,10 @@ export const CandidateDetailSidebar = ({
       cvUrl={cvUrl}
       cvFileName={cvFileName}
     />
-    <CandidateLanguagesSection candidateId={candidateId} languages={languages} />
+    <CandidateLanguagesSection
+      candidateId={candidateId}
+      languages={languages}
+    />
     <CandidateTagsSection candidateId={candidateId} tags={tags} />
   </aside>
 )

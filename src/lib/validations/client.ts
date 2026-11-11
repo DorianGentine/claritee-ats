@@ -1,31 +1,29 @@
-import { z } from "zod";
-import { sirenSchema } from "./auth";
+import { z } from "zod"
+import { sirenSchema } from "./auth"
 
 /** Champs de base d'une société cliente (ClientCompany), partagés création/édition */
 const clientCompanyFieldsSchema = z.object({
-  name: z
-    .string()
-    .min(1, "Le nom de l'entreprise est requis."),
+  name: z.string().min(1, "Le nom de l'entreprise est requis."),
   siren: z.union([z.literal(""), sirenSchema]).optional(),
   /** Villes associées (ClientCompanyCity), sans ordre. Absent → tableau vide. */
   cityIds: z.array(z.uuid()).default([]),
-});
+})
 
 /** Schéma de création d'une société cliente (ClientCompany) */
-export const createClientCompanySchema = clientCompanyFieldsSchema;
+export const createClientCompanySchema = clientCompanyFieldsSchema
 
-export type CreateClientCompanyInput = z.infer<typeof createClientCompanySchema>;
+export type CreateClientCompanyInput = z.infer<typeof createClientCompanySchema>
 
 /** Schéma de mise à jour d'une société cliente (ClientCompany) */
 export const updateClientCompanySchema = clientCompanyFieldsSchema.extend({
   id: z.uuid(),
-});
+})
 
-export type UpdateClientCompanyInput = z.infer<typeof updateClientCompanySchema>;
+export type UpdateClientCompanyInput = z.infer<typeof updateClientCompanySchema>
 
 /** Trim et vide → undefined pour les champs optionnels */
 const trimToUndefined = (s: string | undefined) =>
-  (typeof s === "string" ? s.trim() : s) || undefined;
+  (typeof s === "string" ? s.trim() : s) || undefined
 
 /** Optionnel : si fourni, doit être un email valide */
 const optionalEmail = z
@@ -34,7 +32,7 @@ const optionalEmail = z
   .transform(trimToUndefined)
   .refine((v) => !v || z.email().safeParse(v).success, {
     message: "Veuillez entrer une adresse email valide.",
-  });
+  })
 
 /** Optionnel : si fourni, doit être une URL LinkedIn linkedin.com/in/... */
 const optionalLinkedInUrl = z
@@ -46,7 +44,7 @@ const optionalLinkedInUrl = z
       !v ||
       /^https?:\/\/(www\.)?linkedin\.com\/in\/[a-zA-Z0-9_-]+\/?$/i.test(v),
     { message: "L'URL LinkedIn doit être au format linkedin.com/in/..." }
-  );
+  )
 
 /** Schéma de création d'un contact client (ClientContact) */
 export const createClientContactSchema = z.object({
@@ -56,9 +54,9 @@ export const createClientContactSchema = z.object({
   phone: z.string().optional().transform(trimToUndefined),
   position: z.string().optional().transform(trimToUndefined),
   linkedinUrl: optionalLinkedInUrl,
-});
+})
 
-export type CreateClientContactInput = z.infer<typeof createClientContactSchema>;
+export type CreateClientContactInput = z.infer<typeof createClientContactSchema>
 
 /**
  * Variantes des champs optionnels pour la mise à jour :
@@ -70,27 +68,27 @@ const updatableOptionalString = z
   .union([z.string(), z.null()])
   .optional()
   .transform((v) => {
-    if (v === null) return v;
-    return trimToUndefined(v);
-  });
+    if (v === null) return v
+    return trimToUndefined(v)
+  })
 
 const updatableOptionalEmail = z
   .union([z.string(), z.null()])
   .optional()
   .transform((v) => {
-    if (v === null) return v;
-    return trimToUndefined(v);
+    if (v === null) return v
+    return trimToUndefined(v)
   })
   .refine((v) => v === null || !v || z.email().safeParse(v).success, {
     message: "Veuillez entrer une adresse email valide.",
-  });
+  })
 
 const updatableOptionalLinkedInUrl = z
   .union([z.string(), z.null()])
   .optional()
   .transform((v) => {
-    if (v === null) return v;
-    return trimToUndefined(v);
+    if (v === null) return v
+    return trimToUndefined(v)
   })
   .refine(
     (v) =>
@@ -98,7 +96,7 @@ const updatableOptionalLinkedInUrl = z
       !v ||
       /^https?:\/\/(www\.)?linkedin\.com\/in\/[a-zA-Z0-9_-]+\/?$/i.test(v),
     { message: "L'URL LinkedIn doit être au format linkedin.com/in/..." }
-  );
+  )
 
 /** Schéma de mise à jour d'un contact client */
 export const updateClientContactSchema = z.object({
@@ -109,7 +107,6 @@ export const updateClientContactSchema = z.object({
   phone: updatableOptionalString,
   position: updatableOptionalString,
   linkedinUrl: updatableOptionalLinkedInUrl,
-});
+})
 
-export type UpdateClientContactInput = z.infer<typeof updateClientContactSchema>;
-
+export type UpdateClientContactInput = z.infer<typeof updateClientContactSchema>

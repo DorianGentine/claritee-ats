@@ -1,14 +1,14 @@
-import { PublicHeader } from "@/components/layout/PublicHeader";
+import { PublicHeader } from "@/components/layout/PublicHeader"
 
 export default function ShareLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: React.ReactNode
 }) {
   return (
     <>
       <PublicHeader />
       {children}
     </>
-  );
+  )
 }

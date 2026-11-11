@@ -1,49 +1,49 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { Share2 } from "lucide-react";
-import { api } from "@/lib/trpc/client";
-import { formatCandidateCities } from "@/lib/candidate-utils";
-import { Button } from "@/components/ui/button";
-import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
-import { CandidateDetailSkeleton } from "./CandidateDetailSkeleton";
-import { CandidateDetailHeader } from "./CandidateDetailHeader";
-import { CandidateDetailSidebar } from "./CandidateDetailSidebar";
-import { CandidateDetailContent } from "./CandidateDetailContent";
-import { CandidateNotesSection } from "./CandidateNotesSection";
-import { CandidateCandidaturesSection } from "./CandidateCandidaturesSection";
-import { ShareLinkDialog } from "./ShareLinkDialog";
-import { CandidateIdentityDialog } from "./CandidateIdentityDialog";
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import Link from "next/link"
+import { Share2 } from "lucide-react"
+import { api } from "@/lib/trpc/client"
+import { formatCandidateCities } from "@/lib/candidate-utils"
+import { Button } from "@/components/ui/button"
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
+import { CandidateDetailSkeleton } from "./CandidateDetailSkeleton"
+import { CandidateDetailHeader } from "./CandidateDetailHeader"
+import { CandidateDetailSidebar } from "./CandidateDetailSidebar"
+import { CandidateDetailContent } from "./CandidateDetailContent"
+import { CandidateNotesSection } from "./CandidateNotesSection"
+import { CandidateCandidaturesSection } from "./CandidateCandidaturesSection"
+import { ShareLinkDialog } from "./ShareLinkDialog"
+import { CandidateIdentityDialog } from "./CandidateIdentityDialog"
 
-type Props = { candidateId: string };
+type Props = { candidateId: string }
 
 export const CandidateDetailView = ({ candidateId }: Props) => {
-  const router = useRouter();
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [shareDialogOpen, setShareDialogOpen] = useState(false);
-  const [identityDialogOpen, setIdentityDialogOpen] = useState(false);
-  const utils = api.useUtils();
-  const getByIdQuery = api.candidate.getById.useQuery({ id: candidateId });
+  const router = useRouter()
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [shareDialogOpen, setShareDialogOpen] = useState(false)
+  const [identityDialogOpen, setIdentityDialogOpen] = useState(false)
+  const utils = api.useUtils()
+  const getByIdQuery = api.candidate.getById.useQuery({ id: candidateId })
   const deleteMutation = api.candidate.delete.useMutation({
     onSuccess: () => {
-      setDeleteDialogOpen(false);
-      void utils.candidate.list.invalidate();
-      router.push("/candidates");
+      setDeleteDialogOpen(false)
+      void utils.candidate.list.invalidate()
+      router.push("/candidates")
     },
-  });
+  })
 
   const handleConfirmDelete = () => {
-    deleteMutation.mutate({ id: candidateId });
-  };
+    deleteMutation.mutate({ id: candidateId })
+  }
 
   if (getByIdQuery.isLoading) {
     return (
       <main className="p-6 lg:p-10">
         <CandidateDetailSkeleton />
       </main>
-    );
+    )
   }
 
   if (getByIdQuery.error ?? !getByIdQuery.data) {
@@ -58,11 +58,11 @@ export const CandidateDetailView = ({ candidateId }: Props) => {
           </Button>
         </div>
       </main>
-    );
+    )
   }
 
-  const candidate = getByIdQuery.data;
-  const citiesLabel = formatCandidateCities(candidate.cities);
+  const candidate = getByIdQuery.data
+  const citiesLabel = formatCandidateCities(candidate.cities)
 
   return (
     <main className="p-6 lg:p-10 print:bg-white">
@@ -117,7 +117,10 @@ export const CandidateDetailView = ({ candidateId }: Props) => {
           />
         </div>
 
-        <CandidateCandidaturesSection candidateId={candidateId} candidatures={candidate.candidatures} />
+        <CandidateCandidaturesSection
+          candidateId={candidateId}
+          candidatures={candidate.candidatures}
+        />
         <CandidateNotesSection candidateId={candidateId} />
       </div>
 
@@ -161,5 +164,5 @@ export const CandidateDetailView = ({ candidateId }: Props) => {
         confirmVariant="destructive"
       />
     </main>
-  );
-};
+  )
+}

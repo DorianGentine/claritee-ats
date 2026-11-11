@@ -36,7 +36,10 @@ export const CandidateCard = ({ c }: { c: CandidateCardItem }) => {
         <div className="min-w-0 flex-1 overflow-hidden">
           <p className="truncate font-medium text-foreground">{fullName}</p>
           {c.title ? (
-            <p className="truncate text-sm text-muted-foreground" title={c.title}>
+            <p
+              className="truncate text-sm text-muted-foreground"
+              title={c.title}
+            >
               {c.title}
             </p>
           ) : null}

@@ -1,27 +1,24 @@
-import { z } from "zod";
+import { z } from "zod"
 
 /** Message d'erreur email invalide (PRD Standard Error Messages) */
-const emailInvalidMessage = "Veuillez entrer une adresse email valide.";
+const emailInvalidMessage = "Veuillez entrer une adresse email valide."
 
 /** Message d'erreur SIREN invalide (PRD Standard Error Messages) */
-const sirenInvalidMessage =
-  "Le SIREN doit contenir exactement 9 chiffres.";
+const sirenInvalidMessage = "Le SIREN doit contenir exactement 9 chiffres."
 
 /** Email : format valide */
 export const emailSchema = z
   .string()
   .min(1, emailInvalidMessage)
-  .email(emailInvalidMessage);
+  .email(emailInvalidMessage)
 
 /** Mot de passe : minimum 8 caractères (AC 3) */
 export const passwordSchema = z
   .string()
-  .min(8, "Le mot de passe doit contenir au moins 8 caractères.");
+  .min(8, "Le mot de passe doit contenir au moins 8 caractères.")
 
 /** SIREN : exactement 9 chiffres (AC 4) */
-export const sirenSchema = z
-  .string()
-  .regex(/^\d{9}$/, sirenInvalidMessage);
+export const sirenSchema = z.string().regex(/^\d{9}$/, sirenInvalidMessage)
 
 /** Schéma complet pour le formulaire d'inscription (client + réutilisation tRPC) */
 export const registerFormSchema = z.object({
@@ -31,17 +28,17 @@ export const registerFormSchema = z.object({
   password: passwordSchema,
   companyName: z.string().min(1, "Le nom de l'entreprise est requis."),
   siren: sirenSchema,
-});
+})
 
 /** Input pour register (tout côté serveur : vérifs puis création Auth + Company + User) */
-export const registerSchema = registerFormSchema;
+export const registerSchema = registerFormSchema
 
-export type RegisterFormValues = z.infer<typeof registerFormSchema>;
+export type RegisterFormValues = z.infer<typeof registerFormSchema>
 
 /** Schéma formulaire login (email + mot de passe, validation client) */
 export const loginFormSchema = z.object({
   email: emailSchema,
   password: z.string().min(1, "Le mot de passe est requis."),
-});
+})
 
-export type LoginFormValues = z.infer<typeof loginFormSchema>;
+export type LoginFormValues = z.infer<typeof loginFormSchema>

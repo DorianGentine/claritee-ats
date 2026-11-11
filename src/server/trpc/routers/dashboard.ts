@@ -1,4 +1,4 @@
-import { router, protectedProcedure } from "../trpc";
+import { router, protectedProcedure } from "../trpc"
 
 export const dashboardRouter = router({
   getStats: protectedProcedure.query(async ({ ctx }) => {
@@ -11,7 +11,9 @@ export const dashboardRouter = router({
       recentNotes,
     ] = await Promise.all([
       ctx.db.candidate.count({ where: { companyId: ctx.companyId } }),
-      ctx.db.jobOffer.count({ where: { companyId: ctx.companyId, status: "IN_PROGRESS" } }),
+      ctx.db.jobOffer.count({
+        where: { companyId: ctx.companyId, status: "IN_PROGRESS" },
+      }),
       ctx.db.clientCompany.count({ where: { companyId: ctx.companyId } }),
       ctx.db.candidate.findMany({
         where: { companyId: ctx.companyId },
@@ -39,7 +41,7 @@ export const dashboardRouter = router({
           jobOffer: { select: { title: true } },
         },
       }),
-    ]);
+    ])
 
     return {
       totalCandidates,
@@ -48,6 +50,6 @@ export const dashboardRouter = router({
       recentCandidates,
       recentOffers,
       recentNotes,
-    };
+    }
   }),
-});
+})

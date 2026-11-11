@@ -1,15 +1,15 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import type { FieldErrors, Resolver, UseFormRegister } from "react-hook-form";
-import { useForm, useWatch } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { toast } from "sonner";
-import type { z } from "zod";
-import { api } from "@/lib/trpc/client";
-import { useCandidateFileUpload } from "@/hooks/useCandidateFileUpload";
-import { candidateBasicFieldsSchema } from "@/lib/validations/candidate";
-import { Button } from "@/components/ui/button";
+import { useState } from "react"
+import type { FieldErrors, Resolver, UseFormRegister } from "react-hook-form"
+import { useForm, useWatch } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { toast } from "sonner"
+import type { z } from "zod"
+import { api } from "@/lib/trpc/client"
+import { useCandidateFileUpload } from "@/hooks/useCandidateFileUpload"
+import { candidateBasicFieldsSchema } from "@/lib/validations/candidate"
+import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
@@ -17,60 +17,60 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { type CityOption } from "@/components/shared/CityAutocomplete";
+} from "@/components/ui/dialog"
+import { type CityOption } from "@/components/shared/CityAutocomplete"
 import {
   CandidateBasicFieldsForm,
   type CandidateBasicFields,
-} from "./CandidateBasicFieldsForm";
-import { CandidateCitiesField } from "./CandidateCitiesField";
+} from "./CandidateBasicFieldsForm"
+import { CandidateCitiesField } from "./CandidateCitiesField"
 import {
   CandidatePhotoUpload,
   createPhotoChangeHandler,
   getCandidateInitials,
-} from "./CandidatePhotoUpload";
+} from "./CandidatePhotoUpload"
 
-const identitySchema = candidateBasicFieldsSchema;
-type IdentityFormValues = z.infer<typeof identitySchema>;
+const identitySchema = candidateBasicFieldsSchema
+type IdentityFormValues = z.infer<typeof identitySchema>
 
 export type CandidateIdentity = {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string | null;
-  phone: string | null;
-  linkedinUrl: string | null;
-  title: string | null;
-  photoUrl: string | null;
-  cities: CityOption[];
-};
+  id: string
+  firstName: string
+  lastName: string
+  email: string | null
+  phone: string | null
+  linkedinUrl: string | null
+  title: string | null
+  photoUrl: string | null
+  cities: CityOption[]
+}
 
 type Props = {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  candidate: CandidateIdentity;
-};
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  candidate: CandidateIdentity
+}
 
-const PHOTO_INPUT_ID = "candidate-identity-photo";
-const GENERIC_ERROR_MESSAGE = "Une erreur est survenue. Réessayez.";
+const PHOTO_INPUT_ID = "candidate-identity-photo"
+const GENERIC_ERROR_MESSAGE = "Une erreur est survenue. Réessayez."
 
 /** Formulaire monté à l'ouverture : chaque ouverture repart des données du candidat. */
 const IdentityForm = ({
   candidate,
   onClose,
 }: {
-  candidate: CandidateIdentity;
-  onClose: () => void;
+  candidate: CandidateIdentity
+  onClose: () => void
 }) => {
-  const utils = api.useUtils();
-  const [serverError, setServerError] = useState<string | null>(null);
-  const [cities, setCities] = useState<CityOption[]>(candidate.cities);
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
-  const [photoError, setPhotoError] = useState<string | null>(null);
+  const utils = api.useUtils()
+  const [serverError, setServerError] = useState<string | null>(null)
+  const [cities, setCities] = useState<CityOption[]>(candidate.cities)
+  const [photoFile, setPhotoFile] = useState<File | null>(null)
+  const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null)
+  const [photoError, setPhotoError] = useState<string | null>(null)
 
-  const updateMutation = api.candidate.update.useMutation();
-  const { uploadFile, isUploading } = useCandidateFileUpload();
+  const updateMutation = api.candidate.update.useMutation()
+  const { uploadFile, isUploading } = useCandidateFileUpload()
 
   const {
     register,
@@ -87,27 +87,27 @@ const IdentityForm = ({
       linkedinUrl: candidate.linkedinUrl ?? "",
       title: candidate.title ?? "",
     },
-  });
+  })
 
-  const firstName = useWatch({ control, name: "firstName" });
-  const lastName = useWatch({ control, name: "lastName" });
+  const firstName = useWatch({ control, name: "firstName" })
+  const lastName = useWatch({ control, name: "lastName" })
 
   const handlePhotoChange = createPhotoChangeHandler(
     setPhotoFile,
     setPhotoPreviewUrl,
     setPhotoError,
     photoPreviewUrl
-  );
+  )
 
   const removePhoto = () => {
-    setPhotoFile(null);
-    if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl);
-    setPhotoPreviewUrl(null);
-    setPhotoError(null);
-  };
+    setPhotoFile(null)
+    if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl)
+    setPhotoPreviewUrl(null)
+    setPhotoError(null)
+  }
 
   const onSubmit = async (values: IdentityFormValues) => {
-    setServerError(null);
+    setServerError(null)
     try {
       await updateMutation.mutateAsync({
         id: candidate.id,
@@ -118,28 +118,30 @@ const IdentityForm = ({
         phone: values.phone ?? "",
         linkedinUrl: values.linkedinUrl ?? "",
         title: values.title ?? "",
-        cities: cities.map((city, index) => ({ cityId: city.id, order: index })),
-      });
+        cities: cities.map((city, index) => ({
+          cityId: city.id,
+          order: index,
+        })),
+      })
       if (photoFile) {
         await uploadFile({
           kind: "photo",
           candidateId: candidate.id,
           file: photoFile,
-        });
+        })
       }
-      void utils.candidate.getById.invalidate({ id: candidate.id });
-      void utils.candidate.list.invalidate();
-      toast.success("Fiche mise à jour.");
-      onClose();
+      void utils.candidate.getById.invalidate({ id: candidate.id })
+      void utils.candidate.list.invalidate()
+      toast.success("Fiche mise à jour.")
+      onClose()
     } catch (error) {
       setServerError(
         (error as { message?: string })?.message ?? GENERIC_ERROR_MESSAGE
-      );
+      )
     }
-  };
+  }
 
-  const pending =
-    isSubmitting || updateMutation.isPending || isUploading;
+  const pending = isSubmitting || updateMutation.isPending || isUploading
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
@@ -169,10 +171,19 @@ const IdentityForm = ({
         errors={errors as FieldErrors<CandidateBasicFields>}
       />
 
-      <CandidateCitiesField value={cities} onChange={setCities} disabled={pending} />
+      <CandidateCitiesField
+        value={cities}
+        onChange={setCities}
+        disabled={pending}
+      />
 
       <DialogFooter>
-        <Button type="button" variant="outline" onClick={onClose} disabled={pending}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onClose}
+          disabled={pending}
+        >
           Annuler
         </Button>
         <Button type="submit" disabled={pending} aria-busy={pending}>
@@ -180,11 +191,15 @@ const IdentityForm = ({
         </Button>
       </DialogFooter>
     </form>
-  );
-};
+  )
+}
 
 /** Modale d'édition de l'en-tête de la fiche : identité, coordonnées, photo, villes. */
-export const CandidateIdentityDialog = ({ open, onOpenChange, candidate }: Props) => (
+export const CandidateIdentityDialog = ({
+  open,
+  onOpenChange,
+  candidate,
+}: Props) => (
   <Dialog open={open} onOpenChange={onOpenChange}>
     <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
       <DialogHeader>
@@ -196,4 +211,4 @@ export const CandidateIdentityDialog = ({ open, onOpenChange, candidate }: Props
       <IdentityForm candidate={candidate} onClose={() => onOpenChange(false)} />
     </DialogContent>
   </Dialog>
-);
+)

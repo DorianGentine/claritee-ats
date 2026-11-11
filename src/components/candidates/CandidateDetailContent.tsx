@@ -1,17 +1,17 @@
-"use client";
+"use client"
 
-import { CandidateExperiencesSection } from "@/components/candidates/CandidateExperiencesSection";
-import { CandidateFormationsSection } from "@/components/candidates/CandidateFormationsSection";
-import type { ExperienceItem } from "@/components/candidates/ExperienceFormDialog";
-import type { FormationItem } from "@/components/candidates/FormationFormDialog";
+import { CandidateExperiencesSection } from "@/components/candidates/CandidateExperiencesSection"
+import { CandidateFormationsSection } from "@/components/candidates/CandidateFormationsSection"
+import type { ExperienceItem } from "@/components/candidates/ExperienceFormDialog"
+import type { FormationItem } from "@/components/candidates/FormationFormDialog"
 
-export type { ExperienceItem, FormationItem };
+export type { ExperienceItem, FormationItem }
 
 export type CandidateDetailContentProps = {
-  candidateId?: string;
-  experiences: ExperienceItem[];
-  formations: FormationItem[];
-};
+  candidateId?: string
+  experiences: ExperienceItem[]
+  formations: FormationItem[]
+}
 
 export const CandidateDetailContent = ({
   candidateId,
@@ -28,4 +28,4 @@ export const CandidateDetailContent = ({
       formations={formations}
     />
   </div>
-);
+)

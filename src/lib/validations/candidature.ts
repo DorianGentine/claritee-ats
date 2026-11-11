@@ -17,7 +17,9 @@ export const updateCandidatureStatusSchema = z.object({
   status: candidatureStatusSchema,
 })
 
-export type UpdateCandidatureStatusInput = z.infer<typeof updateCandidatureStatusSchema>
+export type UpdateCandidatureStatusInput = z.infer<
+  typeof updateCandidatureStatusSchema
+>
 
 /** Input pour la suppression d'une candidature (dissociation candidat–offre) */
 export const deleteCandidatureSchema = z.object({

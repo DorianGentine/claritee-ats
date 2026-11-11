@@ -1,104 +1,114 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { TRPCClientError } from "@trpc/client";
-import { api } from "@/lib/trpc/client";
-import { createInvitationSchema, type CreateInvitationInput } from "@/lib/validations/invitation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
-import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
-import { signOutBrowser } from "@/lib/supabase/sign-out";
-import { toast } from "sonner";
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { TRPCClientError } from "@trpc/client"
+import { api } from "@/lib/trpc/client"
+import {
+  createInvitationSchema,
+  type CreateInvitationInput,
+} from "@/lib/validations/invitation"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Skeleton } from "@/components/ui/skeleton"
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
+import { signOutBrowser } from "@/lib/supabase/sign-out"
+import { toast } from "sonner"
 
-const GENERIC_ERROR_MESSAGE = "Une erreur est survenue. Réessayez.";
+const GENERIC_ERROR_MESSAGE = "Une erreur est survenue. Réessayez."
 
-const getInvitationStatus = (
-  inv: {
-    expiresAt: Date | string;
-    usedAt: Date | string | null;
-    revokedAt?: Date | string | null;
-  },
-): "active" | "utilisée" | "expirée" | "révoquée" => {
-  if (inv.usedAt) return "utilisée";
-  if (inv.revokedAt) return "révoquée";
-  if (new Date(inv.expiresAt) < new Date()) return "expirée";
-  return "active";
-};
+const getInvitationStatus = (inv: {
+  expiresAt: Date | string
+  usedAt: Date | string | null
+  revokedAt?: Date | string | null
+}): "active" | "utilisée" | "expirée" | "révoquée" => {
+  if (inv.usedAt) return "utilisée"
+  if (inv.revokedAt) return "révoquée"
+  if (new Date(inv.expiresAt) < new Date()) return "expirée"
+  return "active"
+}
 
 const STATUS_ORDER: ("active" | "utilisée" | "expirée" | "révoquée")[] = [
   "active",
   "utilisée",
   "expirée",
   "révoquée",
-];
+]
 
 const getInvitationUrl = (token: string) =>
-  `${typeof window !== "undefined" ? window.location.origin : ""}/invite/${token}`;
+  `${typeof window !== "undefined" ? window.location.origin : ""}/invite/${token}`
 
 export const TeamSettings = () => {
-  const [serverError, setServerError] = useState<string | null>(null);
-  const [createdUrl, setCreatedUrl] = useState<string | null>(null);
+  const [serverError, setServerError] = useState<string | null>(null)
+  const [createdUrl, setCreatedUrl] = useState<string | null>(null)
 
-  const router = useRouter();
+  const router = useRouter()
   // Membre conservé après fermeture : le titre reste juste pendant l'animation.
   const [memberToDelete, setMemberToDelete] = useState<{
-    id: string;
-    name: string;
-  } | null>(null);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const askDeleteMember = (member: { id: string; firstName: string; lastName: string }) => {
-    setMemberToDelete({ id: member.id, name: `${member.firstName} ${member.lastName}` });
-    setConfirmOpen(true);
-  };
+    id: string
+    name: string
+  } | null>(null)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const askDeleteMember = (member: {
+    id: string
+    firstName: string
+    lastName: string
+  }) => {
+    setMemberToDelete({
+      id: member.id,
+      name: `${member.firstName} ${member.lastName}`,
+    })
+    setConfirmOpen(true)
+  }
 
-  const membersQuery = api.company.listUsers.useQuery();
-  const meQuery = api.auth.getMe.useQuery();
-  const companyQuery = api.company.getMyCompany.useQuery();
-  const currentUserId = meQuery.data?.id;
-  const ownerId = companyQuery.data?.ownerId;
-  const isOwner = !!currentUserId && currentUserId === ownerId;
-  const isLastMember = membersQuery.data?.length === 1;
-  const isDeletingSelf = memberToDelete?.id === currentUserId;
+  const membersQuery = api.company.listUsers.useQuery()
+  const meQuery = api.auth.getMe.useQuery()
+  const companyQuery = api.company.getMyCompany.useQuery()
+  const currentUserId = meQuery.data?.id
+  const ownerId = companyQuery.data?.ownerId
+  const isOwner = !!currentUserId && currentUserId === ownerId
+  const isLastMember = membersQuery.data?.length === 1
+  const isDeletingSelf = memberToDelete?.id === currentUserId
 
   const deleteUserMutation = api.company.deleteUser.useMutation({
     onSuccess: async ({ isSelf }) => {
-      setConfirmOpen(false);
+      setConfirmOpen(false)
       if (isSelf) {
-        await signOutBrowser("local");
-        router.push("/");
-        router.refresh();
-        return;
+        await signOutBrowser("local")
+        router.push("/")
+        router.refresh()
+        return
       }
-      toast.success("Membre retiré du cabinet.");
-      void membersQuery.refetch();
+      toast.success("Membre retiré du cabinet.")
+      void membersQuery.refetch()
     },
     onError: (err) => {
-      toast.error(err.message ?? GENERIC_ERROR_MESSAGE);
+      toast.error(err.message ?? GENERIC_ERROR_MESSAGE)
     },
-  });
-  const invitationsQuery = api.invitation.listAll.useQuery();
+  })
+  const invitationsQuery = api.invitation.listAll.useQuery()
 
   const createMutation = api.invitation.create.useMutation({
     onSuccess: (data) => {
-      setCreatedUrl(data.url);
-      setServerError(null);
-      void invitationsQuery.refetch();
+      setCreatedUrl(data.url)
+      setServerError(null)
+      void invitationsQuery.refetch()
     },
     onError: (err) => {
-      setServerError(err instanceof TRPCClientError ? err.message : GENERIC_ERROR_MESSAGE);
+      setServerError(
+        err instanceof TRPCClientError ? err.message : GENERIC_ERROR_MESSAGE
+      )
     },
-  });
+  })
 
   const revokeMutation = api.invitation.revoke.useMutation({
     onSuccess: () => {
-      void invitationsQuery.refetch();
+      void invitationsQuery.refetch()
     },
-  });
+  })
 
   const {
     register,
@@ -108,28 +118,28 @@ export const TeamSettings = () => {
   } = useForm<CreateInvitationInput>({
     resolver: zodResolver(createInvitationSchema),
     defaultValues: { email: "" },
-  });
+  })
 
   const onSubmit = (data: CreateInvitationInput) => {
-    setServerError(null);
-    setCreatedUrl(null);
+    setServerError(null)
+    setCreatedUrl(null)
     createMutation.mutate(data, {
       onSuccess: () => reset(),
-    });
-  };
+    })
+  }
 
   const handleCopyUrl = (url: string) => {
-    void navigator.clipboard.writeText(url);
-    toast.success("Lien copié.");
-  };
+    void navigator.clipboard.writeText(url)
+    toast.success("Lien copié.")
+  }
 
   const sortedInvitations = invitationsQuery.data
     ? [...invitationsQuery.data].sort(
         (a, b) =>
           STATUS_ORDER.indexOf(getInvitationStatus(a)) -
-          STATUS_ORDER.indexOf(getInvitationStatus(b)),
+          STATUS_ORDER.indexOf(getInvitationStatus(b))
       )
-    : [];
+    : []
 
   return (
     <section aria-labelledby="team-settings-heading">
@@ -157,8 +167,12 @@ export const TeamSettings = () => {
               <thead className="border-b border-border bg-muted/50">
                 <tr>
                   <th className="px-4 py-3 font-medium text-foreground">Nom</th>
-                  <th className="px-4 py-3 font-medium text-foreground">Email</th>
-                  <th className="px-4 py-3 font-medium text-foreground">Membre depuis</th>
+                  <th className="px-4 py-3 font-medium text-foreground">
+                    Email
+                  </th>
+                  <th className="px-4 py-3 font-medium text-foreground">
+                    Membre depuis
+                  </th>
                   <th className="px-4 py-3 font-medium text-foreground">
                     <span className="sr-only">Actions</span>
                   </th>
@@ -178,7 +192,9 @@ export const TeamSettings = () => {
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">{member.email}</td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {member.email}
+                    </td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {new Date(member.createdAt).toLocaleDateString("fr-FR", {
                         day: "numeric",
@@ -187,30 +203,28 @@ export const TeamSettings = () => {
                       })}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      {member.id === currentUserId ? (
-                        !isLastMember && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-destructive hover:text-destructive"
-                            onClick={() => askDeleteMember(member)}
-                          >
-                            Supprimer mon compte
-                          </Button>
-                        )
-                      ) : (
-                        isOwner && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-destructive hover:text-destructive"
-                            onClick={() => askDeleteMember(member)}
-                            aria-label={`Retirer ${member.firstName} ${member.lastName} du cabinet`}
-                          >
-                            Retirer
-                          </Button>
-                        )
-                      )}
+                      {member.id === currentUserId
+                        ? !isLastMember && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => askDeleteMember(member)}
+                            >
+                              Supprimer mon compte
+                            </Button>
+                          )
+                        : isOwner && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => askDeleteMember(member)}
+                              aria-label={`Retirer ${member.firstName} ${member.lastName} du cabinet`}
+                            >
+                              Retirer
+                            </Button>
+                          )}
                     </td>
                   </tr>
                 ))}
@@ -222,7 +236,9 @@ export const TeamSettings = () => {
 
       {/* Invitations */}
       <div className="mt-4 rounded-lg border border-border bg-card p-6 shadow-sm">
-        <h3 className="text-sm font-medium text-foreground">Inviter un collaborateur</h3>
+        <h3 className="text-sm font-medium text-foreground">
+          Inviter un collaborateur
+        </h3>
         <form
           onSubmit={handleSubmit(onSubmit)}
           className="mt-3 flex flex-col gap-4"
@@ -288,22 +304,30 @@ export const TeamSettings = () => {
               <Skeleton className="h-10 w-full" />
             </div>
           ) : !invitationsQuery.data?.length ? (
-            <p className="mt-3 text-sm text-muted-foreground">Aucune invitation.</p>
+            <p className="mt-3 text-sm text-muted-foreground">
+              Aucune invitation.
+            </p>
           ) : (
             <div className="mt-3 overflow-hidden rounded-lg border border-border">
               <table className="w-full text-left text-sm">
                 <thead className="border-b border-border bg-muted/50">
                   <tr>
-                    <th className="px-4 py-3 font-medium text-foreground">Email</th>
-                    <th className="px-4 py-3 font-medium text-foreground">Statut</th>
-                    <th className="px-4 py-3 font-medium text-foreground">Expire le</th>
+                    <th className="px-4 py-3 font-medium text-foreground">
+                      Email
+                    </th>
+                    <th className="px-4 py-3 font-medium text-foreground">
+                      Statut
+                    </th>
+                    <th className="px-4 py-3 font-medium text-foreground">
+                      Expire le
+                    </th>
                     <th className="px-4 py-3 font-medium text-foreground" />
                   </tr>
                 </thead>
                 <tbody>
                   {sortedInvitations.map((inv) => {
-                    const status = getInvitationStatus(inv);
-                    const url = getInvitationUrl(inv.token);
+                    const status = getInvitationStatus(inv)
+                    const url = getInvitationUrl(inv.token)
                     return (
                       <tr
                         key={inv.id}
@@ -352,7 +376,9 @@ export const TeamSettings = () => {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => revokeMutation.mutate({ id: inv.id })}
+                                onClick={() =>
+                                  revokeMutation.mutate({ id: inv.id })
+                                }
                                 disabled={
                                   revokeMutation.isPending &&
                                   revokeMutation.variables?.id === inv.id
@@ -365,7 +391,7 @@ export const TeamSettings = () => {
                           </div>
                         </td>
                       </tr>
-                    );
+                    )
                   })}
                 </tbody>
               </table>
@@ -391,9 +417,10 @@ export const TeamSettings = () => {
         pendingLabel="Suppression…"
         pending={deleteUserMutation.isPending}
         onConfirm={() => {
-          if (memberToDelete) deleteUserMutation.mutate({ userId: memberToDelete.id });
+          if (memberToDelete)
+            deleteUserMutation.mutate({ userId: memberToDelete.id })
         }}
       />
     </section>
-  );
-};
+  )
+}

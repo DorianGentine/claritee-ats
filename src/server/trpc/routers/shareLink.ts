@@ -17,9 +17,7 @@ import {
 const computeExpiresAt = (expiration: ShareLinkExpiration): Date | null => {
   if (expiration === "never") return null
   const ms =
-    expiration === "7d"
-      ? 7 * 24 * 60 * 60 * 1000
-      : 30 * 24 * 60 * 60 * 1000
+    expiration === "7d" ? 7 * 24 * 60 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000
   return new Date(Date.now() + ms)
 }
 
@@ -126,7 +124,10 @@ export const shareLinkRouter = router({
       }
 
       if (link.type === "ANONYMOUS") {
-        return { type: "ANONYMOUS" as const, ...mapToAnonymousPublicDto(link.candidate) }
+        return {
+          type: "ANONYMOUS" as const,
+          ...mapToAnonymousPublicDto(link.candidate),
+        }
       }
       return { type: "NORMAL" as const, ...mapToPublicDto(link.candidate) }
     }),

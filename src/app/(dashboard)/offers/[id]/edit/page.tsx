@@ -17,7 +17,7 @@ const EditOfferPage = () => {
 
   const offerQuery = api.offer.getById.useQuery(
     { id: typeof id === "string" ? id : "" },
-    { enabled: typeof id === "string" && id.length > 0 },
+    { enabled: typeof id === "string" && id.length > 0 }
   )
 
   const deleteMutation = api.offer.delete.useMutation({
@@ -124,5 +124,3 @@ const EditOfferPage = () => {
 }
 
 export default EditOfferPage
-
-

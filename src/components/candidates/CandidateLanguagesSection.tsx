@@ -1,25 +1,27 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { useForm, Controller } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { Plus, X } from "lucide-react";
-import { api } from "@/lib/trpc/client";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { useState } from "react"
+import { useForm, Controller } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
+import { Plus, X } from "lucide-react"
+import { api } from "@/lib/trpc/client"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { LANGUAGE_LEVELS, languageLevelSchema } from "@/lib/validations/candidate";
-import { LANGUAGE_LEVEL_LABELS } from "@/lib/candidate-utils";
-
+} from "@/components/ui/select"
+import {
+  LANGUAGE_LEVELS,
+  languageLevelSchema,
+} from "@/lib/validations/candidate"
+import { LANGUAGE_LEVEL_LABELS } from "@/lib/candidate-utils"
 
 const SUGGESTED_LANGUAGES = [
   "Français",
@@ -27,25 +29,28 @@ const SUGGESTED_LANGUAGES = [
   "Espagnol",
   "Allemand",
   "Italien",
-];
+]
 
 const addLanguageFormSchema = z.object({
   name: z.string().min(1, "Le nom de la langue est requis").max(50),
   level: languageLevelSchema,
-});
+})
 
-type AddLanguageFormValues = z.infer<typeof addLanguageFormSchema>;
+type AddLanguageFormValues = z.infer<typeof addLanguageFormSchema>
 
-type LanguageItem = { id: string; name: string; level: string };
+type LanguageItem = { id: string; name: string; level: string }
 
 type Props = {
-  candidateId: string;
-  languages: LanguageItem[];
-};
+  candidateId: string
+  languages: LanguageItem[]
+}
 
-export const CandidateLanguagesSection = ({ candidateId, languages }: Props) => {
-  const [showForm, setShowForm] = useState(false);
-  const utils = api.useUtils();
+export const CandidateLanguagesSection = ({
+  candidateId,
+  languages,
+}: Props) => {
+  const [showForm, setShowForm] = useState(false)
+  const utils = api.useUtils()
 
   const {
     register,
@@ -56,38 +61,38 @@ export const CandidateLanguagesSection = ({ candidateId, languages }: Props) => 
   } = useForm<AddLanguageFormValues>({
     resolver: zodResolver(addLanguageFormSchema),
     defaultValues: { name: "", level: undefined },
-  });
+  })
 
   const addMutation = api.candidate.addLanguage.useMutation({
     onSuccess: () => {
-      void utils.candidate.getById.invalidate({ id: candidateId });
-      reset({ name: "", level: undefined });
-      setShowForm(false);
+      void utils.candidate.getById.invalidate({ id: candidateId })
+      reset({ name: "", level: undefined })
+      setShowForm(false)
     },
-  });
+  })
 
   const removeMutation = api.candidate.removeLanguage.useMutation({
     onSuccess: () => {
-      void utils.candidate.getById.invalidate({ id: candidateId });
+      void utils.candidate.getById.invalidate({ id: candidateId })
     },
-  });
+  })
 
   const onSubmit = (values: AddLanguageFormValues) => {
     addMutation.mutate({
       candidateId,
       name: values.name,
       level: values.level,
-    });
-  };
+    })
+  }
 
   const handleRemove = (languageId: string) => {
-    removeMutation.mutate({ candidateId, languageId });
-  };
+    removeMutation.mutate({ candidateId, languageId })
+  }
 
   const handleCancel = () => {
-    reset({ name: "", level: undefined });
-    setShowForm(false);
-  };
+    reset({ name: "", level: undefined })
+    setShowForm(false)
+  }
 
   return (
     <section>
@@ -109,12 +114,11 @@ export const CandidateLanguagesSection = ({ candidateId, languages }: Props) => 
       {languages.length > 0 ? (
         <div className="mt-2 flex flex-wrap gap-2">
           {languages.map((lang) => (
-            <Badge
-              key={lang.id}
-              variant="secondary"
-              className="gap-1 pr-1"
-            >
-              {lang.name} — {LANGUAGE_LEVEL_LABELS[lang.level as keyof typeof LANGUAGE_LEVEL_LABELS] ?? lang.level}
+            <Badge key={lang.id} variant="secondary" className="gap-1 pr-1">
+              {lang.name} —{" "}
+              {LANGUAGE_LEVEL_LABELS[
+                lang.level as keyof typeof LANGUAGE_LEVEL_LABELS
+              ] ?? lang.level}
               <button
                 type="button"
                 onClick={() => handleRemove(lang.id)}
@@ -189,11 +193,7 @@ export const CandidateLanguagesSection = ({ candidateId, languages }: Props) => 
           </div>
 
           <div className="flex gap-2">
-            <Button
-              type="submit"
-              size="sm"
-              disabled={addMutation.isPending}
-            >
+            <Button type="submit" size="sm" disabled={addMutation.isPending}>
               {addMutation.isPending ? "Ajout…" : "Ajouter"}
             </Button>
             <Button
@@ -215,5 +215,5 @@ export const CandidateLanguagesSection = ({ candidateId, languages }: Props) => 
         </form>
       )}
     </section>
-  );
-};
+  )
+}

@@ -1,12 +1,12 @@
-import { TRPCError } from "@trpc/server";
-import { z } from "zod";
-import { router, protectedProcedure } from "../trpc";
+import { TRPCError } from "@trpc/server"
+import { z } from "zod"
+import { router, protectedProcedure } from "../trpc"
 import {
   createClientCompanySchema,
   updateClientCompanySchema,
   createClientContactSchema,
   updateClientContactSchema,
-} from "@/lib/validations/client";
+} from "@/lib/validations/client"
 
 export const clientRouter = router({
   /**
@@ -29,7 +29,7 @@ export const clientRouter = router({
           },
         },
       },
-    });
+    })
 
     return items.map((c) => ({
       id: c.id,
@@ -37,7 +37,7 @@ export const clientRouter = router({
       siren: c.siren,
       contactsCount: c._count.contacts,
       offersCount: c._count.jobOffers,
-    }));
+    }))
   }),
 
   /**
@@ -73,10 +73,10 @@ export const clientRouter = router({
             },
           },
         },
-      });
+      })
 
       if (!client) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND" })
       }
 
       return {
@@ -89,7 +89,7 @@ export const clientRouter = router({
         offersCount: client._count.jobOffers,
         createdAt: client.createdAt,
         updatedAt: client.updatedAt,
-      };
+      }
     }),
 
   /**
@@ -108,7 +108,7 @@ export const clientRouter = router({
             siren: input.siren && input.siren.length > 0 ? input.siren : null,
             companyId: ctx.companyId,
           },
-        });
+        })
 
         if (input.cityIds.length > 0) {
           await tx.clientCompanyCity.createMany({
@@ -116,11 +116,11 @@ export const clientRouter = router({
               clientCompanyId: client.id,
               cityId,
             })),
-          });
+          })
         }
 
-        return client;
-      });
+        return client
+      })
     }),
 
   /**
@@ -132,9 +132,9 @@ export const clientRouter = router({
     .mutation(async ({ ctx, input }) => {
       const existing = await ctx.db.clientCompany.findFirst({
         where: { id: input.id, companyId: ctx.companyId },
-      });
+      })
       if (!existing) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND" })
       }
 
       return ctx.db.$transaction(async (tx) => {
@@ -144,22 +144,22 @@ export const clientRouter = router({
             name: input.name,
             siren: input.siren && input.siren.length > 0 ? input.siren : null,
           },
-        });
+        })
 
         await tx.clientCompanyCity.deleteMany({
           where: { clientCompanyId: input.id },
-        });
+        })
         if (input.cityIds.length > 0) {
           await tx.clientCompanyCity.createMany({
             data: input.cityIds.map((cityId) => ({
               clientCompanyId: input.id,
               cityId,
             })),
-          });
+          })
         }
 
-        return client;
-      });
+        return client
+      })
     }),
 
   /**
@@ -176,13 +176,13 @@ export const clientRouter = router({
           id: input.clientCompanyId,
           companyId: ctx.companyId,
         },
-      });
+      })
 
       if (!company) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND" })
       }
 
-      const { clientCompanyId, ...contactData } = input;
+      const { clientCompanyId, ...contactData } = input
       return ctx.db.clientContact.create({
         data: {
           clientCompanyId,
@@ -193,7 +193,7 @@ export const clientRouter = router({
           position: contactData.position ?? null,
           linkedinUrl: contactData.linkedinUrl ?? null,
         },
-      });
+      })
     }),
 
   /**
@@ -206,13 +206,13 @@ export const clientRouter = router({
       const contact = await ctx.db.clientContact.findFirst({
         where: { id: input.id },
         include: { clientCompany: true },
-      });
+      })
 
       if (!contact || contact.clientCompany.companyId !== ctx.companyId) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND" })
       }
 
-      const { id, ...data } = input;
+      const { id, ...data } = input
       return ctx.db.clientContact.update({
         where: { id },
         data: {
@@ -220,12 +220,14 @@ export const clientRouter = router({
           ...(data.lastName !== undefined && { lastName: data.lastName }),
           ...(data.email !== undefined && { email: data.email ?? null }),
           ...(data.phone !== undefined && { phone: data.phone ?? null }),
-          ...(data.position !== undefined && { position: data.position ?? null }),
+          ...(data.position !== undefined && {
+            position: data.position ?? null,
+          }),
           ...(data.linkedinUrl !== undefined && {
             linkedinUrl: data.linkedinUrl ?? null,
           }),
         },
-      });
+      })
     }),
 
   /**
@@ -238,14 +240,14 @@ export const clientRouter = router({
       const contact = await ctx.db.clientContact.findFirst({
         where: { id: input.id },
         include: { clientCompany: true },
-      });
+      })
 
       if (!contact || contact.clientCompany.companyId !== ctx.companyId) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND" })
       }
 
-      await ctx.db.clientContact.delete({ where: { id: input.id } });
-      return { success: true };
+      await ctx.db.clientContact.delete({ where: { id: input.id } })
+      return { success: true }
     }),
 
   /**
@@ -258,13 +260,12 @@ export const clientRouter = router({
       const client = await ctx.db.clientCompany.findFirst({
         where: { id: input.id, companyId: ctx.companyId },
         select: { id: true },
-      });
+      })
       if (!client) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND" })
       }
 
-      await ctx.db.clientCompany.delete({ where: { id: input.id } });
-      return { success: true };
+      await ctx.db.clientCompany.delete({ where: { id: input.id } })
+      return { success: true }
     }),
-});
-
+})

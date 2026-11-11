@@ -1,53 +1,59 @@
-"use client";
+"use client"
 
-import type { ReactNode } from "react";
-import { X } from "lucide-react";
-import type { LinkedInProfileDraft } from "@/lib/linkedin/profile";
-import { LANGUAGE_LEVEL_LABELS } from "@/lib/candidate-utils";
-import { formatDate } from "@/lib/format";
+import type { ReactNode } from "react"
+import { X } from "lucide-react"
+import type { LinkedInProfileDraft } from "@/lib/linkedin/profile"
+import { LANGUAGE_LEVEL_LABELS } from "@/lib/candidate-utils"
+import { formatDate } from "@/lib/format"
 import {
   LANGUAGE_LEVELS,
   languageLevelSchema,
-} from "@/lib/validations/candidate";
-import { getTagBadgeStyle, getTagColor } from "@/lib/tag-colors";
-import { MAX_TAGS_PER_CANDIDATE } from "@/lib/validations/tag";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+} from "@/lib/validations/candidate"
+import { getTagBadgeStyle, getTagColor } from "@/lib/tag-colors"
+import { MAX_TAGS_PER_CANDIDATE } from "@/lib/validations/tag"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@/components/ui/select"
 
 /** Partie du brouillon LinkedIn créée avec la fiche (hors champs du formulaire) */
 export type ImportedBackground = Pick<
   LinkedInProfileDraft,
   "summary" | "experiences" | "formations" | "languages" | "skills"
->;
+>
 
 type Props = {
-  value: ImportedBackground;
-  onChange: (value: ImportedBackground) => void;
-  disabled?: boolean;
-};
+  value: ImportedBackground
+  onChange: (value: ImportedBackground) => void
+  disabled?: boolean
+}
 
 const formatPeriod = (startDate: string | null, endDate: string | null) => {
-  if (!startDate && !endDate) return null;
-  const start = startDate ? formatDate(startDate) : "?";
-  return `${start} – ${endDate ? formatDate(endDate) : "aujourd'hui"}`;
-};
+  if (!startDate && !endDate) return null
+  const start = startDate ? formatDate(startDate) : "?"
+  return `${start} – ${endDate ? formatDate(endDate) : "aujourd'hui"}`
+}
 
 const withoutIndex = <Item,>(items: Item[], removedIndex: number): Item[] =>
-  items.filter((_item, index) => index !== removedIndex);
+  items.filter((_item, index) => index !== removedIndex)
 
-const PreviewGroup = ({ title, children }: { title: string; children: ReactNode }) => (
+const PreviewGroup = ({
+  title,
+  children,
+}: {
+  title: string
+  children: ReactNode
+}) => (
   <div className="space-y-2">
     <h3 className="text-sm font-semibold text-foreground">{title}</h3>
     <ul className="space-y-1.5">{children}</ul>
   </div>
-);
+)
 
 const PreviewItem = ({
   label,
@@ -55,10 +61,10 @@ const PreviewItem = ({
   disabled,
   children,
 }: {
-  label: string;
-  onRemove: () => void;
-  disabled?: boolean;
-  children: ReactNode;
+  label: string
+  onRemove: () => void
+  disabled?: boolean
+  children: ReactNode
 }) => (
   <li className="flex items-start justify-between gap-2 rounded-md bg-muted/60 px-3 py-2 text-sm">
     <div className="min-w-0">{children}</div>
@@ -74,34 +80,38 @@ const PreviewItem = ({
       <X aria-hidden />
     </Button>
   </li>
-);
+)
 
 /**
  * Aperçu du parcours importé depuis LinkedIn (résumé, expériences, formations,
  * langues) : le recruteur retire ce qu'il ne veut pas garder avant d'enregistrer.
  */
 export const LinkedInImportPreview = ({ value, onChange, disabled }: Props) => {
-  const { summary, experiences, formations, languages, skills } = value;
-  const hasLanguageWithoutLevel = languages.some((language) => language.level === null);
+  const { summary, experiences, formations, languages, skills } = value
+  const hasLanguageWithoutLevel = languages.some(
+    (language) => language.level === null
+  )
 
   const handleLanguageLevelChange = (languageIndex: number, level: string) => {
-    const parsedLevel = languageLevelSchema.safeParse(level);
-    if (!parsedLevel.success) return;
+    const parsedLevel = languageLevelSchema.safeParse(level)
+    if (!parsedLevel.success) return
     onChange({
       ...value,
       languages: languages.map((language, index) =>
-        index === languageIndex ? { ...language, level: parsedLevel.data } : language
+        index === languageIndex
+          ? { ...language, level: parsedLevel.data }
+          : language
       ),
-    });
-  };
+    })
+  }
   const isEmpty =
     !summary &&
     experiences.length === 0 &&
     formations.length === 0 &&
     languages.length === 0 &&
-    skills.length === 0;
+    skills.length === 0
 
-  if (isEmpty) return null;
+  if (isEmpty) return null
 
   return (
     <section
@@ -109,7 +119,10 @@ export const LinkedInImportPreview = ({ value, onChange, disabled }: Props) => {
       className="space-y-4 rounded-lg border border-dashed border-border p-4"
     >
       <div>
-        <h2 id="linkedin-preview-title" className="text-base font-semibold text-foreground">
+        <h2
+          id="linkedin-preview-title"
+          className="text-base font-semibold text-foreground"
+        >
           Également importé depuis LinkedIn
         </h2>
         <p className="text-sm text-muted-foreground">
@@ -124,7 +137,9 @@ export const LinkedInImportPreview = ({ value, onChange, disabled }: Props) => {
             onRemove={() => onChange({ ...value, summary: null })}
             disabled={disabled}
           >
-            <p className="line-clamp-4 whitespace-pre-line text-muted-foreground">{summary}</p>
+            <p className="line-clamp-4 whitespace-pre-line text-muted-foreground">
+              {summary}
+            </p>
           </PreviewItem>
         </PreviewGroup>
       )}
@@ -136,7 +151,10 @@ export const LinkedInImportPreview = ({ value, onChange, disabled }: Props) => {
               key={`${experience.company}-${experience.startDate}-${index}`}
               label={`l'expérience ${experience.title} chez ${experience.company}`}
               onRemove={() =>
-                onChange({ ...value, experiences: withoutIndex(experiences, index) })
+                onChange({
+                  ...value,
+                  experiences: withoutIndex(experiences, index),
+                })
               }
               disabled={disabled}
             >
@@ -158,7 +176,10 @@ export const LinkedInImportPreview = ({ value, onChange, disabled }: Props) => {
               key={`${formation.school}-${index}`}
               label={`la formation ${formation.degree} à ${formation.school}`}
               onRemove={() =>
-                onChange({ ...value, formations: withoutIndex(formations, index) })
+                onChange({
+                  ...value,
+                  formations: withoutIndex(formations, index),
+                })
               }
               disabled={disabled}
             >
@@ -169,7 +190,10 @@ export const LinkedInImportPreview = ({ value, onChange, disabled }: Props) => {
                   : ""}
               </p>
               <p className="text-muted-foreground">
-                {[formation.school, formatPeriod(formation.startDate, formation.endDate)]
+                {[
+                  formation.school,
+                  formatPeriod(formation.startDate, formation.endDate),
+                ]
                   .filter(Boolean)
                   .join(" · ")}
               </p>
@@ -182,8 +206,8 @@ export const LinkedInImportPreview = ({ value, onChange, disabled }: Props) => {
         <PreviewGroup title={`Langues (${languages.length})`}>
           {hasLanguageWithoutLevel && (
             <li className="text-sm text-muted-foreground">
-              LinkedIn ne précise pas toujours le niveau : choisissez-le, sinon la
-              langue ne sera pas ajoutée.
+              LinkedIn ne précise pas toujours le niveau : choisissez-le, sinon
+              la langue ne sera pas ajoutée.
             </li>
           )}
           {languages.map((language, index) => (
@@ -191,7 +215,10 @@ export const LinkedInImportPreview = ({ value, onChange, disabled }: Props) => {
               key={language.name}
               label={`la langue ${language.name}`}
               onRemove={() =>
-                onChange({ ...value, languages: withoutIndex(languages, index) })
+                onChange({
+                  ...value,
+                  languages: withoutIndex(languages, index),
+                })
               }
               disabled={disabled}
             >
@@ -199,7 +226,9 @@ export const LinkedInImportPreview = ({ value, onChange, disabled }: Props) => {
                 <span className="text-foreground">{language.name}</span>
                 <Select
                   value={language.level ?? ""}
-                  onValueChange={(level) => handleLanguageLevelChange(index, level)}
+                  onValueChange={(level) =>
+                    handleLanguageLevelChange(index, level)
+                  }
                   disabled={disabled}
                 >
                   <SelectTrigger
@@ -226,9 +255,13 @@ export const LinkedInImportPreview = ({ value, onChange, disabled }: Props) => {
       {skills.length > 0 && (
         <div className="space-y-2">
           <h3 className="text-sm font-semibold text-foreground">
-            Compétences ajoutées en tags ({skills.length}/{MAX_TAGS_PER_CANDIDATE})
+            Compétences ajoutées en tags ({skills.length}/
+            {MAX_TAGS_PER_CANDIDATE})
           </h3>
-          <ul className="flex flex-wrap gap-2" aria-label="Compétences importées">
+          <ul
+            className="flex flex-wrap gap-2"
+            aria-label="Compétences importées"
+          >
             {skills.map((skill) => (
               <li key={skill}>
                 <Badge
@@ -242,7 +275,9 @@ export const LinkedInImportPreview = ({ value, onChange, disabled }: Props) => {
                     onClick={() =>
                       onChange({
                         ...value,
-                        skills: skills.filter((currentSkill) => currentSkill !== skill),
+                        skills: skills.filter(
+                          (currentSkill) => currentSkill !== skill
+                        ),
                       })
                     }
                     disabled={disabled}
@@ -258,5 +293,5 @@ export const LinkedInImportPreview = ({ value, onChange, disabled }: Props) => {
         </div>
       )}
     </section>
-  );
-};
+  )
+}

@@ -1,48 +1,49 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { formatDate } from "@/lib/format";
-import { api } from "@/lib/trpc/client";
-import { Button } from "@/components/ui/button";
-import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { useState } from "react"
+import { formatDate } from "@/lib/format"
+import { api } from "@/lib/trpc/client"
+import { Button } from "@/components/ui/button"
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
 import {
   FormationFormDialog,
   type FormationItem,
-} from "@/components/candidates/FormationFormDialog";
+} from "@/components/candidates/FormationFormDialog"
 
 type Props = {
-  candidateId?: string;
-  formations: FormationItem[];
-};
+  candidateId?: string
+  formations: FormationItem[]
+}
 
 export const CandidateFormationsSection = ({
   candidateId,
   formations,
 }: Props) => {
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editing, setEditing] = useState<FormationItem | null>(null);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [editing, setEditing] = useState<FormationItem | null>(null)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
 
-  const utils = api.useUtils();
+  const utils = api.useUtils()
   const deleteMutation = api.candidate.deleteFormation.useMutation({
     onSuccess: () => {
-      if (candidateId) void utils.candidate.getById.invalidate({ id: candidateId });
-      setDeleteId(null);
+      if (candidateId)
+        void utils.candidate.getById.invalidate({ id: candidateId })
+      setDeleteId(null)
     },
-  });
+  })
 
   const openAdd = () => {
-    setEditing(null);
-    setDialogOpen(true);
-  };
+    setEditing(null)
+    setDialogOpen(true)
+  }
   const openEdit = (f: FormationItem) => {
-    setEditing(f);
-    setDialogOpen(true);
-  };
+    setEditing(f)
+    setDialogOpen(true)
+  }
   const closeDialog = (open: boolean) => {
-    setDialogOpen(open);
-    if (!open) setEditing(null);
-  };
+    setDialogOpen(open)
+    if (!open) setEditing(null)
+  }
 
   return (
     <section>
@@ -60,7 +61,9 @@ export const CandidateFormationsSection = ({
         )}
       </div>
       {formations.length === 0 ? (
-        <p className="mt-2 text-sm text-muted-foreground">Aucune formation ajoutée</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Aucune formation ajoutée
+        </p>
       ) : (
         <ul className="mt-6 space-y-4">
           {formations.map((f) => (
@@ -129,7 +132,7 @@ export const CandidateFormationsSection = ({
                 deleteMutation.mutate({
                   candidateId,
                   formationId: deleteId,
-                });
+                })
             }}
             pending={deleteMutation.isPending}
             confirmVariant="destructive"
@@ -137,5 +140,5 @@ export const CandidateFormationsSection = ({
         </>
       )}
     </section>
-  );
-};
+  )
+}

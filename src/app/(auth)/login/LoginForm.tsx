@@ -1,34 +1,30 @@
-"use client";
+"use client"
 
-import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import {
-  loginFormSchema,
-  type LoginFormValues,
-} from "@/lib/validations/auth";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { createClient } from "@/lib/supabase/client";
+import { useState, useEffect } from "react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import Link from "next/link"
+import { useRouter, useSearchParams } from "next/navigation"
+import { loginFormSchema, type LoginFormValues } from "@/lib/validations/auth"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { createClient } from "@/lib/supabase/client"
 
-const LOGIN_ERROR_MESSAGE = "Email ou mot de passe incorrect.";
-const RATE_LIMIT_MESSAGE =
-  "Trop de requêtes. Réessayez dans quelques minutes.";
+const LOGIN_ERROR_MESSAGE = "Email ou mot de passe incorrect."
+const RATE_LIMIT_MESSAGE = "Trop de requêtes. Réessayez dans quelques minutes."
 
 export const LoginForm = () => {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [serverError, setServerError] = useState<string | null>(null);
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const [serverError, setServerError] = useState<string | null>(null)
 
   useEffect(() => {
     // Le paramètre reste dans l'URL : revenir sur /login (encore limité) relancerait la redirection.
     if (searchParams.get("error") === "rate_limit") {
-      queueMicrotask(() => setServerError(RATE_LIMIT_MESSAGE));
+      queueMicrotask(() => setServerError(RATE_LIMIT_MESSAGE))
     }
-  }, [searchParams]);
+  }, [searchParams])
 
   const {
     register,
@@ -40,25 +36,25 @@ export const LoginForm = () => {
       email: "",
       password: "",
     },
-  });
+  })
 
   const onSubmit = async (data: LoginFormValues) => {
-    setServerError(null);
+    setServerError(null)
 
-    const supabase = createClient();
+    const supabase = createClient()
     const { error } = await supabase.auth.signInWithPassword({
       email: data.email,
       password: data.password,
-    });
+    })
 
     if (error) {
-      setServerError(LOGIN_ERROR_MESSAGE);
-      return;
+      setServerError(LOGIN_ERROR_MESSAGE)
+      return
     }
 
-    router.push("/dashboard");
-    router.refresh();
-  };
+    router.push("/dashboard")
+    router.refresh()
+  }
 
   return (
     <>
@@ -71,8 +67,8 @@ export const LoginForm = () => {
             role="status"
             className="rounded-md border border-green-600/50 bg-green-500/10 px-3 py-2.5 text-sm text-green-800 dark:text-green-200"
           >
-            Un email de confirmation vous a été envoyé. Cliquez sur le lien
-            pour activer votre compte, puis connectez-vous.
+            Un email de confirmation vous a été envoyé. Cliquez sur le lien pour
+            activer votre compte, puis connectez-vous.
           </div>
         )}
         {serverError && (
@@ -135,5 +131,5 @@ export const LoginForm = () => {
         </Link>
       </p>
     </>
-  );
-};
+  )
+}

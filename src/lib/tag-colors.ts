@@ -4,7 +4,16 @@ import type React from "react"
  * Palette de couleurs pour les tags (docs/coding-standards.md § Styles et tokens).
  * Assignation : colorIndex = hash(tagName) % 8.
  */
-export const TAG_PALETTE: readonly [string, string, string, string, string, string, string, string] = [
+export const TAG_PALETTE: readonly [
+  string,
+  string,
+  string,
+  string,
+  string,
+  string,
+  string,
+  string,
+] = [
   "#D4A5A5", // Terracotta clair
   "#8FA89E", // Vert sauge clair
   "#C9B896", // Beige chaud
@@ -30,7 +39,7 @@ export const getTagColor = (tagName: string): string => {
 }
 
 export const getTagBadgeStyle = (
-  color: string,
+  color: string
 ): React.CSSProperties | undefined =>
   color
     ? {

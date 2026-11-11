@@ -1,7 +1,7 @@
-import { defineConfig, globalIgnores } from "eslint/config";
-import nextVitals from "eslint-config-next/core-web-vitals";
-import nextTs from "eslint-config-next/typescript";
-import prettier from "eslint-config-prettier/flat";
+import { defineConfig, globalIgnores } from "eslint/config"
+import nextVitals from "eslint-config-next/core-web-vitals"
+import nextTs from "eslint-config-next/typescript"
+import prettier from "eslint-config-prettier/flat"
 
 const eslintConfig = defineConfig([
   ...nextVitals,
@@ -9,10 +9,7 @@ const eslintConfig = defineConfig([
   prettier,
   {
     rules: {
-      "react/no-unescaped-entities": [
-        "error",
-        { forbid: [">", "}"] },
-      ],
+      "react/no-unescaped-entities": ["error", { forbid: [">", "}"] }],
       "no-console": ["warn", { allow: ["warn", "error"] }],
       "@typescript-eslint/no-unused-vars": [
         "warn",
@@ -28,6 +25,6 @@ const eslintConfig = defineConfig([
     "node_modules/**",
     "generated/**",
   ]),
-]);
+])
 
-export default eslintConfig;
+export default eslintConfig

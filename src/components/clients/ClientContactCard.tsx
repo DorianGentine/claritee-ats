@@ -47,7 +47,9 @@ export const ClientContactCard = ({
       if (ok) {
         toast.success(`${field === "email" ? "Email" : "Numéro"} copié.`)
       } else {
-        toast.error(`Échec de la copie de ${field === "email" ? "email" : "numéro"}.`)
+        toast.error(
+          `Échec de la copie de ${field === "email" ? "email" : "numéro"}.`
+        )
       }
     },
     []
@@ -60,7 +62,9 @@ export const ClientContactCard = ({
           <div>
             <p className="font-medium text-foreground">{fullName}</p>
             {contact.position && (
-              <p className="text-sm text-muted-foreground">{contact.position}</p>
+              <p className="text-sm text-muted-foreground">
+                {contact.position}
+              </p>
             )}
           </div>
 

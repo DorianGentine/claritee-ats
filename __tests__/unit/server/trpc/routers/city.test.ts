@@ -362,7 +362,11 @@ describe("city.autocomplete", () => {
     const photonPayload = {
       features: [
         {
-          properties: { name: "Lyon", state: "Auvergne-Rhône-Alpes", country: "France" },
+          properties: {
+            name: "Lyon",
+            state: "Auvergne-Rhône-Alpes",
+            country: "France",
+          },
           geometry: { coordinates: [4.8357, 45.764] },
         },
       ],
@@ -437,7 +441,9 @@ describe("city.autocomplete", () => {
       companyId: null,
     } as unknown as Context)
 
-    await expect(anonymousCaller.autocomplete({ q: "Par" })).rejects.toMatchObject({
+    await expect(
+      anonymousCaller.autocomplete({ q: "Par" })
+    ).rejects.toMatchObject({
       code: "UNAUTHORIZED",
     })
     expect(queryRaw).not.toHaveBeenCalled()
@@ -449,11 +455,17 @@ describe("city.autocomplete", () => {
     ])
     const sameUserCaller = cityRouter.createCaller(makeCtx())
 
-    for (let call = 0; call < RATE_LIMITS.CITY_AUTOCOMPLETE_PER_USER.limit; call++) {
+    for (
+      let call = 0;
+      call < RATE_LIMITS.CITY_AUTOCOMPLETE_PER_USER.limit;
+      call++
+    ) {
       await sameUserCaller.autocomplete({ q: "Par" })
     }
 
-    await expect(sameUserCaller.autocomplete({ q: "Par" })).rejects.toMatchObject({
+    await expect(
+      sameUserCaller.autocomplete({ q: "Par" })
+    ).rejects.toMatchObject({
       code: "TOO_MANY_REQUESTS",
     })
   })

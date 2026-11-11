@@ -53,7 +53,10 @@ describe("offer.addCandidates", () => {
   })
 
   it("creates candidatures for valid candidates with CONTACTED_LINKEDIN status", async () => {
-    db.jobOffer.findFirst.mockResolvedValue({ id: OFFER_ID, companyId: COMPANY_ID })
+    db.jobOffer.findFirst.mockResolvedValue({
+      id: OFFER_ID,
+      companyId: COMPANY_ID,
+    })
     db.candidate.findMany.mockResolvedValue([
       { id: CANDIDATE_ID_1 },
       { id: CANDIDATE_ID_2 },
@@ -69,8 +72,16 @@ describe("offer.addCandidates", () => {
     expect(result.count).toBe(2)
     expect(db.candidature.createMany).toHaveBeenCalledWith({
       data: [
-        { candidateId: CANDIDATE_ID_1, offerId: OFFER_ID, status: "CONTACTED_LINKEDIN" },
-        { candidateId: CANDIDATE_ID_2, offerId: OFFER_ID, status: "CONTACTED_LINKEDIN" },
+        {
+          candidateId: CANDIDATE_ID_1,
+          offerId: OFFER_ID,
+          status: "CONTACTED_LINKEDIN",
+        },
+        {
+          candidateId: CANDIDATE_ID_2,
+          offerId: OFFER_ID,
+          status: "CONTACTED_LINKEDIN",
+        },
       ],
       skipDuplicates: true,
     })
@@ -81,18 +92,27 @@ describe("offer.addCandidates", () => {
 
     const caller = makeCaller(db)
     await expect(
-      caller.addCandidates({ offerId: OFFER_ID, candidateIds: [CANDIDATE_ID_1] }),
+      caller.addCandidates({
+        offerId: OFFER_ID,
+        candidateIds: [CANDIDATE_ID_1],
+      })
     ).rejects.toMatchObject({ code: "NOT_FOUND" })
   })
 
   it("throws BAD_REQUEST if a candidate does not belong to companyId", async () => {
-    db.jobOffer.findFirst.mockResolvedValue({ id: OFFER_ID, companyId: COMPANY_ID })
+    db.jobOffer.findFirst.mockResolvedValue({
+      id: OFFER_ID,
+      companyId: COMPANY_ID,
+    })
     // Only returns 1 of 2 candidates (the other doesn't belong to the company)
     db.candidate.findMany.mockResolvedValue([{ id: CANDIDATE_ID_1 }])
 
     const caller = makeCaller(db)
     const error = await caller
-      .addCandidates({ offerId: OFFER_ID, candidateIds: [CANDIDATE_ID_1, CANDIDATE_ID_2] })
+      .addCandidates({
+        offerId: OFFER_ID,
+        candidateIds: [CANDIDATE_ID_1, CANDIDATE_ID_2],
+      })
       .catch((e) => e)
 
     expect(error).toBeInstanceOf(TRPCError)
@@ -100,7 +120,10 @@ describe("offer.addCandidates", () => {
   })
 
   it("throws CONFLICT if all candidates are already associated", async () => {
-    db.jobOffer.findFirst.mockResolvedValue({ id: OFFER_ID, companyId: COMPANY_ID })
+    db.jobOffer.findFirst.mockResolvedValue({
+      id: OFFER_ID,
+      companyId: COMPANY_ID,
+    })
     db.candidate.findMany.mockResolvedValue([{ id: CANDIDATE_ID_1 }])
     db.candidature.createMany.mockResolvedValue({ count: 0 })
 
@@ -114,7 +137,10 @@ describe("offer.addCandidates", () => {
   })
 
   it("creates only new candidatures when some already exist (bulk/partial)", async () => {
-    db.jobOffer.findFirst.mockResolvedValue({ id: OFFER_ID, companyId: COMPANY_ID })
+    db.jobOffer.findFirst.mockResolvedValue({
+      id: OFFER_ID,
+      companyId: COMPANY_ID,
+    })
     db.candidate.findMany.mockResolvedValue([
       { id: CANDIDATE_ID_1 },
       { id: CANDIDATE_ID_2 },
@@ -141,7 +167,10 @@ describe("offer.addCandidates", () => {
     const caller = offerRouter.createCaller(noAuthCtx)
 
     await expect(
-      caller.addCandidates({ offerId: OFFER_ID, candidateIds: [CANDIDATE_ID_1] }),
+      caller.addCandidates({
+        offerId: OFFER_ID,
+        candidateIds: [CANDIDATE_ID_1],
+      })
     ).rejects.toThrow(TRPCError)
   })
 })

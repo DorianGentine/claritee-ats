@@ -15,8 +15,7 @@ const mockDeleteMutate = vi.fn()
 vi.mock("@/lib/supabase/client", () => ({
   createClient: () => ({
     auth: {
-      getUser: () =>
-        Promise.resolve({ data: { user: { id: "user-1" } } }),
+      getUser: () => Promise.resolve({ data: { user: { id: "user-1" } } }),
     },
   }),
 }))
@@ -64,7 +63,7 @@ vi.mock("@/components/shared/NoteEditor", () => ({
       editable?: boolean
       onContentChange?: (isEmpty: boolean) => void
     },
-    ref: React.Ref<{ getContent: () => string; focus: () => void }>,
+    ref: React.Ref<{ getContent: () => string; focus: () => void }>
   ) {
     const inputRef = React.useRef<HTMLTextAreaElement>(null)
     React.useImperativeHandle(ref, () => ({
@@ -167,9 +166,13 @@ describe("OfferNotesSection", () => {
     // currentUserId est "user-1" (mock supabase), chargé de façon asynchrone :
     // n1 appartient à user-1 → actions visibles ; n2 à user-2 → aucune action
     await waitFor(() => {
-      expect(screen.getAllByRole("button", { name: "Modifier la note" })).toHaveLength(1)
+      expect(
+        screen.getAllByRole("button", { name: "Modifier la note" })
+      ).toHaveLength(1)
     })
-    expect(screen.getAllByRole("button", { name: "Supprimer la note" })).toHaveLength(1)
+    expect(
+      screen.getAllByRole("button", { name: "Supprimer la note" })
+    ).toHaveLength(1)
   })
 
   it("shows a Tiptap composer with a disabled send button when empty", async () => {
@@ -181,7 +184,9 @@ describe("OfferNotesSection", () => {
     await renderSection()
     expect(screen.getByTestId("note-editor-editable")).toBeDefined()
     expect(
-      screen.getByRole("button", { name: "Envoyer la note" }).hasAttribute("disabled")
+      screen
+        .getByRole("button", { name: "Envoyer la note" })
+        .hasAttribute("disabled")
     ).toBe(true)
     expect(screen.queryByText("Nouvelle note")).toBeNull()
   })
@@ -202,7 +207,7 @@ describe("OfferNotesSection", () => {
     // mutate est appelé avec (input, { onSuccess })
     expect(mockCreateMutate).toHaveBeenCalledWith(
       { offerId: "offer-1", content: noteContent("Mon contenu") },
-      expect.objectContaining({ onSuccess: expect.any(Function) }),
+      expect.objectContaining({ onSuccess: expect.any(Function) })
     )
   })
 
@@ -220,7 +225,7 @@ describe("OfferNotesSection", () => {
 
     expect(mockCreateMutate).toHaveBeenCalledWith(
       { offerId: "offer-1", content: noteContent("Relancer jeudi") },
-      expect.anything(),
+      expect.anything()
     )
   })
 })

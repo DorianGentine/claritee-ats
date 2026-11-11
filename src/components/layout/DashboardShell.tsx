@@ -15,7 +15,9 @@ export const DashboardShell = async ({
   return (
     <div className="flex flex-1 flex-col bg-background lg:flex-row">
       <AppSidebar defaultCollapsed={defaultCollapsed} />
-      <div className="bg-grid flex min-w-0 flex-1 flex-col print:bg-none">{children}</div>
+      <div className="bg-grid flex min-w-0 flex-1 flex-col print:bg-none">
+        {children}
+      </div>
       <NoteChatWidget />
     </div>
   )

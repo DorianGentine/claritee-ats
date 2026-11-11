@@ -68,14 +68,26 @@ describe("shareLink router", () => {
     // Villes insérées dans le désordre pour vérifier le tri par `order`.
     // Nettoyage préalable : un run interrompu sur une base persistante laisse ces villes
     // (liaisons d'abord : CandidateCity → City est en onDelete: Restrict).
-    await db.candidateCity.deleteMany({ where: { city: { country: TEST_COUNTRY } } })
+    await db.candidateCity.deleteMany({
+      where: { city: { country: TEST_COUNTRY } },
+    })
     await db.city.deleteMany({ where: { country: TEST_COUNTRY } })
     const [secondCity, firstCity] = await Promise.all([
       db.city.create({
-        data: { name: "Zzlyon", country: TEST_COUNTRY, latitude: 45.0, longitude: 4.0 },
+        data: {
+          name: "Zzlyon",
+          country: TEST_COUNTRY,
+          latitude: 45.0,
+          longitude: 4.0,
+        },
       }),
       db.city.create({
-        data: { name: "Zzparis", country: TEST_COUNTRY, latitude: 48.0, longitude: 2.0 },
+        data: {
+          name: "Zzparis",
+          country: TEST_COUNTRY,
+          latitude: 48.0,
+          longitude: 2.0,
+        },
       }),
     ])
     await db.candidateCity.createMany({
@@ -178,7 +190,9 @@ describe("shareLink router", () => {
   it("enforces rate limit (TOO_MANY_REQUESTS after 20 creations in an hour)", async () => {
     const { checkRateLimit } = await import("@/lib/rate-limit")
     const uniqueUserId = `rate-limit-test-${Date.now()}`
-    const caller = appRouter.createCaller(createContext(companyAId, uniqueUserId))
+    const caller = appRouter.createCaller(
+      createContext(companyAId, uniqueUserId)
+    )
 
     // Mock after 20 calls to avoid hitting the DB 20 times
     const mod = await import("@/lib/rate-limit")
@@ -206,7 +220,9 @@ describe("shareLink router", () => {
   it("listByCandidate returns only links for the given candidate, sorted createdAt desc", async () => {
     const caller = appRouter.createCaller(createContext(companyAId))
 
-    const links = await caller.shareLink.listByCandidate({ candidateId: candidateAId })
+    const links = await caller.shareLink.listByCandidate({
+      candidateId: candidateAId,
+    })
 
     expect(links.length).toBeGreaterThanOrEqual(2)
     expect(links.every((l) => l.candidateId === candidateAId)).toBe(true)
@@ -247,7 +263,9 @@ describe("shareLink router", () => {
 
     // Public caller (unauthenticated)
     const publicCaller = appRouter.createCaller(createContext(null))
-    const data = await publicCaller.shareLink.getPublicByToken({ token: link.token })
+    const data = await publicCaller.shareLink.getPublicByToken({
+      token: link.token,
+    })
 
     expect(data.type).toBe("NORMAL")
     if (data.type !== "NORMAL") throw new Error("Expected NORMAL")
@@ -300,7 +318,9 @@ describe("shareLink router", () => {
     })
 
     const publicCaller = appRouter.createCaller(createContext(null))
-    const data = await publicCaller.shareLink.getPublicByToken({ token: link.token })
+    const data = await publicCaller.shareLink.getPublicByToken({
+      token: link.token,
+    })
 
     expect(data.type).toBe("ANONYMOUS")
     if (data.type !== "ANONYMOUS") throw new Error("Expected ANONYMOUS")

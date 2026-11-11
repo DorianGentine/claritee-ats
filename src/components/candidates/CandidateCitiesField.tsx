@@ -1,16 +1,16 @@
-"use client";
+"use client"
 
-import { Label } from "@/components/ui/label";
+import { Label } from "@/components/ui/label"
 import {
   CityAutocomplete,
   type CityOption,
-} from "@/components/shared/CityAutocomplete";
+} from "@/components/shared/CityAutocomplete"
 
 type Props = {
-  value: CityOption[];
-  onChange: (cities: CityOption[]) => void;
-  disabled?: boolean;
-};
+  value: CityOption[]
+  onChange: (cities: CityOption[]) => void
+  disabled?: boolean
+}
 
 /**
  * Champ « Villes » d'un candidat : liste ordonnée gérée hors React Hook Form
@@ -27,4 +27,4 @@ export const CandidateCitiesField = ({ value, onChange, disabled }: Props) => (
       disabled={disabled}
     />
   </div>
-);
+)

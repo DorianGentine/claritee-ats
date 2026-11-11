@@ -4,7 +4,10 @@
 import { describe, it, expect, vi, afterEach } from "vitest"
 import { render, within, fireEvent, cleanup } from "@testing-library/react"
 import { ActiveOfferFilterChips } from "@/components/offers/ActiveOfferFilterChips"
-import { EMPTY_OFFER_FILTERS, type OfferFilters } from "@/components/offers/OfferListFilters"
+import {
+  EMPTY_OFFER_FILTERS,
+  type OfferFilters,
+} from "@/components/offers/OfferListFilters"
 
 vi.mock("@/lib/trpc/client", () => ({
   api: {
@@ -22,7 +25,13 @@ vi.mock("@/lib/trpc/client", () => ({
       list: {
         useQuery: () => ({
           data: [
-            { id: "client-1", name: "Acme Corp", siren: null, contactsCount: 1, offersCount: 2 },
+            {
+              id: "client-1",
+              name: "Acme Corp",
+              siren: null,
+              contactsCount: 1,
+              offersCount: 2,
+            },
           ],
         }),
       },

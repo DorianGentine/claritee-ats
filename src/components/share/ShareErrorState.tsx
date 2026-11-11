@@ -5,8 +5,7 @@ type Props = {
 }
 
 export const ShareErrorState = ({ variant }: Props) => {
-  const title =
-    variant === "expired" ? "Ce lien a expiré" : "Lien introuvable"
+  const title = variant === "expired" ? "Ce lien a expiré" : "Lien introuvable"
   const description =
     variant === "expired"
       ? "Ce lien de partage a expiré. Demandez un nouveau lien au cabinet de recrutement."

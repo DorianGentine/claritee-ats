@@ -1,4 +1,4 @@
-import localFont from "next/font/local";
+import localFont from "next/font/local"
 
 /** Polices de la charte claritee.fr, auto-hébergées (Inter : sous-ensemble latin, graisses 400 à 600). */
 export const inter = localFont({
@@ -6,7 +6,7 @@ export const inter = localFont({
   weight: "400 600",
   variable: "--font-inter",
   display: "swap",
-});
+})
 
 /** Clash Grotesk (Indian Type Foundry, licence ITF Free Font) : titres uniquement. */
 export const clashGrotesk = localFont({
@@ -17,4 +17,4 @@ export const clashGrotesk = localFont({
   ],
   variable: "--font-clash",
   display: "swap",
-});
+})

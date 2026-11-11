@@ -84,7 +84,10 @@ describe("candidature.updateStatus", () => {
     })
 
     const caller = makeCaller(db)
-    await caller.updateStatus({ candidatureId: CANDIDATURE_ID, status: "PHONE_CONTACT" })
+    await caller.updateStatus({
+      candidatureId: CANDIDATURE_ID,
+      status: "PHONE_CONTACT",
+    })
 
     expect(db.candidature.findFirst).toHaveBeenCalledWith({
       where: {
@@ -99,7 +102,7 @@ describe("candidature.updateStatus", () => {
 
     const caller = makeCaller(db)
     await expect(
-      caller.updateStatus({ candidatureId: CANDIDATURE_ID, status: "APPLIED" }),
+      caller.updateStatus({ candidatureId: CANDIDATURE_ID, status: "APPLIED" })
     ).rejects.toMatchObject({ code: "NOT_FOUND" })
   })
 
@@ -113,7 +116,7 @@ describe("candidature.updateStatus", () => {
     const caller = candidatureRouter.createCaller(noAuthCtx)
 
     await expect(
-      caller.updateStatus({ candidatureId: CANDIDATURE_ID, status: "APPLIED" }),
+      caller.updateStatus({ candidatureId: CANDIDATURE_ID, status: "APPLIED" })
     ).rejects.toThrow(TRPCError)
   })
 })
@@ -164,7 +167,7 @@ describe("candidature.delete", () => {
 
     const caller = makeCaller(db)
     await expect(
-      caller.delete({ candidatureId: CANDIDATURE_ID }),
+      caller.delete({ candidatureId: CANDIDATURE_ID })
     ).rejects.toMatchObject({ code: "NOT_FOUND" })
   })
 
@@ -178,7 +181,7 @@ describe("candidature.delete", () => {
     const caller = candidatureRouter.createCaller(noAuthCtx)
 
     await expect(
-      caller.delete({ candidatureId: CANDIDATURE_ID }),
+      caller.delete({ candidatureId: CANDIDATURE_ID })
     ).rejects.toThrow(TRPCError)
   })
 })
@@ -191,7 +194,7 @@ describe("updateCandidatureStatusSchema", () => {
       updateCandidatureStatusSchema.safeParse({
         candidatureId: "550e8400-e29b-41d4-a716-446655440000",
         status: "APPLIED",
-      }).success,
+      }).success
     ).toBe(true)
   })
 
@@ -200,7 +203,7 @@ describe("updateCandidatureStatusSchema", () => {
       updateCandidatureStatusSchema.safeParse({
         candidatureId: "not-a-uuid",
         status: "APPLIED",
-      }).success,
+      }).success
     ).toBe(false)
   })
 
@@ -209,7 +212,7 @@ describe("updateCandidatureStatusSchema", () => {
       updateCandidatureStatusSchema.safeParse({
         candidatureId: "550e8400-e29b-41d4-a716-446655440000",
         status: "INVALID_STATUS",
-      }).success,
+      }).success
     ).toBe(false)
   })
 
@@ -227,7 +230,7 @@ describe("updateCandidatureStatusSchema", () => {
         updateCandidatureStatusSchema.safeParse({
           candidatureId: "550e8400-e29b-41d4-a716-446655440000",
           status,
-        }).success,
+        }).success
       ).toBe(true)
     }
   })
@@ -238,7 +241,7 @@ describe("deleteCandidatureSchema", () => {
     expect(
       deleteCandidatureSchema.safeParse({
         candidatureId: "550e8400-e29b-41d4-a716-446655440000",
-      }).success,
+      }).success
     ).toBe(true)
   })
 
@@ -246,7 +249,7 @@ describe("deleteCandidatureSchema", () => {
     expect(
       deleteCandidatureSchema.safeParse({
         candidatureId: "not-a-uuid",
-      }).success,
+      }).success
     ).toBe(false)
   })
 })

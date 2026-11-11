@@ -27,7 +27,7 @@ describe("tag validations", () => {
         addTagSchema.parse({
           candidateId: validCandidateId,
           tagName: "",
-        }),
+        })
       ).toThrow()
     })
 
@@ -36,7 +36,7 @@ describe("tag validations", () => {
         addTagSchema.parse({
           candidateId: validCandidateId,
           tagName: "   ",
-        }),
+        })
       ).toThrow()
     })
 
@@ -45,7 +45,7 @@ describe("tag validations", () => {
         addTagSchema.parse({
           candidateId: validCandidateId,
           tagName: "a".repeat(101),
-        }),
+        })
       ).toThrow()
     })
 
@@ -54,7 +54,7 @@ describe("tag validations", () => {
         addTagSchema.parse({
           candidateId: "not-a-uuid",
           tagName: "Python",
-        }),
+        })
       ).toThrow()
     })
   })
@@ -74,13 +74,13 @@ describe("tag validations", () => {
         removeTagSchema.parse({
           candidateId: "x",
           tagId: validTagId,
-        }),
+        })
       ).toThrow()
       expect(() =>
         removeTagSchema.parse({
           candidateId: validCandidateId,
           tagId: "invalid",
-        }),
+        })
       ).toThrow()
     })
   })

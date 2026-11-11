@@ -1,21 +1,21 @@
-"use client";
+"use client"
 
-import { Pencil } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+import { Pencil } from "lucide-react"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Button } from "@/components/ui/button"
 
 export type CandidateDetailHeaderProps = {
-  photoUrl: string | null;
-  firstName: string;
-  lastName: string;
-  title?: string | null;
-  city?: string | null;
-  email?: string | null;
-  phone?: string | null;
-  linkedinUrl?: string | null;
+  photoUrl: string | null
+  firstName: string
+  lastName: string
+  title?: string | null
+  city?: string | null
+  email?: string | null
+  phone?: string | null
+  linkedinUrl?: string | null
   /** Affiche le bouton « Modifier » en haut à droite (absent sur les fiches publiques). */
-  onEdit?: () => void;
-};
+  onEdit?: () => void
+}
 
 export const CandidateDetailHeader = ({
   photoUrl,
@@ -28,10 +28,9 @@ export const CandidateDetailHeader = ({
   linkedinUrl,
   onEdit,
 }: CandidateDetailHeaderProps) => {
-  const fullName =
-    [firstName, lastName].filter(Boolean).join(" ") || "Sans nom";
+  const fullName = [firstName, lastName].filter(Boolean).join(" ") || "Sans nom"
   const initials =
-    `${firstName?.[0] ?? ""}${lastName?.[0] ?? ""}`.toUpperCase() || "?";
+    `${firstName?.[0] ?? ""}${lastName?.[0] ?? ""}`.toUpperCase() || "?"
 
   return (
     <header className="relative flex flex-col gap-4 rounded-lg border border-border bg-card p-6 shadow-sm sm:flex-row sm:items-start print:shadow-none">
@@ -61,12 +60,8 @@ export const CandidateDetailHeader = ({
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">
           {fullName}
         </h1>
-        {title && (
-          <p className="mt-1 text-muted-foreground">{title}</p>
-        )}
-        {city && (
-          <p className="mt-0.5 text-sm text-muted-foreground">{city}</p>
-        )}
+        {title && <p className="mt-1 text-muted-foreground">{title}</p>}
+        {city && <p className="mt-0.5 text-sm text-muted-foreground">{city}</p>}
         <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
           {email && (
             <li>
@@ -80,10 +75,7 @@ export const CandidateDetailHeader = ({
           )}
           {phone && (
             <li>
-              <a
-                href={`tel:${phone}`}
-                className="text-primary hover:underline"
-              >
+              <a href={`tel:${phone}`} className="text-primary hover:underline">
                 {phone}
               </a>
             </li>
@@ -103,5 +95,5 @@ export const CandidateDetailHeader = ({
         </ul>
       </div>
     </header>
-  );
-};
+  )
+}

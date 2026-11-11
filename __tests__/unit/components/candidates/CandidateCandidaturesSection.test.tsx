@@ -63,7 +63,7 @@ describe("CandidateCandidaturesSection", () => {
 
   it("shows empty state when no candidatures", () => {
     const { container } = render(
-      <CandidateCandidaturesSection candidateId="c1" candidatures={[]} />,
+      <CandidateCandidaturesSection candidateId="c1" candidatures={[]} />
     )
     const card = within(container)
     expect(card.getByText("Aucune offre associée")).toBeDefined()
@@ -71,7 +71,10 @@ describe("CandidateCandidaturesSection", () => {
 
   it("renders offer titles with links to /offers/[id]", () => {
     const { container } = render(
-      <CandidateCandidaturesSection candidateId="c1" candidatures={mockCandidatures} />,
+      <CandidateCandidaturesSection
+        candidateId="c1"
+        candidatures={mockCandidatures}
+      />
     )
     const card = within(container)
 
@@ -86,9 +89,14 @@ describe("CandidateCandidaturesSection", () => {
 
   it("renders status dropdown for each candidature", () => {
     const { container } = render(
-      <CandidateCandidaturesSection candidateId="c1" candidatures={mockCandidatures} />,
+      <CandidateCandidaturesSection
+        candidateId="c1"
+        candidatures={mockCandidatures}
+      />
     )
-    const dropdowns = container.querySelectorAll("[data-testid='status-dropdown']")
+    const dropdowns = container.querySelectorAll(
+      "[data-testid='status-dropdown']"
+    )
     expect(dropdowns).toHaveLength(2)
     expect(dropdowns[0].textContent).toBe("CONTACTED_LINKEDIN")
     expect(dropdowns[1].textContent).toBe("APPLIED")
@@ -96,7 +104,10 @@ describe("CandidateCandidaturesSection", () => {
 
   it("renders section title 'Offres associées'", () => {
     const { container } = render(
-      <CandidateCandidaturesSection candidateId="c1" candidatures={mockCandidatures} />,
+      <CandidateCandidaturesSection
+        candidateId="c1"
+        candidatures={mockCandidatures}
+      />
     )
     expect(within(container).getByText("Offres associées")).toBeDefined()
   })

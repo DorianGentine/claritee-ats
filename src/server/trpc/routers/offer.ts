@@ -240,7 +240,10 @@ export const offerRouter = router({
           })
         }
 
-        if (resolvedClientCompanyId && contact.clientCompanyId !== resolvedClientCompanyId) {
+        if (
+          resolvedClientCompanyId &&
+          contact.clientCompanyId !== resolvedClientCompanyId
+        ) {
           throw new TRPCError({
             code: "BAD_REQUEST",
             message: "Le contact sélectionné n'appartient pas au client.",
@@ -281,7 +284,9 @@ export const offerRouter = router({
           salaryMax: true,
         },
       })
-      const createdWithContact = created as { clientContact?: { id: string } | null }
+      const createdWithContact = created as {
+        clientContact?: { id: string } | null
+      }
       return {
         ...created,
         clientContactId: createdWithContact.clientContact?.id ?? null,
@@ -353,10 +358,7 @@ export const offerRouter = router({
         }
       }
 
-      if (
-        resolvedClientCompanyId === null &&
-        clientContactId === undefined
-      ) {
+      if (resolvedClientCompanyId === null && clientContactId === undefined) {
         resolvedClientContactId = null
       }
 
@@ -372,7 +374,8 @@ export const offerRouter = router({
       } = { ...rest }
 
       if (cityId !== undefined) {
-        data.city = cityId != null ? { connect: { id: cityId } } : { disconnect: true }
+        data.city =
+          cityId != null ? { connect: { id: cityId } } : { disconnect: true }
       }
 
       if (resolvedClientCompanyId !== undefined) {
@@ -402,7 +405,9 @@ export const offerRouter = router({
           salaryMax: true,
         },
       })
-      const updatedWithContact = updated as { clientContact?: { id: string } | null }
+      const updatedWithContact = updated as {
+        clientContact?: { id: string } | null
+      }
       return {
         ...updated,
         clientContactId: updatedWithContact.clientContact?.id ?? null,
@@ -571,7 +576,8 @@ export const offerRouter = router({
       if (result.count === 0) {
         throw new TRPCError({
           code: "CONFLICT",
-          message: "Tous les candidats sélectionnés sont déjà associés à cette offre.",
+          message:
+            "Tous les candidats sélectionnés sont déjà associés à cette offre.",
         })
       }
 

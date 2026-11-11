@@ -1,36 +1,38 @@
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "@prisma/client";
-import { appRouter } from "@/server/trpc/routers/_app";
-import type { Context } from "@/server/trpc/context";
-import { noteContent } from "../../../../helpers/note-content";
+import { describe, it, expect, beforeAll, afterAll } from "vitest"
+import { PrismaPg } from "@prisma/adapter-pg"
+import { PrismaClient } from "@prisma/client"
+import { appRouter } from "@/server/trpc/routers/_app"
+import type { Context } from "@/server/trpc/context"
+import { noteContent } from "../../../../helpers/note-content"
 
-const connectionString = process.env.DATABASE_URL;
+const connectionString = process.env.DATABASE_URL
 
-const defaultNoteContent = noteContent("Note de test");
+const defaultNoteContent = noteContent("Note de test")
 
 describe("note", () => {
-  let db: PrismaClient;
-  let companyAId: string;
-  let companyBId: string;
-  let userAId: string;
-  let userBId: string;
-  let userCId: string;
-  let candidateA1Id: string;
-  let candidateB1Id: string;
-  let offerA1Id: string;
+  let db: PrismaClient
+  let companyAId: string
+  let companyBId: string
+  let userAId: string
+  let userBId: string
+  let userCId: string
+  let candidateA1Id: string
+  let candidateB1Id: string
+  let offerA1Id: string
 
   const createContext = (companyId: string | null, userId?: string): Context =>
     ({
       db,
-      user: companyId ? { id: userId ?? "user-a-id", email: "a@test.com" } : null,
+      user: companyId
+        ? { id: userId ?? "user-a-id", email: "a@test.com" }
+        : null,
       companyId,
       headers: new Headers(),
-    }) as unknown as Context;
+    }) as unknown as Context
 
   beforeAll(async () => {
-    const adapter = new PrismaPg({ connectionString: connectionString! });
-    db = new PrismaClient({ adapter });
+    const adapter = new PrismaPg({ connectionString: connectionString! })
+    db = new PrismaClient({ adapter })
 
     const [companyA, companyB] = await Promise.all([
       db.company.create({
@@ -45,11 +47,12 @@ describe("note", () => {
           siren: `8${Date.now().toString().slice(-8)}`,
         },
       }),
-    ]);
-    companyAId = companyA.id;
-    companyBId = companyB.id;
-
-    [userAId, userBId, userCId] = ["user-a-id", "user-b-id", "user-c-id"];
+    ])
+    companyAId = companyA.id
+    companyBId = companyB.id
+    userAId = "user-a-id"
+    userBId = "user-b-id"
+    userCId = "user-c-id"
     await Promise.all([
       db.user.create({
         data: {
@@ -78,7 +81,7 @@ describe("note", () => {
           companyId: companyBId,
         },
       }),
-    ]);
+    ])
 
     const [cA1, cB1] = await Promise.all([
       db.candidate.create({
@@ -95,18 +98,18 @@ describe("note", () => {
           companyId: companyBId,
         },
       }),
-    ]);
-    candidateA1Id = cA1.id;
-    candidateB1Id = cB1.id;
+    ])
+    candidateA1Id = cA1.id
+    candidateB1Id = cB1.id
 
     const offerA1 = await db.jobOffer.create({
       data: {
         title: "Offer A1",
         companyId: companyAId,
       },
-    });
-    offerA1Id = offerA1.id;
-  });
+    })
+    offerA1Id = offerA1.id
+  })
 
   afterAll(async () => {
     await db.note.deleteMany({
@@ -116,428 +119,446 @@ describe("note", () => {
           { offerId: offerA1Id },
         ],
       },
-    });
-    await db.jobOffer.deleteMany({ where: { id: offerA1Id } });
+    })
+    await db.jobOffer.deleteMany({ where: { id: offerA1Id } })
     await db.candidate.deleteMany({
       where: { id: { in: [candidateA1Id, candidateB1Id] } },
-    });
+    })
     await db.user.deleteMany({
       where: { id: { in: [userAId, userBId, userCId] } },
-    });
+    })
     await db.company.deleteMany({
       where: { id: { in: [companyAId, companyBId] } },
-    });
-    await db.$disconnect();
-  });
+    })
+    await db.$disconnect()
+  })
 
   it("list: returns notes for candidate scoped by companyId, ordered createdAt asc (chat style)", async () => {
-    const ctx = createContext(companyAId, userAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId, userAId)
+    const caller = appRouter.createCaller(ctx)
 
     const created = await caller.note.create({
       candidateId: candidateA1Id,
       content: defaultNoteContent,
-    });
-    expect(created.id).toBeDefined();
+    })
+    expect(created.id).toBeDefined()
 
-    const list = await caller.note.list({ candidateId: candidateA1Id });
-    expect(list.length).toBeGreaterThanOrEqual(1);
-    expect(list.some((n) => n.id === created.id)).toBe(true);
+    const list = await caller.note.list({ candidateId: candidateA1Id })
+    expect(list.length).toBeGreaterThanOrEqual(1)
+    expect(list.some((n) => n.id === created.id)).toBe(true)
     expect(list[0]).toMatchObject({
       content: defaultNoteContent,
       author: { firstName: "User", lastName: "A" },
-    });
+    })
 
-    await db.note.delete({ where: { id: created.id } });
-  });
+    await db.note.delete({ where: { id: created.id } })
+  })
 
   it("list: returns empty when candidate belongs to another company", async () => {
-    const ctx = createContext(companyAId, userAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId, userAId)
+    const caller = appRouter.createCaller(ctx)
 
-    const list = await caller.note.list({ candidateId: candidateB1Id });
-    expect(list).toHaveLength(0);
-  });
+    const list = await caller.note.list({ candidateId: candidateB1Id })
+    expect(list).toHaveLength(0)
+  })
 
   it("list: throws UNAUTHORIZED when not authenticated", async () => {
-    const ctx = createContext(null);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(null)
+    const caller = appRouter.createCaller(ctx)
 
     await expect(
       caller.note.list({ candidateId: candidateA1Id })
-    ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
-  });
+    ).rejects.toMatchObject({ code: "UNAUTHORIZED" })
+  })
 
   it("create: creates note with authorId and companyId", async () => {
-    const ctx = createContext(companyAId, userAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId, userAId)
+    const caller = appRouter.createCaller(ctx)
 
     const created = await caller.note.create({
       candidateId: candidateA1Id,
       content: defaultNoteContent,
-    });
+    })
 
-    expect(created.id).toBeDefined();
-    expect(created.authorId).toBe(userAId);
-    expect(created.companyId).toBe(companyAId);
-    expect(created.candidateId).toBe(candidateA1Id);
-    expect(created.content).toBe(defaultNoteContent);
-    expect(created.author).toEqual({ firstName: "User", lastName: "A" });
+    expect(created.id).toBeDefined()
+    expect(created.authorId).toBe(userAId)
+    expect(created.companyId).toBe(companyAId)
+    expect(created.candidateId).toBe(candidateA1Id)
+    expect(created.content).toBe(defaultNoteContent)
+    expect(created.author).toEqual({ firstName: "User", lastName: "A" })
 
-    await db.note.delete({ where: { id: created.id } });
-  });
+    await db.note.delete({ where: { id: created.id } })
+  })
 
   it("create: throws NOT_FOUND when candidate belongs to another company", async () => {
-    const ctx = createContext(companyAId, userAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId, userAId)
+    const caller = appRouter.createCaller(ctx)
 
     await expect(
       caller.note.create({
         candidateId: candidateB1Id,
         content: defaultNoteContent,
       })
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
-  });
+    ).rejects.toMatchObject({ code: "NOT_FOUND" })
+  })
 
   it("update: allows author to update own note", async () => {
-    const ctx = createContext(companyAId, userAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId, userAId)
+    const caller = appRouter.createCaller(ctx)
 
     const created = await caller.note.create({
       candidateId: candidateA1Id,
       content: defaultNoteContent,
-    });
+    })
 
-    const updatedContent = noteContent("Note modifiée");
+    const updatedContent = noteContent("Note modifiée")
     const updated = await caller.note.update({
       id: created.id,
       content: updatedContent,
-    });
+    })
 
-    expect(updated.content).toBe(updatedContent);
+    expect(updated.content).toBe(updatedContent)
 
-    await db.note.delete({ where: { id: created.id } });
-  });
+    await db.note.delete({ where: { id: created.id } })
+  })
 
   it("update: throws FORBIDDEN when non-author tries to update", async () => {
-    const ctxA = createContext(companyAId, userAId);
-    const callerA = appRouter.createCaller(ctxA);
+    const ctxA = createContext(companyAId, userAId)
+    const callerA = appRouter.createCaller(ctxA)
     const created = await callerA.note.create({
       candidateId: candidateA1Id,
       content: defaultNoteContent,
-    });
+    })
 
-    const ctxB = createContext(companyAId, userBId);
-    const callerB = appRouter.createCaller(ctxB);
+    const ctxB = createContext(companyAId, userBId)
+    const callerB = appRouter.createCaller(ctxB)
 
     await expect(
       callerB.note.update({
         id: created.id,
         content: noteContent(""),
       })
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    ).rejects.toMatchObject({ code: "FORBIDDEN" })
 
-    await db.note.delete({ where: { id: created.id } });
-  });
+    await db.note.delete({ where: { id: created.id } })
+  })
 
   it("update: throws NOT_FOUND when note belongs to another company", async () => {
-    const ctxA = createContext(companyAId, userAId);
-    const callerA = appRouter.createCaller(ctxA);
+    const ctxA = createContext(companyAId, userAId)
+    const callerA = appRouter.createCaller(ctxA)
     const created = await callerA.note.create({
       candidateId: candidateA1Id,
       content: defaultNoteContent,
-    });
+    })
 
-    const ctxC = createContext(companyBId, userCId);
-    const callerC = appRouter.createCaller(ctxC);
+    const ctxC = createContext(companyBId, userCId)
+    const callerC = appRouter.createCaller(ctxC)
 
     await expect(
       callerC.note.update({
         id: created.id,
         content: defaultNoteContent,
       })
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    ).rejects.toMatchObject({ code: "NOT_FOUND" })
 
-    await db.note.delete({ where: { id: created.id } });
-  });
+    await db.note.delete({ where: { id: created.id } })
+  })
 
   it("delete: allows author to delete own note", async () => {
-    const ctx = createContext(companyAId, userAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId, userAId)
+    const caller = appRouter.createCaller(ctx)
 
     const created = await caller.note.create({
       candidateId: candidateA1Id,
       content: defaultNoteContent,
-    });
+    })
 
-    const result = await caller.note.delete({ id: created.id });
-    expect(result.success).toBe(true);
+    const result = await caller.note.delete({ id: created.id })
+    expect(result.success).toBe(true)
 
-    const inDb = await db.note.findUnique({ where: { id: created.id } });
-    expect(inDb).toBeNull();
-  });
+    const inDb = await db.note.findUnique({ where: { id: created.id } })
+    expect(inDb).toBeNull()
+  })
 
   it("delete: throws FORBIDDEN when non-author tries to delete", async () => {
-    const ctxA = createContext(companyAId, userAId);
-    const callerA = appRouter.createCaller(ctxA);
+    const ctxA = createContext(companyAId, userAId)
+    const callerA = appRouter.createCaller(ctxA)
     const created = await callerA.note.create({
       candidateId: candidateA1Id,
       content: defaultNoteContent,
-    });
+    })
 
-    const ctxB = createContext(companyAId, userBId);
-    const callerB = appRouter.createCaller(ctxB);
+    const ctxB = createContext(companyAId, userBId)
+    const callerB = appRouter.createCaller(ctxB)
 
-    await expect(callerB.note.delete({ id: created.id })).rejects.toMatchObject({
-      code: "FORBIDDEN",
-    });
+    await expect(callerB.note.delete({ id: created.id })).rejects.toMatchObject(
+      {
+        code: "FORBIDDEN",
+      }
+    )
 
-    await db.note.delete({ where: { id: created.id } });
-  });
+    await db.note.delete({ where: { id: created.id } })
+  })
 
   it("delete: throws NOT_FOUND when note belongs to another company", async () => {
-    const ctxA = createContext(companyAId, userAId);
-    const callerA = appRouter.createCaller(ctxA);
+    const ctxA = createContext(companyAId, userAId)
+    const callerA = appRouter.createCaller(ctxA)
     const created = await callerA.note.create({
       candidateId: candidateA1Id,
       content: defaultNoteContent,
-    });
+    })
 
-    const ctxC = createContext(companyBId, userCId);
-    const callerC = appRouter.createCaller(ctxC);
+    const ctxC = createContext(companyBId, userCId)
+    const callerC = appRouter.createCaller(ctxC)
 
-    await expect(callerC.note.delete({ id: created.id })).rejects.toMatchObject({
-      code: "NOT_FOUND",
-    });
+    await expect(callerC.note.delete({ id: created.id })).rejects.toMatchObject(
+      {
+        code: "NOT_FOUND",
+      }
+    )
 
-    await db.note.delete({ where: { id: created.id } });
-  });
+    await db.note.delete({ where: { id: created.id } })
+  })
 
   it("listByOffer: returns notes for offer scoped by companyId, ordered createdAt asc", async () => {
-    const ctx = createContext(companyAId, userAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId, userAId)
+    const caller = appRouter.createCaller(ctx)
 
-    const n1 = await caller.note.create({ offerId: offerA1Id, content: defaultNoteContent });
-    const n2Content = noteContent("Note 2");
-    const n2 = await caller.note.create({ offerId: offerA1Id, content: n2Content });
+    const n1 = await caller.note.create({
+      offerId: offerA1Id,
+      content: defaultNoteContent,
+    })
+    const n2Content = noteContent("Note 2")
+    const n2 = await caller.note.create({
+      offerId: offerA1Id,
+      content: n2Content,
+    })
 
-    const list = await caller.note.listByOffer({ offerId: offerA1Id });
-    expect(list.length).toBeGreaterThanOrEqual(2);
+    const list = await caller.note.listByOffer({ offerId: offerA1Id })
+    expect(list.length).toBeGreaterThanOrEqual(2)
     // ordered asc: n1 before n2
-    const ids = list.map((n) => n.id);
-    expect(ids.indexOf(n1.id)).toBeLessThan(ids.indexOf(n2.id));
-    expect(list[0]).toMatchObject({ author: { firstName: "User", lastName: "A" } });
+    const ids = list.map((n) => n.id)
+    expect(ids.indexOf(n1.id)).toBeLessThan(ids.indexOf(n2.id))
+    expect(list[0]).toMatchObject({
+      author: { firstName: "User", lastName: "A" },
+    })
 
-    await db.note.deleteMany({ where: { id: { in: [n1.id, n2.id] } } });
-  });
+    await db.note.deleteMany({ where: { id: { in: [n1.id, n2.id] } } })
+  })
 
   it("listByOffer: throws NOT_FOUND when offer belongs to another company", async () => {
-    const ctxB = createContext(companyBId, userCId);
-    const callerB = appRouter.createCaller(ctxB);
+    const ctxB = createContext(companyBId, userCId)
+    const callerB = appRouter.createCaller(ctxB)
 
     await expect(
       callerB.note.listByOffer({ offerId: offerA1Id })
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
-  });
+    ).rejects.toMatchObject({ code: "NOT_FOUND" })
+  })
 
   it("listByOffer: throws UNAUTHORIZED when not authenticated", async () => {
-    const ctx = createContext(null);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(null)
+    const caller = appRouter.createCaller(ctx)
 
     await expect(
       caller.note.listByOffer({ offerId: offerA1Id })
-    ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
-  });
+    ).rejects.toMatchObject({ code: "UNAUTHORIZED" })
+  })
 
   it("create: creates note for offer with correct authorId, companyId, offerId", async () => {
-    const ctx = createContext(companyAId, userAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId, userAId)
+    const caller = appRouter.createCaller(ctx)
 
-    const created = await caller.note.create({ offerId: offerA1Id, content: defaultNoteContent });
+    const created = await caller.note.create({
+      offerId: offerA1Id,
+      content: defaultNoteContent,
+    })
 
-    expect(created.id).toBeDefined();
-    expect(created.authorId).toBe(userAId);
-    expect(created.companyId).toBe(companyAId);
-    expect(created.offerId).toBe(offerA1Id);
-    expect(created.candidateId).toBeNull();
-    expect(created.author).toEqual({ firstName: "User", lastName: "A" });
+    expect(created.id).toBeDefined()
+    expect(created.authorId).toBe(userAId)
+    expect(created.companyId).toBe(companyAId)
+    expect(created.offerId).toBe(offerA1Id)
+    expect(created.candidateId).toBeNull()
+    expect(created.author).toEqual({ firstName: "User", lastName: "A" })
 
-    await db.note.delete({ where: { id: created.id } });
-  });
+    await db.note.delete({ where: { id: created.id } })
+  })
 
   it("create: throws NOT_FOUND when offer belongs to another company", async () => {
-    const ctxB = createContext(companyBId, userCId);
-    const callerB = appRouter.createCaller(ctxB);
+    const ctxB = createContext(companyBId, userCId)
+    const callerB = appRouter.createCaller(ctxB)
 
     await expect(
       callerB.note.create({ offerId: offerA1Id, content: defaultNoteContent })
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
-  });
+    ).rejects.toMatchObject({ code: "NOT_FOUND" })
+  })
 
   it("create: creates free note without candidateId or offerId (Story 3.11)", async () => {
-    const ctx = createContext(companyAId, userAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId, userAId)
+    const caller = appRouter.createCaller(ctx)
 
     const created = await caller.note.create({
       content: defaultNoteContent,
       title: "Ma note libre",
-    });
+    })
 
-    expect(created.id).toBeDefined();
-    expect(created.candidateId).toBeNull();
-    expect(created.offerId).toBeNull();
-    expect(created.title).toBe("Ma note libre");
-    expect(created.content).toBe(defaultNoteContent);
+    expect(created.id).toBeDefined()
+    expect(created.candidateId).toBeNull()
+    expect(created.offerId).toBeNull()
+    expect(created.title).toBe("Ma note libre")
+    expect(created.content).toBe(defaultNoteContent)
 
-    await db.note.delete({ where: { id: created.id } });
-  });
+    await db.note.delete({ where: { id: created.id } })
+  })
 
   it("listFree: returns free notes ordered by updatedAt desc", async () => {
-    const ctx = createContext(companyAId, userAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId, userAId)
+    const caller = appRouter.createCaller(ctx)
 
-    const n1 = await caller.note.create({ content: defaultNoteContent, title: "Note 1" });
+    const n1 = await caller.note.create({
+      content: defaultNoteContent,
+      title: "Note 1",
+    })
     const n2 = await caller.note.create({
       content: noteContent("Note 2"),
       title: "Note 2",
-    });
+    })
 
-    const list = await caller.note.listFree();
-    expect(list.length).toBeGreaterThanOrEqual(2);
-    expect(list[0].id).toBe(n2.id);
-    expect(list[1].id).toBe(n1.id);
+    const list = await caller.note.listFree()
+    expect(list.length).toBeGreaterThanOrEqual(2)
+    expect(list[0].id).toBe(n2.id)
+    expect(list[1].id).toBe(n1.id)
 
-    await db.note.deleteMany({ where: { id: { in: [n1.id, n2.id] } } });
-  });
+    await db.note.deleteMany({ where: { id: { in: [n1.id, n2.id] } } })
+  })
 
   it("update: accepts title (Story 3.11)", async () => {
-    const ctx = createContext(companyAId, userAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId, userAId)
+    const caller = appRouter.createCaller(ctx)
 
     const created = await caller.note.create({
       content: defaultNoteContent,
       title: "Titre initial",
-    });
+    })
 
     const updated = await caller.note.update({
       id: created.id,
       title: "Titre modifié",
-    });
+    })
 
-    expect(updated.title).toBe("Titre modifié");
+    expect(updated.title).toBe("Titre modifié")
 
-    await db.note.delete({ where: { id: created.id } });
-  });
+    await db.note.delete({ where: { id: created.id } })
+  })
 
   it("moveToCandidate: assigns note to candidate and clears offerId (Story 3.12)", async () => {
-    const ctx = createContext(companyAId, userAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId, userAId)
+    const caller = appRouter.createCaller(ctx)
 
     const created = await caller.note.create({
       content: defaultNoteContent,
       title: "Note à déplacer",
-    });
-    expect(created.candidateId).toBeNull();
-    expect(created.offerId).toBeNull();
+    })
+    expect(created.candidateId).toBeNull()
+    expect(created.offerId).toBeNull()
 
     const moved = await caller.note.moveToCandidate({
       id: created.id,
       candidateId: candidateA1Id,
-    });
+    })
 
-    expect(moved.candidateId).toBe(candidateA1Id);
-    expect(moved.offerId).toBeNull();
+    expect(moved.candidateId).toBe(candidateA1Id)
+    expect(moved.offerId).toBeNull()
 
-    const listFree = await caller.note.listFree();
-    expect(listFree.some((n) => n.id === created.id)).toBe(false);
+    const listFree = await caller.note.listFree()
+    expect(listFree.some((n) => n.id === created.id)).toBe(false)
 
-    const listCandidate = await caller.note.list({ candidateId: candidateA1Id });
-    expect(listCandidate.some((n) => n.id === created.id)).toBe(true);
+    const listCandidate = await caller.note.list({ candidateId: candidateA1Id })
+    expect(listCandidate.some((n) => n.id === created.id)).toBe(true)
 
-    await db.note.delete({ where: { id: created.id } });
-  });
+    await db.note.delete({ where: { id: created.id } })
+  })
 
   it("moveToCandidate: throws NOT_FOUND when candidate belongs to another company", async () => {
-    const ctx = createContext(companyAId, userAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId, userAId)
+    const caller = appRouter.createCaller(ctx)
 
     const created = await caller.note.create({
       content: defaultNoteContent,
       title: "Note libre",
-    });
+    })
 
     await expect(
       caller.note.moveToCandidate({
         id: created.id,
         candidateId: candidateB1Id,
       })
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    ).rejects.toMatchObject({ code: "NOT_FOUND" })
 
-    await db.note.delete({ where: { id: created.id } });
-  });
+    await db.note.delete({ where: { id: created.id } })
+  })
 
   it("moveToCandidate: throws FORBIDDEN when non-author tries to move", async () => {
-    const ctxA = createContext(companyAId, userAId);
-    const callerA = appRouter.createCaller(ctxA);
+    const ctxA = createContext(companyAId, userAId)
+    const callerA = appRouter.createCaller(ctxA)
     const created = await callerA.note.create({
       content: defaultNoteContent,
       title: "Note libre",
-    });
+    })
 
-    const ctxB = createContext(companyAId, userBId);
-    const callerB = appRouter.createCaller(ctxB);
+    const ctxB = createContext(companyAId, userBId)
+    const callerB = appRouter.createCaller(ctxB)
 
     await expect(
       callerB.note.moveToCandidate({
         id: created.id,
         candidateId: candidateA1Id,
       })
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    ).rejects.toMatchObject({ code: "FORBIDDEN" })
 
-    await db.note.delete({ where: { id: created.id } });
-  });
+    await db.note.delete({ where: { id: created.id } })
+  })
 
   it("moveToOffer: assigns note to offer and clears candidateId (Story 3.12)", async () => {
-    const ctx = createContext(companyAId, userAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId, userAId)
+    const caller = appRouter.createCaller(ctx)
 
     const created = await caller.note.create({
       content: defaultNoteContent,
       title: "Note à déplacer vers offre",
-    });
-    expect(created.candidateId).toBeNull();
-    expect(created.offerId).toBeNull();
+    })
+    expect(created.candidateId).toBeNull()
+    expect(created.offerId).toBeNull()
 
     const moved = await caller.note.moveToOffer({
       id: created.id,
       offerId: offerA1Id,
-    });
+    })
 
-    expect(moved.offerId).toBe(offerA1Id);
-    expect(moved.candidateId).toBeNull();
+    expect(moved.offerId).toBe(offerA1Id)
+    expect(moved.candidateId).toBeNull()
 
-    const listFree = await caller.note.listFree();
-    expect(listFree.some((n) => n.id === created.id)).toBe(false);
+    const listFree = await caller.note.listFree()
+    expect(listFree.some((n) => n.id === created.id)).toBe(false)
 
-    await db.note.delete({ where: { id: created.id } });
-  });
+    await db.note.delete({ where: { id: created.id } })
+  })
 
   it("moveToOffer: throws NOT_FOUND when offer belongs to another company", async () => {
-    const ctx = createContext(companyBId, userCId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyBId, userCId)
+    const caller = appRouter.createCaller(ctx)
 
     const created = await caller.note.create({
       content: defaultNoteContent,
       title: "Note libre B",
-    });
+    })
 
     await expect(
       caller.note.moveToOffer({
         id: created.id,
         offerId: offerA1Id,
       })
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    ).rejects.toMatchObject({ code: "NOT_FOUND" })
 
-    await db.note.delete({ where: { id: created.id } });
-  });
-});
+    await db.note.delete({ where: { id: created.id } })
+  })
+})

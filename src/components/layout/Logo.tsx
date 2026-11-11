@@ -1,12 +1,12 @@
-import Link from "next/link";
-import { cn } from "@/lib/utils";
+import Link from "next/link"
+import { cn } from "@/lib/utils"
 
 type Props = {
-  href: string;
-  className?: string;
+  href: string
+  className?: string
   /** Sur desktop, n'affiche que « C. » (menu latéral replié). */
-  compact?: boolean;
-};
+  compact?: boolean
+}
 
 /** Logotype « Claritee. » : point final en terracotta, comme sur claritee.fr. */
 export const Logo = ({ href, className, compact = false }: Props) => (
@@ -22,4 +22,4 @@ export const Logo = ({ href, className, compact = false }: Props) => (
     {compact && <span className="hidden lg:inline">C</span>}
     <span className="text-primary">.</span>
   </Link>
-);
+)

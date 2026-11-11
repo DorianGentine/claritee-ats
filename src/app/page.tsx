@@ -1,11 +1,11 @@
-import type { Metadata } from "next";
-import { PublicHeader } from "@/components/layout/PublicHeader";
+import type { Metadata } from "next"
+import { PublicHeader } from "@/components/layout/PublicHeader"
 
 export const metadata: Metadata = {
   title: "ClariteeAts",
   description:
     "L'outil de suivi des candidats des petits cabinets de recrutement : candidats, offres, clients et notes au même endroit.",
-};
+}
 
 export default function HomePage() {
   return (
@@ -24,12 +24,12 @@ export default function HomePage() {
             <span className="block text-primary">en toute clarté.</span>
           </h1>
           <p className="mx-auto max-w-xl text-lg leading-relaxed text-muted-foreground">
-            ClariteeAts est l'outil de suivi des candidats des petits cabinets de
-            recrutement : candidats, offres, clients et notes de toute l'équipe,
-            réunis au même endroit.
+            ClariteeAts est l'outil de suivi des candidats des petits cabinets
+            de recrutement : candidats, offres, clients et notes de toute
+            l'équipe, réunis au même endroit.
           </p>
         </div>
       </main>
     </>
-  );
+  )
 }

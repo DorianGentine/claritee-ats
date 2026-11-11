@@ -12,4 +12,4 @@ export const idsNewestFirst = (
         second.createdAt.getTime() - first.createdAt.getTime() ||
         (second.id > first.id ? 1 : second.id < first.id ? -1 : 0)
     )
-    .map((row) => row.id);
+    .map((row) => row.id)

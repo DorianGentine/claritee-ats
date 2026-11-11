@@ -52,7 +52,12 @@ const mockOffer = {
   id: "offer-1",
   title: "Développeur Full Stack",
   description: "Description du poste",
-  city: { id: "city-1", name: "Paris", region: "Île-de-France", country: "France" },
+  city: {
+    id: "city-1",
+    name: "Paris",
+    region: "Île-de-France",
+    country: "France",
+  },
   salaryMin: 45000,
   salaryMax: 55000,
   status: "IN_PROGRESS" as const,
@@ -102,7 +107,9 @@ describe("OfferDetailView", () => {
     const { container } = render(<OfferDetailView offerId="offer-1" />)
     const card = within(container)
     expect(
-      card.getByText("Offre introuvable ou vous n'avez pas accès à cette fiche."),
+      card.getByText(
+        "Offre introuvable ou vous n'avez pas accès à cette fiche."
+      )
     ).toBeDefined()
   })
 
