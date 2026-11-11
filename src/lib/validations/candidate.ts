@@ -255,19 +255,6 @@ export const PHOTO_ACCEPTED_MIMES = [
 
 export const PHOTO_MAX_BYTES = 2 * 1024 * 1024; // 2 Mo
 
-/** Schéma pour l'upload de photo candidat */
-export const uploadPhotoSchema = z.object({
-  candidateId: z.uuid(),
-  fileBase64: z.string().min(1, "Fichier requis"),
-  mimeType: z
-    .enum(PHOTO_ACCEPTED_MIMES, {
-      message:
-        "Format de fichier non supporté. Formats acceptés : JPG, PNG, WebP.",
-    }),
-});
-
-export type UploadPhotoInput = z.infer<typeof uploadPhotoSchema>;
-
 /** Formats MIME acceptés pour les CV candidat */
 export const CV_ACCEPTED_MIMES = [
   "application/pdf",
@@ -277,21 +264,56 @@ export const CV_ACCEPTED_MIMES = [
 
 export const CV_MAX_BYTES = 5 * 1024 * 1024; // 5 Mo
 
-/** Schéma pour l'upload de CV candidat */
-export const uploadCvSchema = z.object({
-  candidateId: z.uuid(),
-  fileBase64: z.string().min(1, "Fichier requis"),
-  mimeType: z.enum(CV_ACCEPTED_MIMES, {
-    message:
-      "Format de fichier non supporté. Formats acceptés : PDF, DOC, DOCX.",
-  }),
-  fileName: z
-    .string()
-    .min(1, "Nom de fichier requis")
-    .max(255, "Nom de fichier trop long"),
-});
+export const FILE_TOO_LARGE_MESSAGE =
+  "Le fichier dépasse la taille maximale autorisée (2 Mo pour les photos, 5 Mo pour les CVs).";
+export const PHOTO_FORMAT_MESSAGE =
+  "Format de fichier non supporté. Formats acceptés : JPG, PNG, WebP.";
+export const CV_FORMAT_MESSAGE =
+  "Format de fichier non supporté. Formats acceptés : PDF, DOC, DOCX.";
 
-export type UploadCvInput = z.infer<typeof uploadCvSchema>;
+const fileSizeSchema = (maxBytes: number) =>
+  z.number().int().positive().max(maxBytes, FILE_TOO_LARGE_MESSAGE);
+
+/**
+ * Demande d'URL d'upload signée (photo ou CV). Le fichier part ensuite du
+ * navigateur directement vers Supabase Storage, puis `confirmFileUploadSchema`.
+ */
+export const createFileUploadUrlSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("photo"),
+    candidateId: z.uuid(),
+    mimeType: z.enum(PHOTO_ACCEPTED_MIMES, { message: PHOTO_FORMAT_MESSAGE }),
+    size: fileSizeSchema(PHOTO_MAX_BYTES),
+  }),
+  z.object({
+    kind: z.literal("cv"),
+    candidateId: z.uuid(),
+    mimeType: z.enum(CV_ACCEPTED_MIMES, { message: CV_FORMAT_MESSAGE }),
+    size: fileSizeSchema(CV_MAX_BYTES),
+  }),
+]);
+
+export type CreateFileUploadUrlInput = z.infer<typeof createFileUploadUrlSchema>;
+
+/** Confirmation d'un upload : le serveur revérifie le fichier stocké à `path`. */
+export const confirmFileUploadSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("photo"),
+    candidateId: z.uuid(),
+    path: z.string().min(1).max(500),
+  }),
+  z.object({
+    kind: z.literal("cv"),
+    candidateId: z.uuid(),
+    path: z.string().min(1).max(500),
+    fileName: z
+      .string()
+      .min(1, "Nom de fichier requis")
+      .max(255, "Nom de fichier trop long"),
+  }),
+]);
+
+export type ConfirmFileUploadInput = z.infer<typeof confirmFileUploadSchema>;
 
 /** Date optionnelle (premier jour du mois côté UI → DateTime en base). z.coerce.date() accepte Date ou chaîne ISO. */
 const optionalDate = z.coerce.date().optional().nullable();

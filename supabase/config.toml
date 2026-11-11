@@ -117,7 +117,19 @@ enabled = true
 # The maximum file size allowed (e.g. "5MB", "500KB").
 file_size_limit = "50MiB"
 
-# Uncomment to configure local storage buckets
+# Buckets de l'app (mêmes limites qu'en prod : `bun run storage:configure`,
+# source `src/lib/validations/candidate.ts`). Les fichiers partent du navigateur
+# via URL signée : la limite du bucket est le premier garde-fou.
+[storage.buckets.photos]
+public = true
+file_size_limit = "2MiB"
+allowed_mime_types = ["image/jpeg", "image/png", "image/webp"]
+
+[storage.buckets.cvs]
+public = false
+file_size_limit = "5MiB"
+allowed_mime_types = ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"]
+
 # [storage.buckets.images]
 # public = false
 # file_size_limit = "50MiB"

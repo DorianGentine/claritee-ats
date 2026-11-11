@@ -6,10 +6,7 @@ import { useRouter } from "next/navigation";
 import type { FieldErrors, UseFormRegister } from "react-hook-form";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  candidateBasicFieldsSchema,
-  PHOTO_ACCEPTED_MIMES,
-} from "@/lib/validations/candidate";
+import { candidateBasicFieldsSchema } from "@/lib/validations/candidate";
 import { api } from "@/lib/trpc/client";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,7 +20,7 @@ import {
 } from "@/components/candidates/CandidateBasicFieldsForm";
 import { type CityOption } from "@/components/shared/CityAutocomplete";
 import { CandidateCitiesField } from "@/components/candidates/CandidateCitiesField";
-import { fileToBase64 } from "@/lib/file-utils";
+import { useCandidateFileUpload } from "@/hooks/useCandidateFileUpload";
 import type { LinkedInProfileDraft } from "@/lib/linkedin/profile";
 import { LinkedInImportPanel } from "@/components/candidates/LinkedInImportPanel";
 import {
@@ -77,7 +74,7 @@ export default function NewCandidatePage() {
   };
 
   const createMutation = api.candidate.create.useMutation();
-  const uploadPhotoMutation = api.candidate.uploadPhoto.useMutation();
+  const { uploadFile, isUploading } = useCandidateFileUpload();
 
   const {
     register,
@@ -168,12 +165,7 @@ export default function NewCandidatePage() {
       }
 
       if (photoFile && candidateId) {
-        const { base64, mimeType } = await fileToBase64(photoFile, "image/jpeg");
-        await uploadPhotoMutation.mutateAsync({
-          candidateId,
-          fileBase64: base64,
-          mimeType: mimeType as (typeof PHOTO_ACCEPTED_MIMES)[number],
-        });
+        await uploadFile({ kind: "photo", candidateId, file: photoFile });
       }
 
       router.push(`/candidates/${candidateId}`);
@@ -184,7 +176,7 @@ export default function NewCandidatePage() {
     }
   };
 
-  const isPending = isSubmitting || createMutation.isPending || uploadPhotoMutation.isPending;
+  const isPending = isSubmitting || createMutation.isPending || isUploading;
 
   return (
     <main className="p-6 lg:p-10">

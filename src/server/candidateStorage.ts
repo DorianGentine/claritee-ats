@@ -1,8 +1,10 @@
+import { randomUUID } from "crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 /**
  * Fichiers d'un candidat dans Supabase Storage :
- * `{companyId}/candidates/{candidateId}/{photo|cv}.{ext}`, une extension par format accepté.
+ * `{companyId}/candidates/{candidateId}/{photo|cv}-{uuid}.{ext}`, un nom unique par
+ * upload. Les fichiers antérieurs, sans identifiant (`cv.pdf`), restent reconnus.
  */
 const CANDIDATE_FILES = {
   photos: { name: "photo", extensions: ["jpg", "png", "webp"] },
@@ -15,41 +17,95 @@ export const CANDIDATE_BUCKETS = Object.keys(
   CANDIDATE_FILES
 ) as CandidateBucket[];
 
-export const getCandidateFilePath = (
+const CANDIDATE_FILE_PATTERN =
+  /^([^/]+)\/candidates\/([^/]+)\/([a-z]+)(?:-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})?\.([a-z]+)$/;
+
+/** Taille max d'un listing de dossier candidat (quelques fichiers en pratique). */
+const FOLDER_LIST_LIMIT = 100;
+
+const getCandidateFolder = (companyId: string, candidateId: string): string =>
+  `${companyId}/candidates/${candidateId}`;
+
+/** Nouveau chemin, unique, pour un upload. */
+export const createCandidateFilePath = (
   companyId: string,
   candidateId: string,
   bucket: CandidateBucket,
   extension: string
 ): string =>
-  `${companyId}/candidates/${candidateId}/${CANDIDATE_FILES[bucket].name}.${extension}`;
+  `${getCandidateFolder(companyId, candidateId)}/${CANDIDATE_FILES[bucket].name}-${randomUUID()}.${extension}`;
 
-/** Dérive l'extension du CV stocké depuis le nom d'origine (`pdf` par défaut). */
-export const getCvStorageExt = (cvFileName: string | null): string => {
-  const extension = cvFileName?.split(".").pop()?.toLowerCase() ?? "";
-  return (CANDIDATE_FILES.cvs.extensions as readonly string[]).includes(
-    extension
-  )
-    ? extension
-    : "pdf";
+export type CandidateFilePath = {
+  companyId: string;
+  candidateId: string;
+  extension: string;
+};
+
+/** Décompose un chemin conforme à la convention du bucket, sinon `null`. */
+export const parseCandidateFilePath = (
+  bucket: CandidateBucket,
+  path: string
+): CandidateFilePath | null => {
+  const match = CANDIDATE_FILE_PATTERN.exec(path);
+  if (!match) return null;
+  const [, companyId, candidateId, name, extension] = match;
+  const { name: expectedName, extensions } = CANDIDATE_FILES[bucket];
+  if (
+    name !== expectedName ||
+    !(extensions as readonly string[]).includes(extension)
+  ) {
+    return null;
+  }
+  return { companyId, candidateId, extension };
 };
 
 /**
- * Supprime le fichier du candidat dans le bucket, toutes extensions confondues
- * sauf `keepExtension` (le fichier qui vient d'être uploadé).
- * Supprimer un chemin absent n'est pas une erreur côté Supabase.
+ * Chemin du fichier référencé par une URL stockée (`photoUrl`, `cvUrl`), s'il
+ * appartient bien à ce candidat ; sinon `null`.
  */
-export const removeCandidateFile = async (
+export const getCandidateFilePathFromUrl = (
+  bucket: CandidateBucket,
+  companyId: string,
+  candidateId: string,
+  url: string | null
+): string | null => {
+  if (!url) return null;
+  const folderStart = url.indexOf(
+    `/${getCandidateFolder(companyId, candidateId)}/`
+  );
+  if (folderStart < 0) return null;
+  const path = url.slice(folderStart + 1).split(/[?#]/)[0];
+  const parsed = parseCandidateFilePath(bucket, path);
+  return parsed?.companyId === companyId && parsed.candidateId === candidateId
+    ? path
+    : null;
+};
+
+/**
+ * Supprime les fichiers du candidat dans le bucket (ceux qui suivent la
+ * convention), sauf `keepPath`. Retourne l'erreur Storage éventuelle.
+ */
+export const removeCandidateFiles = async (
   supabase: SupabaseClient,
   companyId: string,
   candidateId: string,
   bucket: CandidateBucket,
-  keepExtension?: string
+  keepPath?: string | null
 ) => {
-  const paths = CANDIDATE_FILES[bucket].extensions
-    .filter((extension) => extension !== keepExtension)
-    .map((extension) =>
-      getCandidateFilePath(companyId, candidateId, bucket, extension)
+  const folder = getCandidateFolder(companyId, candidateId);
+  const { data: files, error: listError } = await supabase.storage
+    .from(bucket)
+    .list(folder, { limit: FOLDER_LIST_LIMIT });
+  if (listError) return listError;
+
+  const paths = (files ?? [])
+    .map((file) => `${folder}/${file.name}`)
+    .filter(
+      (path) =>
+        path !== keepPath && parseCandidateFilePath(bucket, path) !== null
     );
+  if (paths.length === 0) return null;
+
   const { error } = await supabase.storage.from(bucket).remove(paths);
   return error;
 };
@@ -78,18 +134,11 @@ export const classifyCandidateFile = (
   path: string,
   candidatesById: Map<string, StoredCandidate>
 ): StorageFileStatus => {
-  const match = path.match(
-    /^([^/]+)\/candidates\/([^/]+)\/([^/.]+)\.([^/.]+)$/
-  );
-  const [, companyId, candidateId, name, extension] = match ?? [];
-  const { name: expectedName, extensions } = CANDIDATE_FILES[bucket];
-  if (
-    !match ||
-    name !== expectedName ||
-    !(extensions as readonly string[]).includes(extension)
-  ) {
+  const parsed = parseCandidateFilePath(bucket, path);
+  if (!parsed) {
     return { status: "unexpected", path };
   }
+  const { companyId, candidateId } = parsed;
 
   const candidate = candidatesById.get(candidateId);
   if (!candidate) {
@@ -106,5 +155,9 @@ export const classifyCandidateFile = (
   const isCurrent = referencedUrl?.endsWith(`/${path}`) ?? false;
   return isCurrent
     ? { status: "current", path }
-    : { status: "orphan", path, reason: "fichier remplacé ou retiré" };
+    : {
+        status: "orphan",
+        path,
+        reason: "fichier remplacé, retiré ou jamais confirmé",
+      };
 };

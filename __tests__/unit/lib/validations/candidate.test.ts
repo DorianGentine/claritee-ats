@@ -5,8 +5,10 @@ import {
   updateCandidateSchema,
   addLanguageSchema,
   removeLanguageSchema,
-  uploadPhotoSchema,
-  uploadCvSchema,
+  createFileUploadUrlSchema,
+  confirmFileUploadSchema,
+  PHOTO_MAX_BYTES,
+  CV_MAX_BYTES,
   PHOTO_ACCEPTED_MIMES,
   CV_ACCEPTED_MIMES,
   LANGUAGE_LEVELS,
@@ -494,123 +496,107 @@ describe("candidate validations", () => {
     });
   });
 
-  describe("uploadPhotoSchema", () => {
+  describe("createFileUploadUrlSchema", () => {
     const validUuid = "550e8400-e29b-41d4-a716-446655440000";
-    const validBase64 = Buffer.from("fake-image-bytes").toString("base64");
 
-    it("accepts valid input for each mime type", () => {
+    it("accepts every accepted mime type within the size limit", () => {
       for (const mimeType of PHOTO_ACCEPTED_MIMES) {
-        const result = uploadPhotoSchema.parse({
-          candidateId: validUuid,
-          fileBase64: validBase64,
-          mimeType,
-        });
-        expect(result.candidateId).toBe(validUuid);
-        expect(result.mimeType).toBe(mimeType);
+        expect(
+          createFileUploadUrlSchema.parse({
+            kind: "photo",
+            candidateId: validUuid,
+            mimeType,
+            size: PHOTO_MAX_BYTES,
+          }).mimeType
+        ).toBe(mimeType);
+      }
+      for (const mimeType of CV_ACCEPTED_MIMES) {
+        expect(
+          createFileUploadUrlSchema.parse({
+            kind: "cv",
+            candidateId: validUuid,
+            mimeType,
+            size: CV_MAX_BYTES,
+          }).mimeType
+        ).toBe(mimeType);
       }
     });
 
-    it("rejects invalid mime type with PRD message", () => {
+    it("rejects a mime type of the other kind with the PRD message", () => {
       expect(() =>
-        uploadPhotoSchema.parse({
+        createFileUploadUrlSchema.parse({
+          kind: "photo",
           candidateId: validUuid,
-          fileBase64: validBase64,
-          mimeType: "image/gif",
-        }),
-      ).toThrow(/Format de fichier non supporté. Formats acceptés : JPG, PNG, WebP/);
+          mimeType: "application/pdf",
+          size: 10,
+        })
+      ).toThrow(/Formats acceptés : JPG, PNG, WebP/);
+      expect(() =>
+        createFileUploadUrlSchema.parse({
+          kind: "cv",
+          candidateId: validUuid,
+          mimeType: "text/plain",
+          size: 10,
+        })
+      ).toThrow(/Formats acceptés : PDF, DOC, DOCX/);
     });
 
-    it("rejects empty fileBase64", () => {
+    it("rejects a file above the limit of its kind with the PRD message", () => {
       expect(() =>
-        uploadPhotoSchema.parse({
+        createFileUploadUrlSchema.parse({
+          kind: "photo",
           candidateId: validUuid,
-          fileBase64: "",
           mimeType: "image/jpeg",
-        }),
+          size: PHOTO_MAX_BYTES + 1,
+        })
+      ).toThrow(/Le fichier dépasse la taille maximale autorisée/);
+      expect(() =>
+        createFileUploadUrlSchema.parse({
+          kind: "cv",
+          candidateId: validUuid,
+          mimeType: "application/pdf",
+          size: CV_MAX_BYTES + 1,
+        })
+      ).toThrow(/Le fichier dépasse la taille maximale autorisée/);
+    });
+
+    it("rejects an empty file and a non-uuid candidate", () => {
+      expect(() =>
+        createFileUploadUrlSchema.parse({
+          kind: "cv",
+          candidateId: validUuid,
+          mimeType: "application/pdf",
+          size: 0,
+        })
       ).toThrow();
-    });
-
-    it("rejects invalid candidateId (non-uuid)", () => {
       expect(() =>
-        uploadPhotoSchema.parse({
+        createFileUploadUrlSchema.parse({
+          kind: "cv",
           candidateId: "not-a-uuid",
-          fileBase64: validBase64,
-          mimeType: "image/jpeg",
-        }),
+          mimeType: "application/pdf",
+          size: 10,
+        })
       ).toThrow();
     });
   });
 
-  describe("uploadCvSchema", () => {
+  describe("confirmFileUploadSchema", () => {
     const validUuid = "550e8400-e29b-41d4-a716-446655440000";
-    const validBase64 = Buffer.from("fake-pdf-bytes").toString("base64");
 
-    it("accepts valid input for each mime type", () => {
-      for (const mimeType of CV_ACCEPTED_MIMES) {
-        const result = uploadCvSchema.parse({
+    it("requires a file name for a CV only", () => {
+      expect(
+        confirmFileUploadSchema.parse({
+          kind: "photo",
           candidateId: validUuid,
-          fileBase64: validBase64,
-          mimeType,
-          fileName: "cv.pdf",
-        });
-        expect(result.candidateId).toBe(validUuid);
-        expect(result.mimeType).toBe(mimeType);
-        expect(result.fileName).toBe("cv.pdf");
-      }
-    });
-
-    it("rejects invalid mime type with PRD message", () => {
+          path: "a/b.jpg",
+        }).kind
+      ).toBe("photo");
       expect(() =>
-        uploadCvSchema.parse({
+        confirmFileUploadSchema.parse({
+          kind: "cv",
           candidateId: validUuid,
-          fileBase64: validBase64,
-          mimeType: "text/plain",
-          fileName: "doc.txt",
-        }),
-      ).toThrow(/Format de fichier non supporté. Formats acceptés : PDF, DOC, DOCX/);
-    });
-
-    it("rejects empty fileBase64", () => {
-      expect(() =>
-        uploadCvSchema.parse({
-          candidateId: validUuid,
-          fileBase64: "",
-          mimeType: "application/pdf",
-          fileName: "cv.pdf",
-        }),
-      ).toThrow();
-    });
-
-    it("rejects empty fileName", () => {
-      expect(() =>
-        uploadCvSchema.parse({
-          candidateId: validUuid,
-          fileBase64: validBase64,
-          mimeType: "application/pdf",
-          fileName: "",
-        }),
-      ).toThrow();
-    });
-
-    it("rejects fileName exceeding 255 characters", () => {
-      expect(() =>
-        uploadCvSchema.parse({
-          candidateId: validUuid,
-          fileBase64: validBase64,
-          mimeType: "application/pdf",
-          fileName: "a".repeat(256),
-        }),
-      ).toThrow();
-    });
-
-    it("rejects invalid candidateId (non-uuid)", () => {
-      expect(() =>
-        uploadCvSchema.parse({
-          candidateId: "not-a-uuid",
-          fileBase64: validBase64,
-          mimeType: "application/pdf",
-          fileName: "cv.pdf",
-        }),
+          path: "a/b.pdf",
+        })
       ).toThrow();
     });
   });

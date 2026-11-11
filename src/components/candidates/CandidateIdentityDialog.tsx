@@ -7,11 +7,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import type { z } from "zod";
 import { api } from "@/lib/trpc/client";
-import { fileToBase64 } from "@/lib/file-utils";
-import {
-  candidateBasicFieldsSchema,
-  PHOTO_ACCEPTED_MIMES,
-} from "@/lib/validations/candidate";
+import { useCandidateFileUpload } from "@/hooks/useCandidateFileUpload";
+import { candidateBasicFieldsSchema } from "@/lib/validations/candidate";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -73,7 +70,7 @@ const IdentityForm = ({
   const [photoError, setPhotoError] = useState<string | null>(null);
 
   const updateMutation = api.candidate.update.useMutation();
-  const uploadPhotoMutation = api.candidate.uploadPhoto.useMutation();
+  const { uploadFile, isUploading } = useCandidateFileUpload();
 
   const {
     register,
@@ -124,11 +121,10 @@ const IdentityForm = ({
         cities: cities.map((city, index) => ({ cityId: city.id, order: index })),
       });
       if (photoFile) {
-        const { base64, mimeType } = await fileToBase64(photoFile, "image/jpeg");
-        await uploadPhotoMutation.mutateAsync({
+        await uploadFile({
+          kind: "photo",
           candidateId: candidate.id,
-          fileBase64: base64,
-          mimeType: mimeType as (typeof PHOTO_ACCEPTED_MIMES)[number],
+          file: photoFile,
         });
       }
       void utils.candidate.getById.invalidate({ id: candidate.id });
@@ -143,7 +139,7 @@ const IdentityForm = ({
   };
 
   const pending =
-    isSubmitting || updateMutation.isPending || uploadPhotoMutation.isPending;
+    isSubmitting || updateMutation.isPending || isUploading;
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>

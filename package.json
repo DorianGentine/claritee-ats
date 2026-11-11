@@ -25,6 +25,7 @@
     "db:local:reset": "supabase db reset --no-seed && prisma migrate deploy",
     "db:pull:prod": "bash scripts/db-pull-prod.sh",
     "storage:orphans": "tsx scripts/storage-orphans.ts",
+    "storage:configure": "tsx scripts/configure-storage-buckets.ts",
     "linkedin:check": "tsx scripts/check-linkedin-import.ts"
   },
   "dependencies": {
