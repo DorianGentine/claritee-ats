@@ -21,7 +21,10 @@ type Props = {
   candidatures: CandidatureEntry[]
 }
 
-export const CandidateCandidaturesSection = ({ candidateId, candidatures }: Props) => {
+export const CandidateCandidaturesSection = ({
+  candidateId,
+  candidatures,
+}: Props) => {
   const utils = api.useUtils()
 
   const updateStatusMutation = useCandidatureUpdateStatus({
@@ -33,7 +36,7 @@ export const CandidateCandidaturesSection = ({ candidateId, candidatures }: Prop
         return {
           ...old,
           candidatures: old.candidatures.map((c) =>
-            c.id === candidatureId ? { ...c, status } : c,
+            c.id === candidatureId ? { ...c, status } : c
           ),
         }
       })
@@ -49,7 +52,9 @@ export const CandidateCandidaturesSection = ({ candidateId, candidatures }: Prop
 
   return (
     <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
-      <h2 className="mb-4 text-base font-semibold text-foreground">Offres associées</h2>
+      <h2 className="mb-4 text-base font-semibold text-foreground">
+        Offres associées
+      </h2>
 
       {candidatures.length === 0 ? (
         <div className="py-4 text-center">

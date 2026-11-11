@@ -23,13 +23,13 @@ describe("offerListInputSchema", () => {
       offerListInputSchema.safeParse({
         sortBy: "createdAt",
         sortOrder: "asc",
-      }).success,
+      }).success
     ).toBe(true)
     expect(
       offerListInputSchema.safeParse({
         sortBy: "status",
         sortOrder: "desc",
-      }).success,
+      }).success
     ).toBe(true)
   })
 
@@ -109,12 +109,12 @@ describe("offerListInputSchema", () => {
   })
 
   it("rejects negative salary values", () => {
-    expect(
-      offerListInputSchema.safeParse({ salaryMin: -1 }).success
-    ).toBe(false)
-    expect(
-      offerListInputSchema.safeParse({ salaryMax: -100 }).success
-    ).toBe(false)
+    expect(offerListInputSchema.safeParse({ salaryMin: -1 }).success).toBe(
+      false
+    )
+    expect(offerListInputSchema.safeParse({ salaryMax: -100 }).success).toBe(
+      false
+    )
   })
 
   it("accepts a valid cityId filter", () => {
@@ -221,7 +221,7 @@ describe("createJobOfferSchema", () => {
     if (!result.success) {
       const issue = result.error.issues.find((i) => i.path[0] === "salaryMax")
       expect(issue?.message).toContain(
-        "Le salaire minimum ne peut pas être supérieur au salaire maximum.",
+        "Le salaire minimum ne peut pas être supérieur au salaire maximum."
       )
     }
   })
@@ -235,10 +235,10 @@ describe("createJobOfferSchema", () => {
     expect(result.success).toBe(false)
     if (!result.success) {
       const issue = result.error.issues.find(
-        (i) => i.path[0] === "clientContactId",
+        (i) => i.path[0] === "clientContactId"
       )
       expect(issue?.message).toBe(
-        "Un contact référent nécessite un client associé.",
+        "Un contact référent nécessite un client associé."
       )
     }
   })
@@ -285,9 +285,7 @@ describe("updateJobOfferSchema", () => {
 
     expect(result.success).toBe(true)
     if (result.success) {
-      expect(result.data.id).toBe(
-        "7c3ec936-4a1d-4f2f-9f3e-4a1d4f2f9f3e",
-      )
+      expect(result.data.id).toBe("7c3ec936-4a1d-4f2f-9f3e-4a1d4f2f9f3e")
       expect(result.data.title).toBe("Titre mis à jour")
     }
   })

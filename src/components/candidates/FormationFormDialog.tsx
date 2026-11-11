@@ -1,11 +1,11 @@
-"use client";
+"use client"
 
-import { useEffect } from "react";
-import { useForm, Controller } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { api } from "@/lib/trpc/client";
-import { Button } from "@/components/ui/button";
+import { useEffect } from "react"
+import { useForm, Controller } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
+import { api } from "@/lib/trpc/client"
+import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
@@ -13,17 +13,17 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { MONTHS, YEARS } from "@/lib/date-constants";
+} from "@/components/ui/select"
+import { MONTHS, YEARS } from "@/lib/date-constants"
 
 const formationFormSchema = z
   .object({
@@ -37,43 +37,39 @@ const formationFormSchema = z
   })
   .refine(
     (data) => {
-      if (data.startYear == null || data.endYear == null) return true;
+      if (data.startYear == null || data.endYear == null) return true
       const start = new Date(
         data.startYear,
         (data.startMonth ?? 1) - 1,
         1
-      ).getTime();
-      const end = new Date(
-        data.endYear,
-        (data.endMonth ?? 1) - 1,
-        1
-      ).getTime();
-      return end >= start;
+      ).getTime()
+      const end = new Date(data.endYear, (data.endMonth ?? 1) - 1, 1).getTime()
+      return end >= start
     },
     {
       message: "La date de fin doit être après la date de début",
       path: ["endYear"],
     }
-  );
+  )
 
-type FormationFormValues = z.infer<typeof formationFormSchema>;
+type FormationFormValues = z.infer<typeof formationFormSchema>
 
 export type FormationItem = {
-  id: string;
-  degree: string;
-  field: string | null;
-  school: string;
-  startDate: Date | string | null;
-  endDate: Date | string | null;
-};
+  id: string
+  degree: string
+  field: string | null
+  school: string
+  startDate: Date | string | null
+  endDate: Date | string | null
+}
 
 type Props = {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  candidateId: string;
-  formation?: FormationItem | null;
-  onSuccess?: () => void;
-};
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  candidateId: string
+  formation?: FormationItem | null
+  onSuccess?: () => void
+}
 
 const defaultValues: FormationFormValues = {
   degree: "",
@@ -83,7 +79,7 @@ const defaultValues: FormationFormValues = {
   startMonth: null,
   endYear: null,
   endMonth: null,
-};
+}
 
 export const FormationFormDialog = ({
   open,
@@ -92,8 +88,8 @@ export const FormationFormDialog = ({
   formation,
   onSuccess,
 }: Props) => {
-  const utils = api.useUtils();
-  const isEdit = Boolean(formation?.id);
+  const utils = api.useUtils()
+  const isEdit = Boolean(formation?.id)
 
   const {
     register,
@@ -104,15 +100,13 @@ export const FormationFormDialog = ({
   } = useForm<FormationFormValues>({
     resolver: zodResolver(formationFormSchema),
     defaultValues,
-  });
+  })
 
   useEffect(() => {
     if (open) {
       if (formation) {
-        const start = formation.startDate
-          ? new Date(formation.startDate)
-          : null;
-        const end = formation.endDate ? new Date(formation.endDate) : null;
+        const start = formation.startDate ? new Date(formation.startDate) : null
+        const end = formation.endDate ? new Date(formation.endDate) : null
         reset({
           degree: formation.degree,
           field: formation.field ?? "",
@@ -121,44 +115,40 @@ export const FormationFormDialog = ({
           startMonth: start ? start.getMonth() + 1 : null,
           endYear: end ? end.getFullYear() : null,
           endMonth: end ? end.getMonth() + 1 : null,
-        });
+        })
       } else {
-        reset(defaultValues);
+        reset(defaultValues)
       }
     }
-  }, [open, formation, reset]);
+  }, [open, formation, reset])
 
   const addMutation = api.candidate.addFormation.useMutation({
     onSuccess: () => {
-      void utils.candidate.getById.invalidate({ id: candidateId });
-      onSuccess?.();
-      onOpenChange(false);
-      reset(defaultValues);
+      void utils.candidate.getById.invalidate({ id: candidateId })
+      onSuccess?.()
+      onOpenChange(false)
+      reset(defaultValues)
     },
-  });
+  })
 
   const updateMutation = api.candidate.updateFormation.useMutation({
     onSuccess: () => {
-      void utils.candidate.getById.invalidate({ id: candidateId });
-      onSuccess?.();
-      onOpenChange(false);
-      reset(defaultValues);
+      void utils.candidate.getById.invalidate({ id: candidateId })
+      onSuccess?.()
+      onOpenChange(false)
+      reset(defaultValues)
     },
-  });
+  })
 
   const onSubmit = (values: FormationFormValues) => {
     const startDate =
       values.startYear != null
-        ? new Date(
-            values.startYear,
-            (values.startMonth ?? 1) - 1,
-            1
-          )
-        : null;
+        ? new Date(values.startYear, (values.startMonth ?? 1) - 1, 1)
+        : null
     const endDate =
       values.endYear != null
         ? new Date(values.endYear, (values.endMonth ?? 1) - 1, 1)
-        : null;
+        : null
 
     if (isEdit && formation) {
       updateMutation.mutate({
@@ -169,7 +159,7 @@ export const FormationFormDialog = ({
         school: values.school,
         startDate,
         endDate,
-      });
+      })
     } else {
       addMutation.mutate({
         candidateId,
@@ -178,12 +168,12 @@ export const FormationFormDialog = ({
         school: values.school,
         startDate,
         endDate,
-      });
+      })
     }
-  };
+  }
 
-  const pending = addMutation.isPending || updateMutation.isPending;
-  const error = addMutation.error ?? updateMutation.error;
+  const pending = addMutation.isPending || updateMutation.isPending
+  const error = addMutation.error ?? updateMutation.error
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -368,5 +358,5 @@ export const FormationFormDialog = ({
         </form>
       </DialogContent>
     </Dialog>
-  );
-};
+  )
+}

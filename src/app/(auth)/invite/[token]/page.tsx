@@ -1,49 +1,46 @@
-"use client";
+"use client"
 
-import { useParams } from "next/navigation";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { TRPCClientError } from "@trpc/client";
-import { z } from "zod";
-import {
-  emailSchema,
-  passwordSchema,
-} from "@/lib/validations/auth";
-import { api } from "@/lib/trpc/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { createClient } from "@/lib/supabase/client";
+import { useParams } from "next/navigation"
+import { useState } from "react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { TRPCClientError } from "@trpc/client"
+import { z } from "zod"
+import { emailSchema, passwordSchema } from "@/lib/validations/auth"
+import { api } from "@/lib/trpc/client"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { createClient } from "@/lib/supabase/client"
 
 const INVITATION_EXPIRED_MESSAGE =
-  "Cette invitation a expiré. Demandez une nouvelle invitation à votre administrateur.";
-const INVITATION_USED_MESSAGE = "Cette invitation a déjà été utilisée.";
+  "Cette invitation a expiré. Demandez une nouvelle invitation à votre administrateur."
+const INVITATION_USED_MESSAGE = "Cette invitation a déjà été utilisée."
 const INVITATION_REVOKED_MESSAGE =
-  "Cette invitation a été révoquée par l'administrateur.";
-const GENERIC_ERROR_MESSAGE = "Une erreur est survenue. Réessayez.";
+  "Cette invitation a été révoquée par l'administrateur."
+const GENERIC_ERROR_MESSAGE = "Une erreur est survenue. Réessayez."
 
 const inviteAcceptSchema = z.object({
   email: emailSchema,
   firstName: z.string().min(1, "Le prénom est requis."),
   lastName: z.string().min(1, "Le nom est requis."),
   password: passwordSchema,
-});
+})
 
-type InviteAcceptFormValues = z.infer<typeof inviteAcceptSchema>;
+type InviteAcceptFormValues = z.infer<typeof inviteAcceptSchema>
 
 const InviteAcceptForm = ({
   token,
   initialEmail,
 }: {
-  token: string;
-  initialEmail: string;
+  token: string
+  initialEmail: string
 }) => {
-  const router = useRouter();
-  const [serverError, setServerError] = useState<string | null>(null);
-  const acceptMutation = api.invitation.accept.useMutation();
+  const router = useRouter()
+  const [serverError, setServerError] = useState<string | null>(null)
+  const acceptMutation = api.invitation.accept.useMutation()
 
   const {
     register,
@@ -57,10 +54,10 @@ const InviteAcceptForm = ({
       lastName: "",
       password: "",
     },
-  });
+  })
 
   const onSubmit = async (data: InviteAcceptFormValues) => {
-    setServerError(null);
+    setServerError(null)
     try {
       await acceptMutation.mutateAsync({
         token,
@@ -68,27 +65,27 @@ const InviteAcceptForm = ({
         firstName: data.firstName,
         lastName: data.lastName,
         password: data.password,
-      });
+      })
 
-      const supabase = createClient();
+      const supabase = createClient()
       const { error } = await supabase.auth.signInWithPassword({
         email: data.email,
         password: data.password,
-      });
+      })
       if (error) {
-        setServerError(GENERIC_ERROR_MESSAGE);
-        return;
+        setServerError(GENERIC_ERROR_MESSAGE)
+        return
       }
-      router.push("/dashboard");
-      router.refresh();
+      router.push("/dashboard")
+      router.refresh()
     } catch (err: unknown) {
       if (err instanceof TRPCClientError) {
-        setServerError(err.message || GENERIC_ERROR_MESSAGE);
+        setServerError(err.message || GENERIC_ERROR_MESSAGE)
       } else {
-        setServerError(GENERIC_ERROR_MESSAGE);
+        setServerError(GENERIC_ERROR_MESSAGE)
       }
     }
-  };
+  }
 
   return (
     <form
@@ -181,57 +178,61 @@ const InviteAcceptForm = ({
         {acceptMutation.isPending ? "Création en cours…" : "Créer mon compte"}
       </Button>
     </form>
-  );
-};
+  )
+}
 
 export default function InvitePage() {
-  const params = useParams();
-  const token = typeof params.token === "string" ? params.token : "";
+  const params = useParams()
+  const token = typeof params.token === "string" ? params.token : ""
 
   const invitationQuery = api.invitation.getByToken.useQuery(
     { token },
-    { enabled: !!token },
-  );
+    { enabled: !!token }
+  )
 
   const { status, errorMessage, invitationData } = (() => {
     if (!token || invitationQuery.isLoading) {
-      return { status: "loading" as const, errorMessage: null, invitationData: null };
+      return {
+        status: "loading" as const,
+        errorMessage: null,
+        invitationData: null,
+      }
     }
     if (invitationQuery.error || !invitationQuery.data) {
       return {
         status: "invalid" as const,
         errorMessage: INVITATION_EXPIRED_MESSAGE,
         invitationData: null,
-      };
+      }
     }
-    const inv = invitationQuery.data;
+    const inv = invitationQuery.data
     if (inv.usedAt) {
       return {
         status: "used" as const,
         errorMessage: INVITATION_USED_MESSAGE,
         invitationData: null,
-      };
+      }
     }
     if ("revokedAt" in inv && inv.revokedAt) {
       return {
         status: "revoked" as const,
         errorMessage: INVITATION_REVOKED_MESSAGE,
         invitationData: null,
-      };
+      }
     }
     if (new Date(inv.expiresAt) < new Date()) {
       return {
         status: "expired" as const,
         errorMessage: INVITATION_EXPIRED_MESSAGE,
         invitationData: null,
-      };
+      }
     }
     return {
       status: "ready" as const,
       errorMessage: null,
       invitationData: inv,
-    };
-  })();
+    }
+  })()
 
   if (!token) {
     return (
@@ -240,7 +241,7 @@ export default function InvitePage() {
           <p className="text-destructive">{INVITATION_EXPIRED_MESSAGE}</p>
         </div>
       </main>
-    );
+    )
   }
 
   if (status === "loading") {
@@ -248,7 +249,7 @@ export default function InvitePage() {
       <main className="flex flex-1 flex-col items-center justify-center bg-background p-4 py-12">
         <p className="text-muted-foreground">Chargement…</p>
       </main>
-    );
+    )
   }
 
   if (
@@ -276,7 +277,7 @@ export default function InvitePage() {
           </p>
         </div>
       </main>
-    );
+    )
   }
 
   return (
@@ -306,5 +307,5 @@ export default function InvitePage() {
         </p>
       </div>
     </main>
-  );
+  )
 }

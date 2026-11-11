@@ -1,7 +1,10 @@
 "use client"
 
 import { api } from "@/lib/trpc/client"
-import { FilterChipsBar, type FilterChipDescriptor } from "@/components/shared/FilterChipsBar"
+import {
+  FilterChipsBar,
+  type FilterChipDescriptor,
+} from "@/components/shared/FilterChipsBar"
 import { hasActiveOfferFilters, type OfferFilters } from "./OfferListFilters"
 
 const STATUS_LABELS: Record<string, string> = {

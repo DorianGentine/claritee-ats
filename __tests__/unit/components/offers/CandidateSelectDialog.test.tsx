@@ -28,9 +28,27 @@ vi.mock("@/lib/trpc/client", () => ({
 }))
 
 const mockCandidates = [
-  { id: "c1", firstName: "Alice", lastName: "Dupont", title: "Dev Frontend", photoUrl: null },
-  { id: "c2", firstName: "Bob", lastName: "Martin", title: "Dev Backend", photoUrl: null },
-  { id: "c3", firstName: "Claire", lastName: "Petit", title: null, photoUrl: null },
+  {
+    id: "c1",
+    firstName: "Alice",
+    lastName: "Dupont",
+    title: "Dev Frontend",
+    photoUrl: null,
+  },
+  {
+    id: "c2",
+    firstName: "Bob",
+    lastName: "Martin",
+    title: "Dev Backend",
+    photoUrl: null,
+  },
+  {
+    id: "c3",
+    firstName: "Claire",
+    lastName: "Petit",
+    title: null,
+    photoUrl: null,
+  },
 ]
 
 const baseProps = {
@@ -100,7 +118,9 @@ describe("CandidateSelectDialog", () => {
 
     render(<CandidateSelectDialog {...baseProps} />)
 
-    const input = document.querySelector('input[aria-label="Rechercher un candidat"]')!
+    const input = document.querySelector(
+      'input[aria-label="Rechercher un candidat"]'
+    )!
     fireEvent.change(input, { target: { value: "alice" } })
 
     expect(screen.getByText("Alice Dupont")).toBeDefined()
@@ -130,7 +150,9 @@ describe("CandidateSelectDialog", () => {
       error: null,
     } as ReturnType<typeof api.candidate.list.useQuery>)
 
-    render(<CandidateSelectDialog {...baseProps} existingCandidateIds={["c1"]} />)
+    render(
+      <CandidateSelectDialog {...baseProps} existingCandidateIds={["c1"]} />
+    )
 
     expect(screen.getByText("Déjà associé")).toBeDefined()
   })

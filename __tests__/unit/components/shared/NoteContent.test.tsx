@@ -24,7 +24,15 @@ describe("NoteContent", () => {
           {
             type: "bulletList",
             content: [
-              { type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: "React" }] }] },
+              {
+                type: "listItem",
+                content: [
+                  {
+                    type: "paragraph",
+                    content: [{ type: "text", text: "React" }],
+                  },
+                ],
+              },
             ],
           },
         ])}
@@ -43,16 +51,31 @@ describe("NoteContent", () => {
           {
             type: "paragraph",
             content: [
-              { type: "text", text: "profil", marks: [{ type: "link", attrs: { href: "https://linkedin.com/in/x" } }] },
-              { type: "text", text: " piège", marks: [{ type: "link", attrs: { href: "javascript:alert(1)" } }] },
+              {
+                type: "text",
+                text: "profil",
+                marks: [
+                  {
+                    type: "link",
+                    attrs: { href: "https://linkedin.com/in/x" },
+                  },
+                ],
+              },
+              {
+                type: "text",
+                text: " piège",
+                marks: [
+                  { type: "link", attrs: { href: "javascript:alert(1)" } },
+                ],
+              },
             ],
           },
         ])}
       />
     )
-    expect(screen.getByRole("link", { name: "profil" }).getAttribute("href")).toBe(
-      "https://linkedin.com/in/x"
-    )
+    expect(
+      screen.getByRole("link", { name: "profil" }).getAttribute("href")
+    ).toBe("https://linkedin.com/in/x")
     expect(screen.queryByRole("link", { name: /piège/ })).toBeNull()
     expect(screen.getByText(/piège/)).toBeDefined()
   })

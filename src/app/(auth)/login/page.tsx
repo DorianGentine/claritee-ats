@@ -1,6 +1,6 @@
-import { Suspense } from "react";
-import { LoginForm } from "./LoginForm";
-import { LoginFormSkeleton } from "./LoginFormSkeleton";
+import { Suspense } from "react"
+import { LoginForm } from "./LoginForm"
+import { LoginFormSkeleton } from "./LoginFormSkeleton"
 
 export default function LoginPage() {
   return (
@@ -20,5 +20,5 @@ export default function LoginPage() {
         </Suspense>
       </div>
     </main>
-  );
+  )
 }

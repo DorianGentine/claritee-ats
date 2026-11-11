@@ -15,8 +15,8 @@ const queryClientConfig = {
 }
 
 export const Providers = ({ children }: { children: React.ReactNode }) => {
-  const [queryClient] = useState(() => new QueryClient(queryClientConfig));
-  const [trpcClient] = useState(() => createTRPCClient());
+  const [queryClient] = useState(() => new QueryClient(queryClientConfig))
+  const [trpcClient] = useState(() => createTRPCClient())
 
   return (
     <api.Provider client={trpcClient} queryClient={queryClient}>

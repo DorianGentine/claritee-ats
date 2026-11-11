@@ -1,4 +1,4 @@
-import { DashboardMetrics } from "@/components/dashboard/DashboardMetrics";
+import { DashboardMetrics } from "@/components/dashboard/DashboardMetrics"
 
 export default function DashboardPage() {
   return (
@@ -10,5 +10,5 @@ export default function DashboardPage() {
         <DashboardMetrics />
       </div>
     </main>
-  );
+  )
 }

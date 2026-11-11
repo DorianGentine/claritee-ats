@@ -1,52 +1,52 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { toast } from "sonner";
-import { createClientCompanySchema } from "@/lib/validations/client";
-import { api } from "@/lib/trpc/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { useState } from "react"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { toast } from "sonner"
+import { createClientCompanySchema } from "@/lib/validations/client"
+import { api } from "@/lib/trpc/client"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import {
   CityAutocomplete,
   type CityOption,
-} from "@/components/shared/CityAutocomplete";
+} from "@/components/shared/CityAutocomplete"
 
 type ClientCompanyFormValues = {
-  name: string;
-  siren?: string;
-};
+  name: string
+  siren?: string
+}
 
 type ClientCompanyFormProps = {
-  mode: "create" | "edit";
+  mode: "create" | "edit"
   /**
    * Données initiales pour le formulaire en mode édition.
    * `id` est requis en mode "edit" pour déclencher clientCompany.update.
    */
   initialClient?: {
-    id?: string;
-    name?: string;
-    siren?: string | null;
-    cities?: CityOption[];
-  };
-};
+    id?: string
+    name?: string
+    siren?: string | null
+    cities?: CityOption[]
+  }
+}
 
-const GENERIC_ERROR_MESSAGE = "Une erreur est survenue. Réessayez.";
+const GENERIC_ERROR_MESSAGE = "Une erreur est survenue. Réessayez."
 
 export const ClientCompanyForm = ({
   mode,
   initialClient,
 }: ClientCompanyFormProps) => {
-  const router = useRouter();
-  const utils = api.useUtils();
-  const [serverError, setServerError] = useState<string | null>(null);
+  const router = useRouter()
+  const utils = api.useUtils()
+  const [serverError, setServerError] = useState<string | null>(null)
   const [selectedCities, setSelectedCities] = useState<CityOption[]>(
-    initialClient?.cities ?? [],
-  );
+    initialClient?.cities ?? []
+  )
 
   const {
     register,
@@ -58,29 +58,29 @@ export const ClientCompanyForm = ({
       name: initialClient?.name ?? "",
       siren: initialClient?.siren ?? "",
     },
-  });
+  })
 
   const createMutation = api.clientCompany.create.useMutation({
     onSuccess: () => {
-      void utils.clientCompany.list.invalidate();
+      void utils.clientCompany.list.invalidate()
     },
-  });
+  })
 
   const updateMutation = api.clientCompany.update.useMutation({
     onSuccess: async (client) => {
       await Promise.all([
         utils.clientCompany.list.invalidate(),
         utils.clientCompany.getById.invalidate({ id: client.id }),
-      ]);
+      ])
     },
-  });
+  })
 
   const isPending =
-    isSubmitting || createMutation.isPending || updateMutation.isPending;
+    isSubmitting || createMutation.isPending || updateMutation.isPending
 
   const onSubmit = async (data: ClientCompanyFormValues) => {
-    setServerError(null);
-    const cityIds = selectedCities.map((city) => city.id);
+    setServerError(null)
+    const cityIds = selectedCities.map((city) => city.id)
 
     try {
       if (mode === "create") {
@@ -88,14 +88,14 @@ export const ClientCompanyForm = ({
           name: data.name.trim(),
           siren: data.siren?.trim() || undefined,
           cityIds,
-        });
-        toast.success("Client créé.");
-        router.push(`/clients/${created.id}`);
-        return;
+        })
+        toast.success("Client créé.")
+        router.push(`/clients/${created.id}`)
+        return
       }
 
       if (!initialClient?.id) {
-        throw new Error("Identifiant client manquant pour la modification.");
+        throw new Error("Identifiant client manquant pour la modification.")
       }
 
       const updated = await updateMutation.mutateAsync({
@@ -103,20 +103,20 @@ export const ClientCompanyForm = ({
         name: data.name.trim(),
         siren: data.siren?.trim() || undefined,
         cityIds,
-      });
-      toast.success("Client mis à jour.");
-      router.push(`/clients/${updated.id}`);
+      })
+      toast.success("Client mis à jour.")
+      router.push(`/clients/${updated.id}`)
     } catch (err) {
       setServerError(
-        (err as { message?: string })?.message ?? GENERIC_ERROR_MESSAGE,
-      );
+        (err as { message?: string })?.message ?? GENERIC_ERROR_MESSAGE
+      )
     }
-  };
+  }
 
   const cancelHref =
     mode === "edit" && initialClient?.id
       ? `/clients/${initialClient.id}`
-      : "/clients";
+      : "/clients"
 
   return (
     <form
@@ -190,5 +190,5 @@ export const ClientCompanyForm = ({
         </Button>
       </div>
     </form>
-  );
-};
+  )
+}

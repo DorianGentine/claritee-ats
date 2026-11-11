@@ -49,7 +49,9 @@ vi.mock("@/lib/trpc/client", () => ({
       moveToCandidate: { useMutation: mutation(mockMoveToCandidateMutate) },
       moveToOffer: { useMutation: mutation(mockMoveToOfferMutate) },
     },
-    search: { search: { useQuery: (...args: unknown[]) => mockSearchUseQuery(...args) } },
+    search: {
+      search: { useQuery: (...args: unknown[]) => mockSearchUseQuery(...args) },
+    },
   },
 }))
 
@@ -76,7 +78,12 @@ describe("NotesPage", () => {
     mockSearchUseQuery.mockReturnValue({
       data: {
         candidates: [
-          { id: "cand-1", firstName: "Alice", lastName: "Dupont", title: "Dev Frontend" },
+          {
+            id: "cand-1",
+            firstName: "Alice",
+            lastName: "Dupont",
+            title: "Dev Frontend",
+          },
         ],
         offers: [
           { id: "offer-1", title: "Lead Dev", clientCompany: { name: "Acme" } },

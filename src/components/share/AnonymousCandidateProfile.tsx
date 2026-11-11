@@ -7,7 +7,10 @@ type Props = {
   companyName: string
 }
 
-export const AnonymousCandidateProfile = ({ candidate, companyName }: Props) => (
+export const AnonymousCandidateProfile = ({
+  candidate,
+  companyName,
+}: Props) => (
   <main className="bg-background p-6">
     <div className="mx-auto max-w-4xl space-y-6">
       {/* Branding + badge anonyme */}

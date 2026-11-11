@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 import {
   useId,
@@ -6,8 +6,8 @@ import {
   type CSSProperties,
   type ReactNode,
   type Ref,
-} from "react";
-import { GripVertical, MapPin, X } from "lucide-react";
+} from "react"
+import { GripVertical, MapPin, X } from "lucide-react"
 import {
   DndContext,
   KeyboardSensor,
@@ -18,77 +18,77 @@ import {
   type Announcements,
   type DragEndEvent,
   type ScreenReaderInstructions,
-} from "@dnd-kit/core";
+} from "@dnd-kit/core"
 import {
   SortableContext,
   arrayMove,
   rectSortingStrategy,
   sortableKeyboardCoordinates,
   useSortable,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import { keepPreviousData } from "@tanstack/react-query";
-import { api } from "@/lib/trpc/client";
-import { useDebounce } from "@/hooks/useDebounce";
-import { Button } from "@/components/ui/button";
+} from "@dnd-kit/sortable"
+import { CSS } from "@dnd-kit/utilities"
+import { keepPreviousData } from "@tanstack/react-query"
+import { api } from "@/lib/trpc/client"
+import { useDebounce } from "@/hooks/useDebounce"
+import { Button } from "@/components/ui/button"
 import {
   Command,
   CommandEmpty,
   CommandInput,
   CommandItem,
   CommandList,
-} from "@/components/ui/command";
+} from "@/components/ui/command"
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
+} from "@/components/ui/popover"
 
 /**
  * Ville manipulée côté UI. Les coordonnées ne sont jamais exposées par
  * `city.autocomplete` — ce composant n'en a donc pas besoin.
  */
 export type CityOption = {
-  id: string;
-  name: string;
-  region?: string | null;
-  country: string;
-};
+  id: string
+  name: string
+  region?: string | null
+  country: string
+}
 
 type SingleProps = {
-  mode: "single";
-  value: CityOption | null;
-  onChange: (city: CityOption | null) => void;
-  placeholder?: string;
-  disabled?: boolean;
+  mode: "single"
+  value: CityOption | null
+  onChange: (city: CityOption | null) => void
+  placeholder?: string
+  disabled?: boolean
   /** Id posé sur le déclencheur, pour l'associer à un `<Label htmlFor>`. */
-  id?: string;
+  id?: string
   /** Affiche la sélection sous forme de chip(s) intégrée(s) au composant (défaut : true). À désactiver quand un composant parent affiche déjà ses propres chips (ex. filtres de liste), pour éviter le doublon. */
-  showChips?: boolean;
-};
+  showChips?: boolean
+}
 
 type MultiProps = {
-  mode: "multi";
-  value: CityOption[];
-  onChange: (cities: CityOption[]) => void;
-  placeholder?: string;
-  disabled?: boolean;
+  mode: "multi"
+  value: CityOption[]
+  onChange: (cities: CityOption[]) => void
+  placeholder?: string
+  disabled?: boolean
   /** Rend les chips réordonnables par drag & drop (souris et clavier) (défaut : true). */
-  ordered?: boolean;
+  ordered?: boolean
   /** Id posé sur le déclencheur, pour l'associer à un `<Label htmlFor>`. */
-  id?: string;
+  id?: string
   /** Affiche la sélection sous forme de chip(s) intégrée(s) au composant (défaut : true). À désactiver quand un composant parent affiche déjà ses propres chips (ex. filtres de liste), pour éviter le doublon. */
-  showChips?: boolean;
-};
+  showChips?: boolean
+}
 
-type Props = SingleProps | MultiProps;
+type Props = SingleProps | MultiProps
 
-const MIN_QUERY_LENGTH = 3;
-const DEBOUNCE_MS = 300;
-const SUGGESTIONS_STALE_TIME_MS = 60 * 1000;
-const MAX_QUERY_LENGTH = 100; // aligné sur `cityAutocompleteInputSchema` (q: max 100)
+const MIN_QUERY_LENGTH = 3
+const DEBOUNCE_MS = 300
+const SUGGESTIONS_STALE_TIME_MS = 60 * 1000
+const MAX_QUERY_LENGTH = 100 // aligné sur `cityAutocompleteInputSchema` (q: max 100)
 // Évite qu'un simple clic sur la poignée ne démarre un drag.
-const POINTER_ACTIVATION_DISTANCE_PX = 5;
+const POINTER_ACTIVATION_DISTANCE_PX = 5
 
 /**
  * Annonces lecteur d'écran en français (dnd-kit les fournit en anglais par
@@ -96,9 +96,9 @@ const POINTER_ACTIVATION_DISTANCE_PX = 5;
  */
 const buildDragAnnouncements = (cities: CityOption[]): Announcements => {
   const getCityName = (cityId: string | number) =>
-    cities.find((city) => city.id === cityId)?.name ?? String(cityId);
+    cities.find((city) => city.id === cityId)?.name ?? String(cityId)
   const getPosition = (cityId: string | number) =>
-    cities.findIndex((city) => city.id === cityId) + 1;
+    cities.findIndex((city) => city.id === cityId) + 1
 
   return {
     onDragStart: ({ active }) =>
@@ -113,27 +113,27 @@ const buildDragAnnouncements = (cities: CityOption[]): Announcements => {
         : `${getCityName(active.id)} déposée.`,
     onDragCancel: ({ active }) =>
       `Déplacement annulé. ${getCityName(active.id)} reste à sa position initiale.`,
-  };
-};
+  }
+}
 
 const SCREEN_READER_INSTRUCTIONS: ScreenReaderInstructions = {
   draggable:
     "Pour réordonner une ville, appuyez sur espace pour la saisir, utilisez les flèches pour la déplacer, puis espace pour la déposer ou Échap pour annuler.",
-};
+}
 
 type CityChipProps = {
-  city: CityOption;
-  disabled?: boolean;
-  onRemove: () => void;
-};
+  city: CityOption
+  disabled?: boolean
+  onRemove: () => void
+}
 
 type CityChipLayoutProps = CityChipProps & {
-  ref?: Ref<HTMLLIElement>;
-  style?: CSSProperties;
-  className?: string;
+  ref?: Ref<HTMLLIElement>
+  style?: CSSProperties
+  className?: string
   /** Poignée de drag affichée à gauche du nom (chips réordonnables uniquement). */
-  dragHandle?: ReactNode;
-};
+  dragHandle?: ReactNode
+}
 
 const CityChip = ({
   city,
@@ -165,7 +165,7 @@ const CityChip = ({
       </Button>
     </span>
   </li>
-);
+)
 
 /** Chip réordonnable : la poignée (⠿) porte le drag souris et clavier. */
 const SortableCityChip = ({ city, disabled, onRemove }: CityChipProps) => {
@@ -181,7 +181,7 @@ const SortableCityChip = ({ city, disabled, onRemove }: CityChipProps) => {
     id: city.id,
     disabled,
     attributes: { roleDescription: "ville réordonnable" },
-  });
+  })
 
   return (
     <CityChip
@@ -205,14 +205,14 @@ const SortableCityChip = ({ city, disabled, onRemove }: CityChipProps) => {
         </button>
       }
     />
-  );
-};
+  )
+}
 
 type SortableCityListProps = {
-  cities: CityOption[];
-  onChange: (cities: CityOption[]) => void;
-  children: ReactNode;
-};
+  cities: CityOption[]
+  onChange: (cities: CityOption[]) => void
+  children: ReactNode
+}
 
 /** Contexte dnd-kit des chips ordonnées : réordonne `cities` au drop. */
 const SortableCityList = ({
@@ -221,7 +221,7 @@ const SortableCityList = ({
   children,
 }: SortableCityListProps) => {
   // Id stable SSR/client : dnd-kit dérive l'`aria-describedby` des poignées d'un compteur global.
-  const dndContextId = useId();
+  const dndContextId = useId()
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: POINTER_ACTIVATION_DISTANCE_PX },
@@ -229,15 +229,15 @@ const SortableCityList = ({
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
-  );
+  )
 
   const handleDragEnd = ({ active, over }: DragEndEvent) => {
-    if (!over || active.id === over.id) return;
-    const oldIndex = cities.findIndex((city) => city.id === active.id);
-    const newIndex = cities.findIndex((city) => city.id === over.id);
-    if (oldIndex === -1 || newIndex === -1) return;
-    onChange(arrayMove(cities, oldIndex, newIndex));
-  };
+    if (!over || active.id === over.id) return
+    const oldIndex = cities.findIndex((city) => city.id === active.id)
+    const newIndex = cities.findIndex((city) => city.id === over.id)
+    if (oldIndex === -1 || newIndex === -1) return
+    onChange(arrayMove(cities, oldIndex, newIndex))
+  }
 
   return (
     <DndContext
@@ -257,15 +257,15 @@ const SortableCityList = ({
         {children}
       </SortableContext>
     </DndContext>
-  );
-};
+  )
+}
 
 type CityChipListProps = {
-  cities: CityOption[];
-  onChange: (cities: CityOption[]) => void;
-  ordered: boolean;
-  disabled?: boolean;
-};
+  cities: CityOption[]
+  onChange: (cities: CityOption[]) => void
+  ordered: boolean
+  disabled?: boolean
+}
 
 const CityChipList = ({
   cities,
@@ -273,7 +273,7 @@ const CityChipList = ({
   ordered,
   disabled,
 }: CityChipListProps) => {
-  const ChipComponent = ordered ? SortableCityChip : CityChip;
+  const ChipComponent = ordered ? SortableCityChip : CityChip
   const chipList = (
     <ul className="flex flex-wrap gap-2">
       {cities.map((city, index) => (
@@ -287,7 +287,7 @@ const CityChipList = ({
         />
       ))}
     </ul>
-  );
+  )
 
   return ordered ? (
     <SortableCityList cities={cities} onChange={onChange}>
@@ -295,12 +295,12 @@ const CityChipList = ({
     </SortableCityList>
   ) : (
     chipList
-  );
-};
+  )
+}
 
 /** Sous-titre d'une suggestion : `Région · Pays`, ou juste le pays si pas de région. */
 const formatCitySubtitle = (city: CityOption) =>
-  [city.region, city.country].filter(Boolean).join(" · ");
+  [city.region, city.country].filter(Boolean).join(" · ")
 
 /**
  * Libellé du déclencheur. Quand `showChips` est désactivé, la sélection n'est
@@ -309,24 +309,24 @@ const formatCitySubtitle = (city: CityOption) =>
  */
 const getTriggerLabel = (props: Props, showChips: boolean): string => {
   if (props.mode === "single") {
-    if (!showChips && props.value) return props.value.name;
-    return props.placeholder ?? "Sélectionner une ville";
+    if (!showChips && props.value) return props.value.name
+    return props.placeholder ?? "Sélectionner une ville"
   }
   if (!showChips && props.value.length > 0) {
-    const count = props.value.length;
-    return `${count} ville${count > 1 ? "s" : ""} sélectionnée${count > 1 ? "s" : ""}`;
+    const count = props.value.length
+    return `${count} ville${count > 1 ? "s" : ""} sélectionnée${count > 1 ? "s" : ""}`
   }
-  return props.placeholder ?? "Ajouter une ville";
-};
+  return props.placeholder ?? "Ajouter une ville"
+}
 
 export const CityAutocomplete = (props: Props) => {
-  const { mode, disabled, id, showChips = true } = props;
-  const ordered = mode === "multi" ? (props.ordered ?? true) : true;
-  const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState("");
+  const { mode, disabled, id, showChips = true } = props
+  const ordered = mode === "multi" ? (props.ordered ?? true) : true
+  const [open, setOpen] = useState(false)
+  const [query, setQuery] = useState("")
 
-  const debouncedQuery = useDebounce(query.trim(), DEBOUNCE_MS);
-  const hasMinQuery = debouncedQuery.length >= MIN_QUERY_LENGTH;
+  const debouncedQuery = useDebounce(query.trim(), DEBOUNCE_MS)
+  const hasMinQuery = debouncedQuery.length >= MIN_QUERY_LENGTH
 
   const {
     data: suggestions,
@@ -341,13 +341,13 @@ export const CityAutocomplete = (props: Props) => {
       // charge (pas de flash « Recherche... » à chaque frappe) — pattern projet.
       placeholderData: keepPreviousData,
     }
-  );
+  )
 
   // AC 9 — les villes déjà choisies n'apparaissent pas dans les suggestions.
   const selectedIds =
     mode === "multi"
       ? new Set(props.value.map((city) => city.id))
-      : new Set(props.value ? [props.value.id] : []);
+      : new Set(props.value ? [props.value.id] : [])
 
   // `keepPreviousData` peut renvoyer les résultats de la recherche précédente
   // même quand la query est désactivée (recherche repassée sous le seuil) —
@@ -355,7 +355,7 @@ export const CityAutocomplete = (props: Props) => {
   // obsolètes.
   const filteredSuggestions = hasMinQuery
     ? (suggestions ?? []).filter((city) => !selectedIds.has(city.id))
-    : [];
+    : []
 
   // Le serveur a bien renvoyé des villes, mais toutes sont déjà sélectionnées :
   // à distinguer de « aucun résultat » pour ne pas afficher un message trompeur.
@@ -364,30 +364,30 @@ export const CityAutocomplete = (props: Props) => {
     !isLoading &&
     !isError &&
     (suggestions?.length ?? 0) > 0 &&
-    filteredSuggestions.length === 0;
+    filteredSuggestions.length === 0
 
   const handleSelect = (city: CityOption) => {
     if (mode === "single") {
-      props.onChange(city);
-      setOpen(false);
+      props.onChange(city)
+      setOpen(false)
     } else {
-      props.onChange([...props.value, city]);
+      props.onChange([...props.value, city])
     }
-    setQuery("");
-  };
+    setQuery("")
+  }
 
   const handleClearSingle = () => {
     if (mode === "single") {
-      props.onChange(null);
+      props.onChange(null)
     }
-  };
+  }
 
   // Quand `showChips` est désactivé, le déclencheur affiche lui-même la
   // sélection (nom unique, ou décompte) puisqu'aucune chip interne n'est
   // rendue — sinon la sélection resterait invisible dans le composant.
   const hasDisplayValue =
-    !showChips && (mode === "single" ? !!props.value : props.value.length > 0);
-  const triggerLabel = getTriggerLabel(props, showChips);
+    !showChips && (mode === "single" ? !!props.value : props.value.length > 0)
+  const triggerLabel = getTriggerLabel(props, showChips)
 
   return (
     <div className="flex flex-col gap-2">
@@ -494,5 +494,5 @@ export const CityAutocomplete = (props: Props) => {
         </PopoverContent>
       </Popover>
     </div>
-  );
-};
+  )
+}

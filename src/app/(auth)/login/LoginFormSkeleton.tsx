@@ -10,4 +10,4 @@ export const LoginFormSkeleton = () => (
     </div>
     <div className="mt-2 h-9 w-full animate-pulse rounded-md bg-muted" />
   </div>
-);
+)

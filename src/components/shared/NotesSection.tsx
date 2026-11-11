@@ -5,10 +5,7 @@ import { Pencil, SendHorizontal, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
 import { NoteContent } from "@/components/shared/NoteContent"
-import {
-  NoteEditor,
-  type NoteEditorRef,
-} from "@/components/shared/NoteEditor"
+import { NoteEditor, type NoteEditorRef } from "@/components/shared/NoteEditor"
 import { isNoteContentEmpty } from "@/lib/note-utils"
 import { formatDateLong } from "@/lib/format"
 import { cn } from "@/lib/utils"
@@ -97,7 +94,9 @@ export const NotesSection = ({
   }
 
   // Phase de capture : intercepter ⌘/Ctrl+Entrée avant ProseMirror (qui y insère un saut de ligne)
-  const handleComposerKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+  const handleComposerKeyDown = (
+    event: React.KeyboardEvent<HTMLDivElement>
+  ) => {
     if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
       event.preventDefault()
       event.stopPropagation()
@@ -118,7 +117,10 @@ export const NotesSection = ({
       className="flex flex-col rounded-lg border border-border bg-card shadow-sm print:hidden"
     >
       <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
-        <h2 id="notes-section-title" className="text-base font-semibold text-foreground">
+        <h2
+          id="notes-section-title"
+          className="text-base font-semibold text-foreground"
+        >
           Notes
         </h2>
         {notes.length > 0 && (
@@ -133,13 +135,18 @@ export const NotesSection = ({
         className="max-h-[28rem] min-h-28 overflow-y-auto px-4 py-4"
       >
         {isLoading ? (
-          <p className="py-6 text-center text-sm text-muted-foreground">Chargement…</p>
+          <p className="py-6 text-center text-sm text-muted-foreground">
+            Chargement…
+          </p>
         ) : notes.length === 0 ? (
-          <p className="py-6 text-center text-sm text-muted-foreground">Aucune note</p>
+          <p className="py-6 text-center text-sm text-muted-foreground">
+            Aucune note
+          </p>
         ) : (
           <ul className="flex flex-col gap-4" aria-label="Fil des notes">
             {notes.map((note) => {
-              const isOwn = note.authorId !== null && currentUserId === note.authorId
+              const isOwn =
+                note.authorId !== null && currentUserId === note.authorId
               const isEditing = editNoteId === note.id
               const author = formatAuthor(note.author)
 

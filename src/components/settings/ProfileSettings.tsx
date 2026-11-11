@@ -1,78 +1,91 @@
-"use client";
+"use client"
 
-import { useForm, useWatch } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { api } from "@/lib/trpc/client";
-import { updateProfileSchema, type UpdateProfileInput } from "@/lib/validations/user";
-import { createClient } from "@/lib/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
-import { toast } from "sonner";
+import { useForm, useWatch } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
+import { api } from "@/lib/trpc/client"
+import {
+  updateProfileSchema,
+  type UpdateProfileInput,
+} from "@/lib/validations/user"
+import { createClient } from "@/lib/supabase/client"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Skeleton } from "@/components/ui/skeleton"
+import { toast } from "sonner"
 
 const passwordChangeSchema = z
   .object({
-    newPassword: z.string().min(8, "Le mot de passe doit contenir au moins 8 caractères."),
+    newPassword: z
+      .string()
+      .min(8, "Le mot de passe doit contenir au moins 8 caractères."),
     confirmPassword: z.string().min(1, "Confirmez le mot de passe."),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
     message: "Les mots de passe ne correspondent pas.",
     path: ["confirmPassword"],
-  });
+  })
 
-type PasswordChangeInput = z.infer<typeof passwordChangeSchema>;
+type PasswordChangeInput = z.infer<typeof passwordChangeSchema>
 
 export const ProfileSettings = () => {
-  const utils = api.useUtils();
-  const profileQuery = api.auth.getMe.useQuery();
+  const utils = api.useUtils()
+  const profileQuery = api.auth.getMe.useQuery()
 
   const profileForm = useForm<UpdateProfileInput>({
     resolver: zodResolver(updateProfileSchema),
     values: profileQuery.data
-      ? { firstName: profileQuery.data.firstName, lastName: profileQuery.data.lastName }
+      ? {
+          firstName: profileQuery.data.firstName,
+          lastName: profileQuery.data.lastName,
+        }
       : undefined,
-  });
+  })
 
   const passwordForm = useForm<PasswordChangeInput>({
     resolver: zodResolver(passwordChangeSchema),
     defaultValues: { newPassword: "", confirmPassword: "" },
-  });
+  })
 
   const updateProfileMutation = api.auth.updateProfile.useMutation({
     onSuccess: async () => {
-      toast.success("Profil mis à jour.");
-      void utils.auth.getMe.invalidate();
+      toast.success("Profil mis à jour.")
+      void utils.auth.getMe.invalidate()
       // Rafraîchit le JWT client pour que la navbar reflète les nouveaux user_metadata
-      const supabase = createClient();
-      await supabase.auth.refreshSession();
+      const supabase = createClient()
+      await supabase.auth.refreshSession()
     },
     onError: () => {
-      toast.error("Une erreur est survenue. Réessayez.");
+      toast.error("Une erreur est survenue. Réessayez.")
     },
-  });
+  })
 
   const onSubmitProfile = (data: UpdateProfileInput) => {
-    updateProfileMutation.mutate(data);
-  };
+    updateProfileMutation.mutate(data)
+  }
 
-  const newPasswordValue = useWatch({ control: passwordForm.control, name: "newPassword" });
+  const newPasswordValue = useWatch({
+    control: passwordForm.control,
+    name: "newPassword",
+  })
   const confirmPasswordValue = useWatch({
     control: passwordForm.control,
     name: "confirmPassword",
-  });
+  })
 
   const onSubmitPassword = async (data: PasswordChangeInput) => {
-    const supabase = createClient();
-    const { error } = await supabase.auth.updateUser({ password: data.newPassword });
+    const supabase = createClient()
+    const { error } = await supabase.auth.updateUser({
+      password: data.newPassword,
+    })
     if (error) {
-      toast.error("Impossible de modifier le mot de passe. Réessayez.");
+      toast.error("Impossible de modifier le mot de passe. Réessayez.")
     } else {
-      toast.success("Mot de passe mis à jour.");
-      passwordForm.reset();
+      toast.success("Mot de passe mis à jour.")
+      passwordForm.reset()
     }
-  };
+  }
 
   return (
     <section aria-labelledby="profile-settings-heading">
@@ -85,7 +98,9 @@ export const ProfileSettings = () => {
 
       {/* Profil */}
       <div className="mt-4 rounded-lg border border-border bg-card p-6 shadow-sm">
-        <h3 className="text-sm font-medium text-foreground">Informations personnelles</h3>
+        <h3 className="text-sm font-medium text-foreground">
+          Informations personnelles
+        </h3>
         {profileQuery.isLoading ? (
           <div className="mt-4 space-y-4">
             <Skeleton className="h-4 w-24" />
@@ -146,13 +161,17 @@ export const ProfileSettings = () => {
             <Button
               type="submit"
               disabled={
-                profileForm.formState.isSubmitting || updateProfileMutation.isPending
+                profileForm.formState.isSubmitting ||
+                updateProfileMutation.isPending
               }
               aria-busy={
-                profileForm.formState.isSubmitting || updateProfileMutation.isPending
+                profileForm.formState.isSubmitting ||
+                updateProfileMutation.isPending
               }
             >
-              {updateProfileMutation.isPending ? "Enregistrement…" : "Enregistrer"}
+              {updateProfileMutation.isPending
+                ? "Enregistrement…"
+                : "Enregistrer"}
             </Button>
           </form>
         )}
@@ -160,7 +179,9 @@ export const ProfileSettings = () => {
 
       {/* Mot de passe */}
       <div className="mt-4 rounded-lg border border-border bg-card p-6 shadow-sm">
-        <h3 className="text-sm font-medium text-foreground">Changer le mot de passe</h3>
+        <h3 className="text-sm font-medium text-foreground">
+          Changer le mot de passe
+        </h3>
         <form
           onSubmit={passwordForm.handleSubmit(onSubmitPassword)}
           className="mt-4 space-y-4"
@@ -210,5 +231,5 @@ export const ProfileSettings = () => {
         </form>
       </div>
     </section>
-  );
-};
+  )
+}

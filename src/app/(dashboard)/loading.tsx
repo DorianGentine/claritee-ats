@@ -3,7 +3,10 @@ export default function DashboardLoading() {
     <main className="p-6 lg:p-10" aria-busy="true" aria-label="Chargement">
       <div className="mx-auto max-w-6xl">
         <div className="h-8 w-48 animate-pulse rounded-md bg-muted" />
-        <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-hidden>
+        <section
+          className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+          aria-hidden
+        >
           {[1, 2, 3].map((i) => (
             <div
               key={i}
@@ -22,5 +25,5 @@ export default function DashboardLoading() {
         </div>
       </div>
     </main>
-  );
+  )
 }

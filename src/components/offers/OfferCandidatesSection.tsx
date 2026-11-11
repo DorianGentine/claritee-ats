@@ -39,7 +39,7 @@ export type OfferCandidatesSectionProps = {
 }
 
 const computeCountByStatus = (
-  items: { status: CandidatureStatus }[],
+  items: { status: CandidatureStatus }[]
 ): Partial<Record<CandidatureStatus, number>> =>
   items.reduce<Partial<Record<CandidatureStatus, number>>>((acc, c) => {
     acc[c.status] = (acc[c.status] ?? 0) + 1
@@ -53,7 +53,9 @@ export const OfferCandidatesSection = ({
 }: OfferCandidatesSectionProps) => {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
-  const [statusFilter, setStatusFilter] = useState<CandidatureStatus | null>(null)
+  const [statusFilter, setStatusFilter] = useState<CandidatureStatus | null>(
+    null
+  )
   const utils = api.useUtils()
 
   const existingCandidateIds = candidatures.map((c) => c.candidate.id)
@@ -69,7 +71,7 @@ export const OfferCandidatesSection = ({
       utils.offer.getById.setData({ id: offerId }, (old) => {
         if (!old) return old
         const newCandidatures = old.candidatures.map((c) =>
-          c.id === candidatureId ? { ...c, status } : c,
+          c.id === candidatureId ? { ...c, status } : c
         )
         return {
           ...old,
@@ -94,7 +96,9 @@ export const OfferCandidatesSection = ({
       const previous = utils.offer.getById.getData({ id: offerId })
       utils.offer.getById.setData({ id: offerId }, (old) => {
         if (!old) return old
-        const newCandidatures = old.candidatures.filter((c) => c.id !== candidatureId)
+        const newCandidatures = old.candidatures.filter(
+          (c) => c.id !== candidatureId
+        )
         return {
           ...old,
           candidatures: newCandidatures,
@@ -120,7 +124,7 @@ export const OfferCandidatesSection = ({
   })
 
   const presentStatuses = CANDIDATURE_STATUS_ORDER.filter(
-    (s) => (candidatureCountByStatus[s] ?? 0) > 0,
+    (s) => (candidatureCountByStatus[s] ?? 0) > 0
   )
 
   const filteredCandidatures =
@@ -131,7 +135,9 @@ export const OfferCandidatesSection = ({
   return (
     <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-base font-semibold text-foreground">Candidats associés</h2>
+        <h2 className="text-base font-semibold text-foreground">
+          Candidats associés
+        </h2>
         <Button
           type="button"
           variant="outline"
@@ -144,7 +150,9 @@ export const OfferCandidatesSection = ({
 
       {candidatures.length === 0 ? (
         <div className="py-6 text-center">
-          <p className="font-medium text-muted-foreground">Aucun candidat associé</p>
+          <p className="font-medium text-muted-foreground">
+            Aucun candidat associé
+          </p>
           <p className="mt-1 text-sm text-muted-foreground">
             Cliquez sur "Associer un candidat" pour commencer.
           </p>
@@ -157,8 +165,13 @@ export const OfferCandidatesSection = ({
               {presentStatuses.map((status) => {
                 const { badgeClassName } = getCandidatureStatusStyle(status)
                 return (
-                  <Badge key={status} variant="outline" className={badgeClassName}>
-                    {CANDIDATURE_STATUS_LABELS[status]} ({candidatureCountByStatus[status]})
+                  <Badge
+                    key={status}
+                    variant="outline"
+                    className={badgeClassName}
+                  >
+                    {CANDIDATURE_STATUS_LABELS[status]} (
+                    {candidatureCountByStatus[status]})
                   </Badge>
                 )
               })}
@@ -185,7 +198,8 @@ export const OfferCandidatesSection = ({
                 Tous
               </button>
               {presentStatuses.map((status) => {
-                const { label, badgeClassName } = getCandidatureStatusStyle(status)
+                const { label, badgeClassName } =
+                  getCandidatureStatusStyle(status)
                 const isActive = statusFilter === status
                 return (
                   <button
@@ -215,13 +229,19 @@ export const OfferCandidatesSection = ({
             ) : (
               filteredCandidatures.map((c) => {
                 const fullName = `${c.candidate.firstName} ${c.candidate.lastName}`
-                const initials = getInitials(c.candidate.firstName, c.candidate.lastName)
+                const initials = getInitials(
+                  c.candidate.firstName,
+                  c.candidate.lastName
+                )
 
                 return (
                   <li key={c.id} className="flex items-center gap-3 py-3">
                     <Avatar className="size-9 shrink-0">
                       {c.candidate.photoUrl && (
-                        <AvatarImage src={c.candidate.photoUrl} alt={fullName} />
+                        <AvatarImage
+                          src={c.candidate.photoUrl}
+                          alt={fullName}
+                        />
                       )}
                       <AvatarFallback>{initials}</AvatarFallback>
                     </Avatar>
@@ -243,7 +263,10 @@ export const OfferCandidatesSection = ({
                     <CandidatureStatusDropdown
                       currentStatus={c.status}
                       onSelect={(status) =>
-                        updateStatusMutation.mutate({ candidatureId: c.id, status })
+                        updateStatusMutation.mutate({
+                          candidatureId: c.id,
+                          status,
+                        })
                       }
                     />
 

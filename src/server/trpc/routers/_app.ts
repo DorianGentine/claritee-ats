@@ -31,4 +31,4 @@ export const appRouter = router({
   tag: tagRouter,
 })
 
-export type AppRouter = typeof appRouter;
+export type AppRouter = typeof appRouter

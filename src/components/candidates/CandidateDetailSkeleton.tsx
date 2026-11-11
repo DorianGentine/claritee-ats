@@ -30,4 +30,4 @@ export const CandidateDetailSkeleton = () => (
       </div>
     </div>
   </div>
-);
+)

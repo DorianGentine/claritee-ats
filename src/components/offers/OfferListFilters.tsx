@@ -13,7 +13,10 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { MultiSelectPopover } from "@/components/shared/MultiSelectPopover"
-import { CityAutocomplete, type CityOption } from "@/components/shared/CityAutocomplete"
+import {
+  CityAutocomplete,
+  type CityOption,
+} from "@/components/shared/CityAutocomplete"
 import type { JobOfferStatus } from "@/lib/validations/offer"
 
 const STATUS_OPTIONS: { value: JobOfferStatus; label: string }[] = [
@@ -111,9 +114,7 @@ export const OfferListFilters = ({
       ? parseInt(salaryMinInput.trim(), 10)
       : undefined
     const value =
-      parsed !== undefined && !isNaN(parsed) && parsed >= 0
-        ? parsed
-        : undefined
+      parsed !== undefined && !isNaN(parsed) && parsed >= 0 ? parsed : undefined
     if (value !== filters.salaryMin) {
       onFiltersChange({ ...filters, salaryMin: value })
     }
@@ -124,9 +125,7 @@ export const OfferListFilters = ({
       ? parseInt(salaryMaxInput.trim(), 10)
       : undefined
     const value =
-      parsed !== undefined && !isNaN(parsed) && parsed >= 0
-        ? parsed
-        : undefined
+      parsed !== undefined && !isNaN(parsed) && parsed >= 0 ? parsed : undefined
     if (value !== filters.salaryMax) {
       onFiltersChange({ ...filters, salaryMax: value })
     }
@@ -135,7 +134,7 @@ export const OfferListFilters = ({
   const handleSalaryKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       e.preventDefault()
-      ;(e.target as HTMLInputElement).blur()
+      e.currentTarget.blur()
     }
   }
 

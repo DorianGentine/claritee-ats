@@ -1,6 +1,10 @@
 import { describe, it, expect } from "vitest"
 import { TRPCError } from "@trpc/server"
-import { checkRateLimit, checkMutationRateLimit, getClientIp } from "@/lib/rate-limit"
+import {
+  checkRateLimit,
+  checkMutationRateLimit,
+  getClientIp,
+} from "@/lib/rate-limit"
 
 describe("checkRateLimit", () => {
   it("succeeds within the limit and decrements remaining", async () => {
@@ -42,7 +46,9 @@ describe("checkMutationRateLimit", () => {
     await expect(checkMutationRateLimit(userId)).rejects.toMatchObject({
       code: "TOO_MANY_REQUESTS",
     })
-    await expect(checkMutationRateLimit(userId)).rejects.toBeInstanceOf(TRPCError)
+    await expect(checkMutationRateLimit(userId)).rejects.toBeInstanceOf(
+      TRPCError
+    )
   })
 })
 

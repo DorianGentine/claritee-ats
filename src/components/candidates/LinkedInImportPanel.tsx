@@ -1,23 +1,23 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import Link from "next/link";
-import { Linkedin, Loader2 } from "lucide-react";
-import { api } from "@/lib/trpc/client";
-import type { LinkedInProfileDraft } from "@/lib/linkedin/profile";
-import { linkedinPreviewInputSchema } from "@/lib/validations/candidate";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { useState } from "react"
+import Link from "next/link"
+import { Linkedin, Loader2 } from "lucide-react"
+import { api } from "@/lib/trpc/client"
+import type { LinkedInProfileDraft } from "@/lib/linkedin/profile"
+import { linkedinPreviewInputSchema } from "@/lib/validations/candidate"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 
-type DuplicateCandidate = { id: string; firstName: string; lastName: string };
+type DuplicateCandidate = { id: string; firstName: string; lastName: string }
 
 type Props = {
-  onImported: (draft: LinkedInProfileDraft) => void;
-  disabled?: boolean;
-};
+  onImported: (draft: LinkedInProfileDraft) => void
+  disabled?: boolean
+}
 
-const URL_INPUT_ID = "linkedin-import-url";
+const URL_INPUT_ID = "linkedin-import-url"
 
 /**
  * Bloc « Importer depuis LinkedIn » de la création de candidat : l'URL du profil
@@ -25,36 +25,36 @@ const URL_INPUT_ID = "linkedin-import-url";
  * Masqué tant que l'import n'est pas configuré côté serveur (APIFY_TOKEN).
  */
 export const LinkedInImportPanel = ({ onImported, disabled }: Props) => {
-  const [linkedinUrl, setLinkedinUrl] = useState("");
-  const [inputError, setInputError] = useState<string | null>(null);
-  const [duplicate, setDuplicate] = useState<DuplicateCandidate | null>(null);
+  const [linkedinUrl, setLinkedinUrl] = useState("")
+  const [inputError, setInputError] = useState<string | null>(null)
+  const [duplicate, setDuplicate] = useState<DuplicateCandidate | null>(null)
 
   const statusQuery = api.linkedinImport.status.useQuery(undefined, {
     staleTime: Infinity,
-  });
+  })
   const previewMutation = api.linkedinImport.preview.useMutation({
     onSuccess: (result) => {
-      setDuplicate(result.duplicate);
-      onImported(result.draft);
+      setDuplicate(result.duplicate)
+      onImported(result.draft)
     },
     onError: (error) => setInputError(error.message),
-  });
+  })
 
-  if (!statusQuery.data?.enabled) return null;
+  if (!statusQuery.data?.enabled) return null
 
   const handleImport = () => {
-    setInputError(null);
-    setDuplicate(null);
-    const parsed = linkedinPreviewInputSchema.safeParse({ linkedinUrl });
+    setInputError(null)
+    setDuplicate(null)
+    const parsed = linkedinPreviewInputSchema.safeParse({ linkedinUrl })
     if (!parsed.success) {
-      setInputError(parsed.error.issues[0]?.message ?? "URL LinkedIn invalide");
-      return;
+      setInputError(parsed.error.issues[0]?.message ?? "URL LinkedIn invalide")
+      return
     }
-    previewMutation.mutate(parsed.data);
-  };
+    previewMutation.mutate(parsed.data)
+  }
 
-  const isPending = previewMutation.isPending;
-  const errorId = `${URL_INPUT_ID}-error`;
+  const isPending = previewMutation.isPending
+  const errorId = `${URL_INPUT_ID}-error`
 
   return (
     <section
@@ -88,8 +88,8 @@ export const LinkedInImportPanel = ({ onImported, disabled }: Props) => {
             onKeyDown={(event) => {
               if (event.key === "Enter") {
                 // Ne pas soumettre le formulaire de création
-                event.preventDefault();
-                handleImport();
+                event.preventDefault()
+                handleImport()
               }
             }}
             disabled={disabled || isPending}
@@ -135,5 +135,5 @@ export const LinkedInImportPanel = ({ onImported, disabled }: Props) => {
         )}
       </div>
     </section>
-  );
-};
+  )
+}

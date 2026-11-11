@@ -1,7 +1,7 @@
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "@prisma/client"
 
-const PHOTON_BASE_URL = "https://photon.komoot.io/api";
-const PHOTON_BBOX = "-10,35,40,72"; // Europe
+const PHOTON_BASE_URL = "https://photon.komoot.io/api"
+const PHOTON_BBOX = "-10,35,40,72" // Europe
 
 const CITY_LIST = [
   // France — grandes villes
@@ -79,57 +79,56 @@ const CITY_LIST = [
   "Saint-Gall",
   // Luxembourg
   "Luxembourg",
-];
+]
 
 interface PhotonFeature {
   properties: {
-    name: string;
-    state?: string;
-    country?: string;
-  };
+    name: string
+    state?: string
+    country?: string
+  }
   geometry: {
-    coordinates: [number, number]; // [longitude, latitude]
-  };
+    coordinates: [number, number] // [longitude, latitude]
+  }
 }
 
 interface PhotonResponse {
-  features: PhotonFeature[];
+  features: PhotonFeature[]
 }
 
-const sleep = (ms: number) =>
-  new Promise((resolve) => setTimeout(resolve, ms));
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 const fetchCityFromPhoton = async (
   cityName: string
 ): Promise<{
-  name: string;
-  region: string | null;
-  country: string;
-  latitude: number;
-  longitude: number;
+  name: string
+  region: string | null
+  country: string
+  latitude: number
+  longitude: number
 } | null> => {
-  const url = `${PHOTON_BASE_URL}/?q=${encodeURIComponent(cityName)}&lang=fr&limit=1&layer=city&bbox=${PHOTON_BBOX}`;
+  const url = `${PHOTON_BASE_URL}/?q=${encodeURIComponent(cityName)}&lang=fr&limit=1&layer=city&bbox=${PHOTON_BBOX}`
 
   const response = await fetch(url, {
     signal: AbortSignal.timeout(5000),
-  });
+  })
 
   if (!response.ok) {
-    throw new Error(`Photon HTTP ${response.status} pour "${cityName}"`);
+    throw new Error(`Photon HTTP ${response.status} pour "${cityName}"`)
   }
 
-  const data = (await response.json()) as PhotonResponse;
+  const data = (await response.json()) as PhotonResponse
 
   if (!data.features || data.features.length === 0) {
-    return null;
+    return null
   }
 
-  const feature = data.features[0];
-  const { name, state, country } = feature.properties;
-  const [longitude, latitude] = feature.geometry.coordinates;
+  const feature = data.features[0]
+  const { name, state, country } = feature.properties
+  const [longitude, latitude] = feature.geometry.coordinates
 
   if (!name || !country) {
-    return null;
+    return null
   }
 
   return {
@@ -138,25 +137,25 @@ const fetchCityFromPhoton = async (
     country,
     latitude,
     longitude,
-  };
-};
+  }
+}
 
 export const seedCities = async (prisma: PrismaClient): Promise<void> => {
-  console.warn(`\n🌍 Seed des villes — ${CITY_LIST.length} villes cibles\n`);
+  console.warn(`\n🌍 Seed des villes — ${CITY_LIST.length} villes cibles\n`)
 
-  let created = 0;
-  let skipped = 0;
-  let errors = 0;
+  let created = 0
+  let skipped = 0
+  let errors = 0
 
   for (const cityName of CITY_LIST) {
     try {
-      const cityData = await fetchCityFromPhoton(cityName);
+      const cityData = await fetchCityFromPhoton(cityName)
 
       if (!cityData) {
-        console.warn(`[SKIP] ${cityName} — aucun résultat Photon`);
-        skipped++;
-        await sleep(200);
-        continue;
+        console.warn(`[SKIP] ${cityName} — aucun résultat Photon`)
+        skipped++
+        await sleep(200)
+        continue
       }
 
       await prisma.city.upsert({
@@ -174,23 +173,23 @@ export const seedCities = async (prisma: PrismaClient): Promise<void> => {
           longitude: cityData.longitude,
         },
         update: {},
-      });
+      })
 
       console.warn(
         `[OK] ${cityData.name}${cityData.region ? `, ${cityData.region}` : ""} (${cityData.country})`
-      );
-      created++;
+      )
+      created++
     } catch (err) {
       console.error(
         `[ERR] ${cityName} — ${err instanceof Error ? err.message : String(err)}`
-      );
-      errors++;
+      )
+      errors++
     }
 
-    await sleep(200);
+    await sleep(200)
   }
 
   console.warn(
     `\n✅ Seed terminé : ${created} créées/mises à jour, ${skipped} ignorées (Photon vide), ${errors} erreurs\n`
-  );
-};
+  )
+}

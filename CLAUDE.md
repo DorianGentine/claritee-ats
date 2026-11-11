@@ -89,7 +89,7 @@ See `prisma/schema.prisma` (source of truth) and `docs/architecture.md` (entity 
 
 ## Code style
 
-- **Prettier config:** `semi: true`, `singleQuote: false`, `tabWidth: 2`, `trailingComma: "es5"`
+- **Prettier config:** `semi: false`, `singleQuote: false`, `tabWidth: 2`, `trailingComma: "es5"` — no semicolons (Prettier keeps only the ASI-protective ones); checked in CI (`bun run format:check`), Markdown excluded
 - **Zod v4 APIs:** use `z.uuid()`, `z.email()` — not `z.string().uuid()`
 - **No `^` or `~`** in package.json — exact versions only
 - ESLint warns on `console.log`; `console.warn` and `console.error` are allowed

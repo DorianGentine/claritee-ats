@@ -1,40 +1,39 @@
-import { type NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
-import {
-  checkRateLimit,
-  getClientIp,
-  RATE_LIMITS,
-} from "@/lib/rate-limit";
+import { type NextRequest, NextResponse } from "next/server"
+import { createServerClient } from "@supabase/ssr"
+import { checkRateLimit, getClientIp, RATE_LIMITS } from "@/lib/rate-limit"
 
-const LOGIN_URL = "/login";
-const RATE_LIMIT_ERROR = "rate_limit";
+const LOGIN_URL = "/login"
+const RATE_LIMIT_ERROR = "rate_limit"
 
 export const proxy = async (request: NextRequest) => {
-  const { pathname } = request.nextUrl;
+  const { pathname } = request.nextUrl
 
   // Rate limit auth routes (login, register) — Option A: same as Story 1.3.
   // La page d'erreur elle-même (/login?error=rate_limit) n'est ni comptée ni
   // redirigée : sinon elle se redirigerait vers elle-même en boucle.
   const isRateLimitErrorPage =
     pathname === LOGIN_URL &&
-    request.nextUrl.searchParams.get("error") === RATE_LIMIT_ERROR;
-  if ((pathname === "/login" || pathname === "/register") && !isRateLimitErrorPage) {
-    const ip = getClientIp(request.headers);
+    request.nextUrl.searchParams.get("error") === RATE_LIMIT_ERROR
+  if (
+    (pathname === "/login" || pathname === "/register") &&
+    !isRateLimitErrorPage
+  ) {
+    const ip = getClientIp(request.headers)
     const result = await checkRateLimit(
       `auth:${ip}`,
       RATE_LIMITS.AUTH_PER_IP.limit,
-      RATE_LIMITS.AUTH_PER_IP.windowMs,
-    );
+      RATE_LIMITS.AUTH_PER_IP.windowMs
+    )
     if (!result.success) {
-      const redirectUrl = new URL(LOGIN_URL, request.url);
-      redirectUrl.searchParams.set("error", RATE_LIMIT_ERROR);
-      return NextResponse.redirect(redirectUrl);
+      const redirectUrl = new URL(LOGIN_URL, request.url)
+      redirectUrl.searchParams.set("error", RATE_LIMIT_ERROR)
+      return NextResponse.redirect(redirectUrl)
     }
   }
 
   const response = NextResponse.next({
     request,
-  });
+  })
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -42,19 +41,21 @@ export const proxy = async (request: NextRequest) => {
     {
       cookies: {
         getAll: () =>
-          request.cookies.getAll().map((c) => ({ name: c.name, value: c.value })),
+          request.cookies
+            .getAll()
+            .map((c) => ({ name: c.name, value: c.value })),
         setAll: (cookiesToSet) => {
           cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options),
-          );
+            response.cookies.set(name, value, options)
+          )
         },
       },
-    },
-  );
+    }
+  )
 
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await supabase.auth.getUser()
 
   // Protect dashboard routes
   const isDashboard =
@@ -66,15 +67,17 @@ export const proxy = async (request: NextRequest) => {
     pathname.startsWith("/notes")
 
   if (isDashboard && !user) {
-    const redirectUrl = new URL(LOGIN_URL, request.url);
-    const redirect = NextResponse.redirect(redirectUrl);
+    const redirectUrl = new URL(LOGIN_URL, request.url)
+    const redirect = NextResponse.redirect(redirectUrl)
     // Preserve Set-Cookie from session refresh on the redirect response
-    response.cookies.getAll().forEach((c) => redirect.cookies.set(c.name, c.value));
-    return redirect;
+    response.cookies
+      .getAll()
+      .forEach((c) => redirect.cookies.set(c.name, c.value))
+    return redirect
   }
 
-  return response;
-};
+  return response
+}
 
 export const config = {
   matcher: [
@@ -87,4 +90,4 @@ export const config = {
      */
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
-};
+}

@@ -1,18 +1,21 @@
-"use client";
+"use client"
 
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { api } from "@/lib/trpc/client";
-import { updateCompanySchema, type UpdateCompanyInput } from "@/lib/validations/company";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
-import { toast } from "sonner";
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { api } from "@/lib/trpc/client"
+import {
+  updateCompanySchema,
+  type UpdateCompanyInput,
+} from "@/lib/validations/company"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Skeleton } from "@/components/ui/skeleton"
+import { toast } from "sonner"
 
 export const CompanySettings = () => {
-  const utils = api.useUtils();
-  const companyQuery = api.company.getMyCompany.useQuery();
+  const utils = api.useUtils()
+  const companyQuery = api.company.getMyCompany.useQuery()
 
   const {
     register,
@@ -21,21 +24,21 @@ export const CompanySettings = () => {
   } = useForm<UpdateCompanyInput>({
     resolver: zodResolver(updateCompanySchema),
     values: companyQuery.data ? { name: companyQuery.data.name } : undefined,
-  });
+  })
 
   const updateMutation = api.company.updateCompany.useMutation({
     onSuccess: () => {
-      toast.success("Informations mises à jour.");
-      void utils.company.getMyCompany.invalidate();
+      toast.success("Informations mises à jour.")
+      void utils.company.getMyCompany.invalidate()
     },
     onError: () => {
-      toast.error("Une erreur est survenue. Réessayez.");
+      toast.error("Une erreur est survenue. Réessayez.")
     },
-  });
+  })
 
   const onSubmit = (data: UpdateCompanyInput) => {
-    updateMutation.mutate(data);
-  };
+    updateMutation.mutate(data)
+  }
 
   return (
     <section aria-labelledby="company-settings-heading">
@@ -95,5 +98,5 @@ export const CompanySettings = () => {
         )}
       </div>
     </section>
-  );
-};
+  )
+}

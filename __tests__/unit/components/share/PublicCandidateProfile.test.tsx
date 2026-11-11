@@ -48,30 +48,55 @@ afterEach(() => cleanup())
 
 describe("PublicCandidateProfile", () => {
   it("displays company branding banner", () => {
-    render(<PublicCandidateProfile candidate={baseCandidate} companyName="Cabinet Alpha" />)
+    render(
+      <PublicCandidateProfile
+        candidate={baseCandidate}
+        companyName="Cabinet Alpha"
+      />
+    )
     expect(screen.getByText("Cabinet Alpha")).toBeDefined()
     expect(screen.getByText(/Présenté par/)).toBeDefined()
   })
 
   it("displays candidate name and title", () => {
-    render(<PublicCandidateProfile candidate={baseCandidate} companyName="Cabinet Alpha" />)
+    render(
+      <PublicCandidateProfile
+        candidate={baseCandidate}
+        companyName="Cabinet Alpha"
+      />
+    )
     expect(screen.getByText("Alice Martin")).toBeDefined()
     expect(screen.getByText("Développeuse Full Stack")).toBeDefined()
   })
 
   it("displays contact info", () => {
-    render(<PublicCandidateProfile candidate={baseCandidate} companyName="Cabinet Alpha" />)
+    render(
+      <PublicCandidateProfile
+        candidate={baseCandidate}
+        companyName="Cabinet Alpha"
+      />
+    )
     expect(screen.getByText("alice@example.com")).toBeDefined()
     expect(screen.getByText("0612345678")).toBeDefined()
   })
 
   it("displays summary", () => {
-    render(<PublicCandidateProfile candidate={baseCandidate} companyName="Cabinet Alpha" />)
+    render(
+      <PublicCandidateProfile
+        candidate={baseCandidate}
+        companyName="Cabinet Alpha"
+      />
+    )
     expect(screen.getByText("Profil senior orienté backend.")).toBeDefined()
   })
 
   it("displays languages with level labels", () => {
-    render(<PublicCandidateProfile candidate={baseCandidate} companyName="Cabinet Alpha" />)
+    render(
+      <PublicCandidateProfile
+        candidate={baseCandidate}
+        companyName="Cabinet Alpha"
+      />
+    )
     expect(screen.getByText(/Anglais/)).toBeDefined()
     expect(screen.getByText(/Courant/)).toBeDefined()
     expect(screen.getByText(/Espagnol/)).toBeDefined()
@@ -79,7 +104,12 @@ describe("PublicCandidateProfile", () => {
   })
 
   it("displays experiences", () => {
-    render(<PublicCandidateProfile candidate={baseCandidate} companyName="Cabinet Alpha" />)
+    render(
+      <PublicCandidateProfile
+        candidate={baseCandidate}
+        companyName="Cabinet Alpha"
+      />
+    )
     expect(screen.getByText("Lead Dev")).toBeDefined()
     expect(screen.getByText(/Acme Corp/)).toBeDefined()
     expect(screen.getByText("Architecture micro-services.")).toBeDefined()
@@ -88,7 +118,12 @@ describe("PublicCandidateProfile", () => {
   })
 
   it("displays formations", () => {
-    render(<PublicCandidateProfile candidate={baseCandidate} companyName="Cabinet Alpha" />)
+    render(
+      <PublicCandidateProfile
+        candidate={baseCandidate}
+        companyName="Cabinet Alpha"
+      />
+    )
     expect(screen.getByText(/Master Informatique/)).toBeDefined()
     expect(screen.getByText(/Université Paris-Saclay/)).toBeDefined()
   })
@@ -134,7 +169,12 @@ describe("PublicCandidateProfile", () => {
   })
 
   it("does not render internal sections (notes, tags, offers, CV)", () => {
-    render(<PublicCandidateProfile candidate={baseCandidate} companyName="Cabinet Alpha" />)
+    render(
+      <PublicCandidateProfile
+        candidate={baseCandidate}
+        companyName="Cabinet Alpha"
+      />
+    )
     expect(screen.queryByText("Notes")).toBeNull()
     expect(screen.queryByText("Tags")).toBeNull()
     expect(screen.queryByText("Candidatures")).toBeNull()

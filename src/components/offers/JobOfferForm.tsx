@@ -74,7 +74,7 @@ export const JobOfferForm = ({
   const utils = api.useUtils()
   const [serverError, setServerError] = useState<string | null>(null)
   const [selectedCity, setSelectedCity] = useState<CityOption | null>(
-    initialOffer?.city ?? null,
+    initialOffer?.city ?? null
   )
 
   const {
@@ -119,7 +119,7 @@ export const JobOfferForm = ({
 
   const clientDetailsQuery = api.clientCompany.getById.useQuery(
     { id: selectedClientId ?? "" },
-    { enabled: !!selectedClientId },
+    { enabled: !!selectedClientId }
   )
 
   const createMutation = api.offer.create.useMutation({
@@ -172,7 +172,9 @@ export const JobOfferForm = ({
       const updatePayload: UpdateJobOfferInput = {
         id: initialOffer.id,
         title: values.title,
-        description: values.description?.trim() ? values.description.trim() : null,
+        description: values.description?.trim()
+          ? values.description.trim()
+          : null,
         salaryMin: values.salaryMin ?? null,
         salaryMax: values.salaryMax ?? null,
         status: values.status,
@@ -279,7 +281,9 @@ export const JobOfferForm = ({
             )}
           </div>
           <div>
-            <Label htmlFor="salaryMax">Salaire&nbsp;max&nbsp;(€&nbsp;annuel)</Label>
+            <Label htmlFor="salaryMax">
+              Salaire&nbsp;max&nbsp;(€&nbsp;annuel)
+            </Label>
             <Input
               id="salaryMax"
               type="number"
@@ -331,7 +335,7 @@ export const JobOfferForm = ({
             onValueChange={(value) =>
               setValue(
                 "clientCompanyId",
-                value === NONE_VALUE ? undefined : value,
+                value === NONE_VALUE ? undefined : value
               )
             }
           >
@@ -356,13 +360,15 @@ export const JobOfferForm = ({
 
         {hasClient && (
           <div>
-            <Label htmlFor="clientContactId">Contact référent (optionnel)</Label>
+            <Label htmlFor="clientContactId">
+              Contact référent (optionnel)
+            </Label>
             <Select
               value={clientContactId ?? NONE_VALUE}
               onValueChange={(value) =>
                 setValue(
                   "clientContactId",
-                  value === NONE_VALUE ? undefined : value,
+                  value === NONE_VALUE ? undefined : value
                 )
               }
               disabled={clientDetailsQuery.isLoading || contacts.length === 0}
@@ -395,11 +401,7 @@ export const JobOfferForm = ({
       </div>
 
       <div className="mt-4 flex flex-wrap gap-3">
-        <Button
-          type="submit"
-          disabled={isPending}
-          aria-busy={isPending}
-        >
+        <Button type="submit" disabled={isPending} aria-busy={isPending}>
           {isPending
             ? mode === "create"
               ? "Création…"
@@ -419,4 +421,3 @@ export const JobOfferForm = ({
     </form>
   )
 }
-

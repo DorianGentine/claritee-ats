@@ -1,11 +1,11 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import { api } from "@/lib/trpc/client";
-import { signOutBrowser } from "@/lib/supabase/sign-out";
-import { Button } from "@/components/ui/button";
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
+import { api } from "@/lib/trpc/client"
+import { signOutBrowser } from "@/lib/supabase/sign-out"
+import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
@@ -13,48 +13,48 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 
-const GENERIC_ERROR_MESSAGE = "Une erreur est survenue. Réessayez.";
-const CONFIRM_INPUT_ID = "delete-company-confirm";
+const GENERIC_ERROR_MESSAGE = "Une erreur est survenue. Réessayez."
+const CONFIRM_INPUT_ID = "delete-company-confirm"
 
 /**
  * Zone de suppression du cabinet (RGPD), visible du seul créateur du cabinet.
  * La saisie du nom du cabinet confirme l'action, irréversible.
  */
 export const DeleteCompanySettings = () => {
-  const router = useRouter();
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [confirmName, setConfirmName] = useState("");
+  const router = useRouter()
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [confirmName, setConfirmName] = useState("")
 
-  const meQuery = api.auth.getMe.useQuery();
-  const companyQuery = api.company.getMyCompany.useQuery();
+  const meQuery = api.auth.getMe.useQuery()
+  const companyQuery = api.company.getMyCompany.useQuery()
 
   const deleteMutation = api.company.deleteCompany.useMutation({
     onSuccess: async () => {
-      await signOutBrowser("local");
-      router.push("/");
-      router.refresh();
+      await signOutBrowser("local")
+      router.push("/")
+      router.refresh()
     },
     onError: (error) => {
-      toast.error(error.message ?? GENERIC_ERROR_MESSAGE);
+      toast.error(error.message ?? GENERIC_ERROR_MESSAGE)
     },
-  });
+  })
 
-  const company = companyQuery.data;
+  const company = companyQuery.data
   if (!company || !meQuery.data || meQuery.data.id !== company.ownerId) {
-    return null;
+    return null
   }
 
-  const isConfirmed = confirmName.trim() === company.name.trim();
+  const isConfirmed = confirmName.trim() === company.name.trim()
 
   const handleOpenChange = (nextOpen: boolean) => {
-    if (deleteMutation.isPending) return;
-    if (!nextOpen) setConfirmName("");
-    setDialogOpen(nextOpen);
-  };
+    if (deleteMutation.isPending) return
+    if (!nextOpen) setConfirmName("")
+    setDialogOpen(nextOpen)
+  }
 
   return (
     <section aria-labelledby="delete-company-heading">
@@ -92,8 +92,8 @@ export const DeleteCompanySettings = () => {
           <form
             className="space-y-2"
             onSubmit={(event) => {
-              event.preventDefault();
-              if (isConfirmed) deleteMutation.mutate({ confirmName });
+              event.preventDefault()
+              if (isConfirmed) deleteMutation.mutate({ confirmName })
             }}
           >
             <Label htmlFor={CONFIRM_INPUT_ID}>
@@ -129,5 +129,5 @@ export const DeleteCompanySettings = () => {
         </DialogContent>
       </Dialog>
     </section>
-  );
-};
+  )
+}

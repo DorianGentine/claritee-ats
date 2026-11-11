@@ -1,32 +1,32 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { useForm, useWatch } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { Pencil } from "lucide-react";
-import { api } from "@/lib/trpc/client";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
+import { useState } from "react"
+import { useForm, useWatch } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
+import { Pencil } from "lucide-react"
+import { api } from "@/lib/trpc/client"
+import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
 
 const summaryFormSchema = z.object({
   summary: z
     .string()
     .max(500, "Le résumé ne peut pas dépasser 500 caractères")
     .transform((v) => (v.trim() === "" ? "" : v.trim())),
-});
+})
 
-type SummaryFormValues = z.infer<typeof summaryFormSchema>;
+type SummaryFormValues = z.infer<typeof summaryFormSchema>
 
 type Props = {
-  candidateId: string;
-  summary: string | null;
-};
+  candidateId: string
+  summary: string | null
+}
 
 export const CandidateSummarySection = ({ candidateId, summary }: Props) => {
-  const [editing, setEditing] = useState(false);
-  const utils = api.useUtils();
+  const [editing, setEditing] = useState(false)
+  const utils = api.useUtils()
 
   const {
     register,
@@ -37,29 +37,29 @@ export const CandidateSummarySection = ({ candidateId, summary }: Props) => {
   } = useForm<SummaryFormValues>({
     resolver: zodResolver(summaryFormSchema),
     defaultValues: { summary: summary ?? "" },
-  });
+  })
 
   const updateMutation = api.candidate.update.useMutation({
     onSuccess: () => {
-      void utils.candidate.getById.invalidate({ id: candidateId });
-      setEditing(false);
+      void utils.candidate.getById.invalidate({ id: candidateId })
+      setEditing(false)
     },
-  });
+  })
 
-  const currentValue = useWatch({ control, name: "summary" });
+  const currentValue = useWatch({ control, name: "summary" })
 
   const onSubmit = (values: SummaryFormValues) => {
     updateMutation.mutate({
       id: candidateId,
       // Chaîne vide → résumé effacé (undefined laisserait le résumé inchangé)
       summary: values.summary ?? "",
-    });
-  };
+    })
+  }
 
   const handleCancel = () => {
-    reset({ summary: summary ?? "" });
-    setEditing(false);
-  };
+    reset({ summary: summary ?? "" })
+    setEditing(false)
+  }
 
   if (!editing) {
     return (
@@ -86,7 +86,7 @@ export const CandidateSummarySection = ({ candidateId, summary }: Props) => {
           </p>
         )}
       </section>
-    );
+    )
   }
 
   return (
@@ -108,7 +108,9 @@ export const CandidateSummarySection = ({ candidateId, summary }: Props) => {
           />
           <div className="mt-1 flex items-center justify-between">
             {errors.summary ? (
-              <p className="text-xs text-destructive">{errors.summary.message}</p>
+              <p className="text-xs text-destructive">
+                {errors.summary.message}
+              </p>
             ) : (
               <span />
             )}
@@ -121,11 +123,7 @@ export const CandidateSummarySection = ({ candidateId, summary }: Props) => {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button
-            type="submit"
-            size="sm"
-            disabled={updateMutation.isPending}
-          >
+          <Button type="submit" size="sm" disabled={updateMutation.isPending}>
             {updateMutation.isPending ? "Enregistrement…" : "Enregistrer"}
           </Button>
           <Button
@@ -145,5 +143,5 @@ export const CandidateSummarySection = ({ candidateId, summary }: Props) => {
         )}
       </form>
     </section>
-  );
-};
+  )
+}

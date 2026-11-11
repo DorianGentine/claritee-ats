@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "vitest"
 import {
   extractCityName,
   findDraftProblems,
@@ -9,9 +9,9 @@ import {
   toMonthDate,
   translateLanguageName,
   SUMMARY_MAX_LENGTH,
-} from "@/lib/linkedin/profile";
+} from "@/lib/linkedin/profile"
 
-const REQUESTED_URL = "https://www.linkedin.com/in/jeanne-martin";
+const REQUESTED_URL = "https://www.linkedin.com/in/jeanne-martin"
 
 /** Extrait d'une sortie réelle de harvestapi/linkedin-profile-scraper */
 const harvestProfile = {
@@ -62,7 +62,7 @@ const harvestProfile = {
     { name: "english", proficiency: "Elementary proficiency" },
   ],
   skills: [{ name: "Sourcing" }],
-};
+}
 
 /** Extrait d'une sortie réelle de supreme_coder/linkedin-profile-scraper */
 const supremeCoderProfile = {
@@ -84,7 +84,10 @@ const supremeCoderProfile = {
     {
       title: "Strategy",
       company: { name: "Acme" },
-      timePeriod: { startDate: { year: 2004 }, endDate: { month: 8, year: 2006 } },
+      timePeriod: {
+        startDate: { year: 2004 },
+        endDate: { month: 8, year: 2006 },
+      },
     },
     // Sans titre (poste groupé côté LinkedIn) : ignorée
     { title: null, company: { name: "Next Play Ventures" }, timePeriod: null },
@@ -94,9 +97,17 @@ const supremeCoderProfile = {
       schoolName: "Stanford University",
       degreeName: "Masters",
       fieldOfStudy: "Computer Science",
-      timePeriod: { startDate: { month: 9, year: 1999 }, endDate: { month: 10, year: 2001 } },
+      timePeriod: {
+        startDate: { month: 9, year: 1999 },
+        endDate: { month: 10, year: 2001 },
+      },
     },
-    { schoolName: "Harvard University", degreeName: "", fieldOfStudy: "", timePeriod: null },
+    {
+      schoolName: "Harvard University",
+      degreeName: "",
+      fieldOfStudy: "",
+      timePeriod: null,
+    },
   ],
   languages: [
     { name: "English", proficiency: "" },
@@ -109,11 +120,13 @@ const supremeCoderProfile = {
     { name: " ", endorsements: 0, experiences: "" },
   ],
   pictureUrl: { "200x200": "https://media.licdn.com/photo.jpg" },
-};
+}
 
 describe("mapSupremeCoderProfile", () => {
   it("maps a full profile", () => {
-    expect(mapSupremeCoderProfile(supremeCoderProfile, "https://linkedin.com/in/x")).toEqual({
+    expect(
+      mapSupremeCoderProfile(supremeCoderProfile, "https://linkedin.com/in/x")
+    ).toEqual({
       firstName: "Frédéric",
       lastName: "Mazzella",
       linkedinUrl: "https://www.linkedin.com/in/fredericmazzella",
@@ -159,45 +172,54 @@ describe("mapSupremeCoderProfile", () => {
       ],
       // Ordre du profil, dédoublonné sans tenir compte de la casse
       skills: ["Business Strategy", "Start-ups"],
-    });
-  });
+    })
+  })
 
   it("keeps at most 20 skills, in profile order", () => {
     const draft = mapSupremeCoderProfile(
       {
         firstName: "Jeanne",
         lastName: "Martin",
-        skills: Array.from({ length: 30 }, (_unused, index) => ({ name: `Skill ${index}` })),
+        skills: Array.from({ length: 30 }, (_unused, index) => ({
+          name: `Skill ${index}`,
+        })),
       },
       "https://x"
-    );
-    expect(draft?.skills).toHaveLength(20);
-    expect(draft?.skills[0]).toBe("Skill 0");
-    expect(draft?.skills[19]).toBe("Skill 19");
-  });
+    )
+    expect(draft?.skills).toHaveLength(20)
+    expect(draft?.skills[0]).toBe("Skill 0")
+    expect(draft?.skills[19]).toBe("Skill 19")
+  })
 
   it("falls back to the requested URL without public identifier", () => {
     const draft = mapSupremeCoderProfile(
       { firstName: "Jeanne", lastName: "Martin" },
       "https://www.linkedin.com/in/jeanne"
-    );
-    expect(draft?.linkedinUrl).toBe("https://www.linkedin.com/in/jeanne");
-  });
+    )
+    expect(draft?.linkedinUrl).toBe("https://www.linkedin.com/in/jeanne")
+  })
 
   it("returns null for an unusable item", () => {
-    expect(mapSupremeCoderProfile({ error: "not found" }, "https://x")).toBeNull();
-    expect(mapSupremeCoderProfile([], "https://x")).toBeNull();
-  });
+    expect(
+      mapSupremeCoderProfile({ error: "not found" }, "https://x")
+    ).toBeNull()
+    expect(mapSupremeCoderProfile([], "https://x")).toBeNull()
+  })
 
   it("keeps the profile when a list has an unexpected format", () => {
     const draft = mapSupremeCoderProfile(
-      { firstName: "Jeanne", lastName: "Martin", positions: "n/a", languages: [42] },
+      {
+        firstName: "Jeanne",
+        lastName: "Martin",
+        positions: "n/a",
+        languages: [42],
+      },
       "https://x"
-    );
-    expect(draft?.experiences).toEqual([]);
-    expect(draft?.languages).toEqual([]);
-  });
-});
+    )
+    expect(draft?.experiences).toEqual([])
+    expect(draft?.languages).toEqual([])
+  })
+})
 
 describe("extractCityName", () => {
   it.each([
@@ -210,13 +232,13 @@ describe("extractCityName", () => {
     ["  ", null],
     [null, null],
   ])("%s → %s", (location, expected) => {
-    expect(extractCityName(location)).toBe(expected);
-  });
-});
+    expect(extractCityName(location)).toBe(expected)
+  })
+})
 
 describe("mapHarvestApiProfile", () => {
   it("maps identity, title, summary and city", () => {
-    const draft = mapHarvestApiProfile(harvestProfile, REQUESTED_URL);
+    const draft = mapHarvestApiProfile(harvestProfile, REQUESTED_URL)
     expect(draft).toMatchObject({
       firstName: "Jeanne",
       lastName: "Martin",
@@ -224,11 +246,11 @@ describe("mapHarvestApiProfile", () => {
       title: "Responsable RH chez Acme",
       summary: "Dix ans de recrutement tech.",
       cityName: "Lyon",
-    });
-  });
+    })
+  })
 
   it("keeps experiences with a start date, in profile order, as month dates", () => {
-    const draft = mapHarvestApiProfile(harvestProfile, REQUESTED_URL);
+    const draft = mapHarvestApiProfile(harvestProfile, REQUESTED_URL)
     expect(draft?.experiences).toEqual([
       {
         title: "Responsable RH",
@@ -244,11 +266,11 @@ describe("mapHarvestApiProfile", () => {
         endDate: "2022-10-01",
         description: null,
       },
-    ]);
-  });
+    ])
+  })
 
   it("maps formations, defaulting the degree when missing", () => {
-    const draft = mapHarvestApiProfile(harvestProfile, REQUESTED_URL);
+    const draft = mapHarvestApiProfile(harvestProfile, REQUESTED_URL)
     expect(draft?.formations).toEqual([
       {
         degree: "Master",
@@ -264,25 +286,25 @@ describe("mapHarvestApiProfile", () => {
         startDate: null,
         endDate: null,
       },
-    ]);
-  });
+    ])
+  })
 
   it("translates and deduplicates languages", () => {
-    const draft = mapHarvestApiProfile(harvestProfile, REQUESTED_URL);
+    const draft = mapHarvestApiProfile(harvestProfile, REQUESTED_URL)
     expect(draft?.languages).toEqual([
       { name: "Anglais", level: "FLUENT" },
       { name: "Français", level: "NATIVE" },
-    ]);
-  });
+    ])
+  })
 
   it("truncates a summary longer than the candidate limit", () => {
     const draft = mapHarvestApiProfile(
       { ...harvestProfile, about: "a".repeat(SUMMARY_MAX_LENGTH + 100) },
       REQUESTED_URL
-    );
-    expect(draft?.summary).toHaveLength(SUMMARY_MAX_LENGTH);
-    expect(draft?.summary?.endsWith("…")).toBe(true);
-  });
+    )
+    expect(draft?.summary).toHaveLength(SUMMARY_MAX_LENGTH)
+    expect(draft?.summary?.endsWith("…")).toBe(true)
+  })
 
   it("falls back to the requested URL and the location text", () => {
     const draft = mapHarvestApiProfile(
@@ -292,7 +314,7 @@ describe("mapHarvestApiProfile", () => {
         location: { linkedinText: "Bordeaux, Nouvelle-Aquitaine, France" },
       },
       REQUESTED_URL
-    );
+    )
     expect(draft).toMatchObject({
       linkedinUrl: REQUESTED_URL,
       cityName: "Bordeaux",
@@ -302,25 +324,34 @@ describe("mapHarvestApiProfile", () => {
       formations: [],
       languages: [],
       skills: [],
-    });
-  });
+    })
+  })
 
   it("returns null for an unusable item (error, missing name, wrong type)", () => {
-    expect(mapHarvestApiProfile({ error: "Profile not found" }, REQUESTED_URL)).toBeNull();
-    expect(mapHarvestApiProfile({ firstName: "Jeanne" }, REQUESTED_URL)).toBeNull();
-    expect(mapHarvestApiProfile("oops", REQUESTED_URL)).toBeNull();
-    expect(mapHarvestApiProfile(null, REQUESTED_URL)).toBeNull();
-  });
+    expect(
+      mapHarvestApiProfile({ error: "Profile not found" }, REQUESTED_URL)
+    ).toBeNull()
+    expect(
+      mapHarvestApiProfile({ firstName: "Jeanne" }, REQUESTED_URL)
+    ).toBeNull()
+    expect(mapHarvestApiProfile("oops", REQUESTED_URL)).toBeNull()
+    expect(mapHarvestApiProfile(null, REQUESTED_URL)).toBeNull()
+  })
 
   it("ignores malformed nested fields instead of failing", () => {
     const draft = mapHarvestApiProfile(
-      { firstName: "Jeanne", lastName: "Martin", experience: "n/a", languages: 42 },
+      {
+        firstName: "Jeanne",
+        lastName: "Martin",
+        experience: "n/a",
+        languages: 42,
+      },
       REQUESTED_URL
-    );
-    expect(draft?.experiences).toEqual([]);
-    expect(draft?.languages).toEqual([]);
-  });
-});
+    )
+    expect(draft?.experiences).toEqual([])
+    expect(draft?.languages).toEqual([])
+  })
+})
 
 describe("toMonthDate", () => {
   it.each([
@@ -335,9 +366,9 @@ describe("toMonthDate", () => {
     [{ month: "Mar" }, null],
     [null, null],
   ])("%j → %s", (date, expected) => {
-    expect(toMonthDate(date)).toBe(expected);
-  });
-});
+    expect(toMonthDate(date)).toBe(expected)
+  })
+})
 
 describe("mapProficiency", () => {
   it.each([
@@ -357,18 +388,18 @@ describe("mapProficiency", () => {
     [null, null],
     ["Courant", null],
   ] as const)("%s → %s", (proficiency, expected) => {
-    expect(mapProficiency(proficiency)).toBe(expected);
-  });
-});
+    expect(mapProficiency(proficiency)).toBe(expected)
+  })
+})
 
 describe("translateLanguageName", () => {
   it("translates common English names and capitalises the others", () => {
-    expect(translateLanguageName("English")).toBe("Anglais");
-    expect(translateLanguageName(" german ")).toBe("Allemand");
-    expect(translateLanguageName("breton")).toBe("Breton");
-    expect(translateLanguageName("Français")).toBe("Français");
-  });
-});
+    expect(translateLanguageName("English")).toBe("Anglais")
+    expect(translateLanguageName(" german ")).toBe("Allemand")
+    expect(translateLanguageName("breton")).toBe("Breton")
+    expect(translateLanguageName("Français")).toBe("Français")
+  })
+})
 
 describe("getLinkedInPublicIdentifier", () => {
   it.each([
@@ -377,25 +408,32 @@ describe("getLinkedInPublicIdentifier", () => {
     ["https://fr.linkedin.com/in/j%C3%A9r%C3%B4me", "jérôme"],
     ["https://example.com/profile", null],
   ])("%s → %s", (url, expected) => {
-    expect(getLinkedInPublicIdentifier(url)).toBe(expected);
-  });
-});
+    expect(getLinkedInPublicIdentifier(url)).toBe(expected)
+  })
+})
 
 describe("findDraftProblems", () => {
   it("accepts a complete reference profile", () => {
-    expect(findDraftProblems(mapHarvestApiProfile(harvestProfile, REQUESTED_URL))).toEqual([]);
-  });
+    expect(
+      findDraftProblems(mapHarvestApiProfile(harvestProfile, REQUESTED_URL))
+    ).toEqual([])
+  })
 
   it("lists what is missing", () => {
-    expect(findDraftProblems(null)).toEqual(["aucun profil exploitable dans la réponse Apify"]);
+    expect(findDraftProblems(null)).toEqual([
+      "aucun profil exploitable dans la réponse Apify",
+    ])
     expect(
       findDraftProblems(
-        mapHarvestApiProfile({ firstName: "Jeanne", lastName: "Martin" }, REQUESTED_URL)
+        mapHarvestApiProfile(
+          { firstName: "Jeanne", lastName: "Martin" },
+          REQUESTED_URL
+        )
       )
     ).toEqual([
       "titre (headline) absent",
       "aucune expérience exploitable",
       "aucune formation exploitable",
-    ]);
-  });
-});
+    ])
+  })
+})

@@ -1,17 +1,17 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { api } from "@/lib/trpc/client";
-import { createClient } from "@/lib/supabase/client";
-import type { CreateFileUploadUrlInput } from "@/lib/validations/candidate";
+import { useState } from "react"
+import { api } from "@/lib/trpc/client"
+import { createClient } from "@/lib/supabase/client"
+import type { CreateFileUploadUrlInput } from "@/lib/validations/candidate"
 
 type UploadRequest = {
-  kind: "photo" | "cv";
-  candidateId: string;
-  file: File;
-};
+  kind: "photo" | "cv"
+  candidateId: string
+  file: File
+}
 
-const GENERIC_ERROR_MESSAGE = "Une erreur est survenue. Réessayez.";
+const GENERIC_ERROR_MESSAGE = "Une erreur est survenue. Réessayez."
 
 /**
  * Envoie une photo ou un CV directement du navigateur à Supabase Storage (URL
@@ -20,12 +20,12 @@ const GENERIC_ERROR_MESSAGE = "Une erreur est survenue. Réessayez.";
  * Retourne le candidat mis à jour.
  */
 export const useCandidateFileUpload = () => {
-  const createUploadUrl = api.candidate.createFileUploadUrl.useMutation();
-  const confirmUpload = api.candidate.confirmFileUpload.useMutation();
-  const [isUploading, setIsUploading] = useState(false);
+  const createUploadUrl = api.candidate.createFileUploadUrl.useMutation()
+  const confirmUpload = api.candidate.confirmFileUpload.useMutation()
+  const [isUploading, setIsUploading] = useState(false)
 
   const uploadFile = async ({ kind, candidateId, file }: UploadRequest) => {
-    setIsUploading(true);
+    setIsUploading(true)
     try {
       // Format et taille sont revalidés par le schéma Zod côté serveur.
       const { bucket, path, token } = await createUploadUrl.mutateAsync({
@@ -33,14 +33,14 @@ export const useCandidateFileUpload = () => {
         candidateId,
         mimeType: file.type,
         size: file.size,
-      } as CreateFileUploadUrlInput);
+      } as CreateFileUploadUrlInput)
 
       const { error } = await createClient()
         .storage.from(bucket)
-        .uploadToSignedUrl(path, token, file, { contentType: file.type });
+        .uploadToSignedUrl(path, token, file, { contentType: file.type })
       if (error) {
-        console.error("[useCandidateFileUpload] Storage upload failed:", error);
-        throw new Error(GENERIC_ERROR_MESSAGE);
+        console.error("[useCandidateFileUpload] Storage upload failed:", error)
+        throw new Error(GENERIC_ERROR_MESSAGE)
       }
 
       return kind === "photo"
@@ -50,11 +50,11 @@ export const useCandidateFileUpload = () => {
             candidateId,
             path,
             fileName: file.name,
-          });
+          })
     } finally {
-      setIsUploading(false);
+      setIsUploading(false)
     }
-  };
+  }
 
-  return { uploadFile, isUploading };
-};
+  return { uploadFile, isUploading }
+}

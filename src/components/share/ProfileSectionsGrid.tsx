@@ -3,7 +3,6 @@ import { Badge } from "@/components/ui/badge"
 import { formatDate } from "@/lib/format"
 import { LANGUAGE_LEVEL_LABELS } from "@/lib/candidate-utils"
 
-
 type Props = {
   summary: string | null
   languages: Array<{ id: string; name: string; level: LanguageLevel }>

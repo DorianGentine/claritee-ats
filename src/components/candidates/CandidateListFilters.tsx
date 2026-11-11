@@ -5,7 +5,10 @@ import { Filter } from "lucide-react"
 import { api } from "@/lib/trpc/client"
 import { Button } from "@/components/ui/button"
 import { MultiSelectPopover } from "@/components/shared/MultiSelectPopover"
-import { CityAutocomplete, type CityOption } from "@/components/shared/CityAutocomplete"
+import {
+  CityAutocomplete,
+  type CityOption,
+} from "@/components/shared/CityAutocomplete"
 
 export type CandidateFilters = {
   tagIds: string[]
@@ -82,7 +85,10 @@ export const CandidateListFilters = ({
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start">
         {/* Tags */}
         <div className="flex min-w-0 flex-col gap-2">
-          <label htmlFor="filter-tags" className="text-xs text-muted-foreground">
+          <label
+            htmlFor="filter-tags"
+            className="text-xs text-muted-foreground"
+          >
             Tags
           </label>
           <MultiSelectPopover
@@ -100,7 +106,10 @@ export const CandidateListFilters = ({
 
         {/* Villes */}
         <div className="flex min-w-0 flex-col gap-2">
-          <label htmlFor="filter-cities" className="text-xs text-muted-foreground">
+          <label
+            htmlFor="filter-cities"
+            className="text-xs text-muted-foreground"
+          >
             Ville
           </label>
           <CityAutocomplete

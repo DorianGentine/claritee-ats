@@ -1,26 +1,26 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { TRPCClientError } from "@trpc/client";
+import { useState } from "react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { TRPCClientError } from "@trpc/client"
 import {
   registerFormSchema,
   type RegisterFormValues,
-} from "@/lib/validations/auth";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { api } from "@/lib/trpc/client";
+} from "@/lib/validations/auth"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { api } from "@/lib/trpc/client"
 
-const GENERIC_ERROR_MESSAGE = "Une erreur est survenue. Réessayez.";
+const GENERIC_ERROR_MESSAGE = "Une erreur est survenue. Réessayez."
 
 export default function RegisterPage() {
-  const router = useRouter();
-  const [serverError, setServerError] = useState<string | null>(null);
-  const registerMutation = api.auth.register.useMutation();
+  const router = useRouter()
+  const [serverError, setServerError] = useState<string | null>(null)
+  const registerMutation = api.auth.register.useMutation()
 
   const {
     register,
@@ -36,10 +36,10 @@ export default function RegisterPage() {
       companyName: "",
       siren: "",
     },
-  });
+  })
 
   const onSubmit = async (data: RegisterFormValues) => {
-    setServerError(null);
+    setServerError(null)
 
     try {
       await registerMutation.mutateAsync({
@@ -49,18 +49,18 @@ export default function RegisterPage() {
         siren: data.siren,
         firstName: data.firstName,
         lastName: data.lastName,
-      });
+      })
 
-      router.push("/login?registered=1");
-      router.refresh();
+      router.push("/login?registered=1")
+      router.refresh()
     } catch (err: unknown) {
       if (err instanceof TRPCClientError) {
-        setServerError(err.message || GENERIC_ERROR_MESSAGE);
+        setServerError(err.message || GENERIC_ERROR_MESSAGE)
       } else {
-        setServerError(GENERIC_ERROR_MESSAGE);
+        setServerError(GENERIC_ERROR_MESSAGE)
       }
     }
-  };
+  }
 
   return (
     <main className="flex flex-1 flex-col items-center justify-center bg-background p-4 py-12">
@@ -206,5 +206,5 @@ export default function RegisterPage() {
         </p>
       </div>
     </main>
-  );
+  )
 }

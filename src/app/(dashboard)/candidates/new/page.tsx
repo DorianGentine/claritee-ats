@@ -1,80 +1,84 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import type { FieldErrors, UseFormRegister } from "react-hook-form";
-import { useForm, useWatch } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { candidateBasicFieldsSchema } from "@/lib/validations/candidate";
-import { api } from "@/lib/trpc/client";
-import { Button } from "@/components/ui/button";
+import { useState } from "react"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import type { FieldErrors, UseFormRegister } from "react-hook-form"
+import { useForm, useWatch } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { candidateBasicFieldsSchema } from "@/lib/validations/candidate"
+import { api } from "@/lib/trpc/client"
+import { Button } from "@/components/ui/button"
 import {
   CandidatePhotoUpload,
   createPhotoChangeHandler,
   getCandidateInitials,
-} from "@/components/candidates/CandidatePhotoUpload";
+} from "@/components/candidates/CandidatePhotoUpload"
 import {
   CandidateBasicFieldsForm,
   type CandidateBasicFields,
-} from "@/components/candidates/CandidateBasicFieldsForm";
-import { type CityOption } from "@/components/shared/CityAutocomplete";
-import { CandidateCitiesField } from "@/components/candidates/CandidateCitiesField";
-import { useCandidateFileUpload } from "@/hooks/useCandidateFileUpload";
-import type { LinkedInProfileDraft } from "@/lib/linkedin/profile";
-import { LinkedInImportPanel } from "@/components/candidates/LinkedInImportPanel";
+} from "@/components/candidates/CandidateBasicFieldsForm"
+import { type CityOption } from "@/components/shared/CityAutocomplete"
+import { CandidateCitiesField } from "@/components/candidates/CandidateCitiesField"
+import { useCandidateFileUpload } from "@/hooks/useCandidateFileUpload"
+import type { LinkedInProfileDraft } from "@/lib/linkedin/profile"
+import { LinkedInImportPanel } from "@/components/candidates/LinkedInImportPanel"
 import {
   LinkedInImportPreview,
   type ImportedBackground,
-} from "@/components/candidates/LinkedInImportPreview";
+} from "@/components/candidates/LinkedInImportPreview"
 
 /** Type du formulaire : champs optionnels pour compatibilité avec useForm + zodResolver */
 type NewCandidateFormValues = {
-  firstName: string;
-  lastName: string;
-  email?: string;
-  phone?: string;
-  linkedinUrl?: string;
-  title?: string;
-};
+  firstName: string
+  lastName: string
+  email?: string
+  phone?: string
+  linkedinUrl?: string
+  title?: string
+}
 
-const GENERIC_ERROR_MESSAGE = "Une erreur est survenue. Réessayez.";
-const PHOTO_INPUT_ID = "candidate-photo";
+const GENERIC_ERROR_MESSAGE = "Une erreur est survenue. Réessayez."
+const PHOTO_INPUT_ID = "candidate-photo"
 
 /** Comparaison de noms de ville insensible à la casse et aux accents */
 const normalizeCityName = (name: string) =>
-  name.normalize("NFD").replace(/\p{Diacritic}/gu, "").trim().toLowerCase();
+  name
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .trim()
+    .toLowerCase()
 
 export default function NewCandidatePage() {
-  const router = useRouter();
-  const [serverError, setServerError] = useState<string | null>(null);
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
-  const [photoError, setPhotoError] = useState<string | null>(null);
-  const [cities, setCities] = useState<CityOption[]>([]);
+  const router = useRouter()
+  const [serverError, setServerError] = useState<string | null>(null)
+  const [photoFile, setPhotoFile] = useState<File | null>(null)
+  const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null)
+  const [photoError, setPhotoError] = useState<string | null>(null)
+  const [cities, setCities] = useState<CityOption[]>([])
   const [createdCandidateId, setCreatedCandidateId] = useState<string | null>(
-    null,
-  );
+    null
+  )
   const [importedBackground, setImportedBackground] =
-    useState<ImportedBackground | null>(null);
-  const utils = api.useUtils();
+    useState<ImportedBackground | null>(null)
+  const utils = api.useUtils()
 
   const handlePhotoChange = createPhotoChangeHandler(
     setPhotoFile,
     setPhotoPreviewUrl,
     setPhotoError,
     photoPreviewUrl
-  );
+  )
 
   const removePhoto = () => {
-    setPhotoFile(null);
-    if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl);
-    setPhotoPreviewUrl(null);
-    setPhotoError(null);
-  };
+    setPhotoFile(null)
+    if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl)
+    setPhotoPreviewUrl(null)
+    setPhotoError(null)
+  }
 
-  const createMutation = api.candidate.create.useMutation();
-  const { uploadFile, isUploading } = useCandidateFileUpload();
+  const createMutation = api.candidate.create.useMutation()
+  const { uploadFile, isUploading } = useCandidateFileUpload()
 
   const {
     register,
@@ -93,51 +97,54 @@ export default function NewCandidatePage() {
       linkedinUrl: "",
       title: "",
     },
-  });
+  })
 
-  const firstName = useWatch({ control, name: "firstName" });
-  const lastName = useWatch({ control, name: "lastName" });
-  const displayInitials = getCandidateInitials(firstName || "?", lastName || "?");
+  const firstName = useWatch({ control, name: "firstName" })
+  const lastName = useWatch({ control, name: "lastName" })
+  const displayInitials = getCandidateInitials(
+    firstName || "?",
+    lastName || "?"
+  )
 
   /** Associe la ville LinkedIn à une ville connue (même nom), sinon on laisse saisir. */
   const resolveImportedCity = async (cityName: string) => {
     try {
-      const results = await utils.city.autocomplete.fetch({ q: cityName });
+      const results = await utils.city.autocomplete.fetch({ q: cityName })
       const match = results.find(
-        (city) => normalizeCityName(city.name) === normalizeCityName(cityName),
-      );
+        (city) => normalizeCityName(city.name) === normalizeCityName(cityName)
+      )
       if (match) {
         setCities((current) =>
           current.some((city) => city.id === match.id)
             ? current
-            : [...current, match],
-        );
+            : [...current, match]
+        )
       }
     } catch {
       // Ville non résolue : le recruteur la choisit dans le champ Villes
     }
-  };
+  }
 
   const handleLinkedInImported = (draft: LinkedInProfileDraft) => {
-    const fieldOptions = { shouldDirty: true, shouldValidate: true };
-    setValue("firstName", draft.firstName, fieldOptions);
-    setValue("lastName", draft.lastName, fieldOptions);
-    setValue("linkedinUrl", draft.linkedinUrl, fieldOptions);
-    setValue("title", draft.title ?? "", fieldOptions);
+    const fieldOptions = { shouldDirty: true, shouldValidate: true }
+    setValue("firstName", draft.firstName, fieldOptions)
+    setValue("lastName", draft.lastName, fieldOptions)
+    setValue("linkedinUrl", draft.linkedinUrl, fieldOptions)
+    setValue("title", draft.title ?? "", fieldOptions)
     setImportedBackground({
       summary: draft.summary,
       experiences: draft.experiences,
       formations: draft.formations,
       languages: draft.languages,
       skills: draft.skills,
-    });
-    if (draft.cityName) void resolveImportedCity(draft.cityName);
-  };
+    })
+    if (draft.cityName) void resolveImportedCity(draft.cityName)
+  }
 
   const onSubmit = async (data: NewCandidateFormValues) => {
-    setServerError(null);
+    setServerError(null)
     try {
-      let candidateId = createdCandidateId;
+      let candidateId = createdCandidateId
 
       if (!candidateId) {
         const candidate = await createMutation.mutateAsync({
@@ -155,28 +162,31 @@ export default function NewCandidatePage() {
           experiences: importedBackground?.experiences ?? [],
           formations: importedBackground?.formations ?? [],
           // Une langue sans niveau (non précisé sur LinkedIn ni choisi) n'est pas créée
-          languages: (importedBackground?.languages ?? []).flatMap((language) =>
-            language.level ? [{ name: language.name, level: language.level }] : [],
+          languages: (importedBackground?.languages ?? []).flatMap(
+            (language) =>
+              language.level
+                ? [{ name: language.name, level: language.level }]
+                : []
           ),
           tags: importedBackground?.skills ?? [],
-        });
-        candidateId = candidate.id;
-        setCreatedCandidateId(candidate.id);
+        })
+        candidateId = candidate.id
+        setCreatedCandidateId(candidate.id)
       }
 
       if (photoFile && candidateId) {
-        await uploadFile({ kind: "photo", candidateId, file: photoFile });
+        await uploadFile({ kind: "photo", candidateId, file: photoFile })
       }
 
-      router.push(`/candidates/${candidateId}`);
+      router.push(`/candidates/${candidateId}`)
     } catch (err) {
       setServerError(
-        (err as { message?: string })?.message ?? GENERIC_ERROR_MESSAGE,
-      );
+        (err as { message?: string })?.message ?? GENERIC_ERROR_MESSAGE
+      )
     }
-  };
+  }
 
-  const isPending = isSubmitting || createMutation.isPending || isUploading;
+  const isPending = isSubmitting || createMutation.isPending || isUploading
 
   return (
     <main className="p-6 lg:p-10">
@@ -235,11 +245,7 @@ export default function NewCandidatePage() {
           )}
 
           <div className="mt-4 flex flex-wrap gap-3">
-            <Button
-              type="submit"
-              disabled={isPending}
-              aria-busy={isPending}
-            >
+            <Button type="submit" disabled={isPending} aria-busy={isPending}>
               {isPending ? "Enregistrement…" : "Enregistrer"}
             </Button>
             <Button type="button" variant="outline" asChild>
@@ -249,5 +255,5 @@ export default function NewCandidatePage() {
         </form>
       </div>
     </main>
-  );
+  )
 }

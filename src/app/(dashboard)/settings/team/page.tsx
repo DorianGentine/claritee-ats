@@ -1,39 +1,44 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { TRPCClientError } from "@trpc/client";
-import { createInvitationSchema, type CreateInvitationInput } from "@/lib/validations/invitation";
-import { api } from "@/lib/trpc/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
+import { useState } from "react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { TRPCClientError } from "@trpc/client"
+import {
+  createInvitationSchema,
+  type CreateInvitationInput,
+} from "@/lib/validations/invitation"
+import { api } from "@/lib/trpc/client"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { toast } from "sonner"
 
-const GENERIC_ERROR_MESSAGE = "Une erreur est survenue. Réessayez.";
+const GENERIC_ERROR_MESSAGE = "Une erreur est survenue. Réessayez."
 
 export default function SettingsTeamPage() {
-  const [serverError, setServerError] = useState<string | null>(null);
-  const [createdUrl, setCreatedUrl] = useState<string | null>(null);
+  const [serverError, setServerError] = useState<string | null>(null)
+  const [createdUrl, setCreatedUrl] = useState<string | null>(null)
 
   const createMutation = api.invitation.create.useMutation({
     onSuccess: (data) => {
-      setCreatedUrl(data.url);
-      setServerError(null);
-      invitationsQuery.refetch();
+      setCreatedUrl(data.url)
+      setServerError(null)
+      invitationsQuery.refetch()
     },
     onError: (err) => {
-      setServerError(err instanceof TRPCClientError ? err.message : GENERIC_ERROR_MESSAGE);
+      setServerError(
+        err instanceof TRPCClientError ? err.message : GENERIC_ERROR_MESSAGE
+      )
     },
-  });
+  })
 
-  const invitationsQuery = api.invitation.listAll.useQuery();
+  const invitationsQuery = api.invitation.listAll.useQuery()
   const revokeMutation = api.invitation.revoke.useMutation({
     onSuccess: () => {
-      invitationsQuery.refetch();
+      invitationsQuery.refetch()
     },
-  });
+  })
 
   const {
     register,
@@ -43,53 +48,51 @@ export default function SettingsTeamPage() {
   } = useForm<CreateInvitationInput>({
     resolver: zodResolver(createInvitationSchema),
     defaultValues: { email: "" },
-  });
+  })
 
   const onSubmit = async (data: CreateInvitationInput) => {
-    setServerError(null);
-    setCreatedUrl(null);
+    setServerError(null)
+    setCreatedUrl(null)
     createMutation.mutate(data, {
       onSuccess: () => {
-        reset();
+        reset()
       },
-    });
-  };
+    })
+  }
 
   const handleCopyUrl = (url: string) => {
-    void navigator.clipboard.writeText(url);
+    void navigator.clipboard.writeText(url)
     toast.success("Lien copié.")
-  };
+  }
 
-  const getInvitationStatus = (
-    inv: {
-      expiresAt: Date | string;
-      usedAt: Date | string | null;
-      revokedAt?: Date | string | null;
-    },
-  ): "active" | "utilisée" | "expirée" | "révoquée" => {
-    if (inv.usedAt) return "utilisée";
-    if (inv.revokedAt) return "révoquée";
-    if (new Date(inv.expiresAt) < new Date()) return "expirée";
-    return "active";
-  };
+  const getInvitationStatus = (inv: {
+    expiresAt: Date | string
+    usedAt: Date | string | null
+    revokedAt?: Date | string | null
+  }): "active" | "utilisée" | "expirée" | "révoquée" => {
+    if (inv.usedAt) return "utilisée"
+    if (inv.revokedAt) return "révoquée"
+    if (new Date(inv.expiresAt) < new Date()) return "expirée"
+    return "active"
+  }
 
   const STATUS_ORDER: ("active" | "utilisée" | "expirée" | "révoquée")[] = [
     "active",
     "utilisée",
     "expirée",
     "révoquée",
-  ];
+  ]
 
   const sortedInvitations = invitationsQuery.data
     ? [...invitationsQuery.data].sort(
         (a, b) =>
           STATUS_ORDER.indexOf(getInvitationStatus(a)) -
-          STATUS_ORDER.indexOf(getInvitationStatus(b)),
+          STATUS_ORDER.indexOf(getInvitationStatus(b))
       )
-    : [];
+    : []
 
   const getInvitationUrl = (token: string) =>
-    `${typeof window !== "undefined" ? window.location.origin : ""}/invite/${token}`;
+    `${typeof window !== "undefined" ? window.location.origin : ""}/invite/${token}`
 
   return (
     <main className="p-6 lg:p-10">
@@ -155,19 +158,17 @@ export default function SettingsTeamPage() {
             disabled={isSubmitting || createMutation.isPending}
             aria-busy={isSubmitting || createMutation.isPending}
           >
-            {createMutation.isPending ? "Création…" : "Inviter un collaborateur"}
+            {createMutation.isPending
+              ? "Création…"
+              : "Inviter un collaborateur"}
           </Button>
         </form>
       </section>
 
       <section className="mt-12">
-        <h2 className="text-lg font-medium text-foreground">
-          Invitations
-        </h2>
+        <h2 className="text-lg font-medium text-foreground">Invitations</h2>
         {invitationsQuery.isLoading ? (
-          <p className="mt-4 text-sm text-muted-foreground">
-            Chargement…
-          </p>
+          <p className="mt-4 text-sm text-muted-foreground">Chargement…</p>
         ) : !invitationsQuery.data?.length ? (
           <p className="mt-4 text-sm text-muted-foreground">
             Aucune invitation.
@@ -191,8 +192,8 @@ export default function SettingsTeamPage() {
               </thead>
               <tbody>
                 {sortedInvitations.map((inv) => {
-                  const status = getInvitationStatus(inv);
-                  const url = getInvitationUrl(inv.token);
+                  const status = getInvitationStatus(inv)
+                  const url = getInvitationUrl(inv.token)
                   return (
                     <tr
                       key={inv.id}
@@ -241,7 +242,9 @@ export default function SettingsTeamPage() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => revokeMutation.mutate({ id: inv.id })}
+                              onClick={() =>
+                                revokeMutation.mutate({ id: inv.id })
+                              }
                               disabled={
                                 revokeMutation.isPending &&
                                 revokeMutation.variables?.id === inv.id
@@ -254,7 +257,7 @@ export default function SettingsTeamPage() {
                         </div>
                       </td>
                     </tr>
-                  );
+                  )
                 })}
               </tbody>
             </table>
@@ -262,5 +265,5 @@ export default function SettingsTeamPage() {
         )}
       </section>
     </main>
-  );
+  )
 }

@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 import {
   forwardRef,
@@ -7,16 +7,16 @@ import {
   useMemo,
   useRef,
   useState,
-} from "react";
+} from "react"
 import {
   EditorContent,
   useEditor,
   useEditorState,
   type Editor,
-} from "@tiptap/react";
-import { BubbleMenu } from "@tiptap/react/menus";
-import StarterKit from "@tiptap/starter-kit";
-import { Placeholder } from "@tiptap/extensions";
+} from "@tiptap/react"
+import { BubbleMenu } from "@tiptap/react/menus"
+import StarterKit from "@tiptap/starter-kit"
+import { Placeholder } from "@tiptap/extensions"
 import {
   Bold,
   Heading1,
@@ -29,24 +29,24 @@ import {
   Strikethrough,
   Underline,
   type LucideIcon,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { parseNoteContent } from "@/lib/note-utils";
+} from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
+import { parseNoteContent } from "@/lib/note-utils"
 
 export type NoteEditorRef = {
-  getContent: () => string;
-  focus: () => void;
-};
+  getContent: () => string
+  focus: () => void
+}
 
 type FormatAction = {
-  label: string;
-  icon: LucideIcon;
+  label: string
+  icon: LucideIcon
   /** Les actions d'un même groupe sont regroupées, séparées des autres par un trait */
-  group: "mark" | "heading" | "block";
-  isActive: (editor: Editor) => boolean;
-  run: (editor: Editor) => void;
-};
+  group: "mark" | "heading" | "block"
+  isActive: (editor: Editor) => boolean
+  run: (editor: Editor) => void
+}
 
 const FORMAT_ACTIONS: FormatAction[] = [
   {
@@ -119,7 +119,7 @@ const FORMAT_ACTIONS: FormatAction[] = [
     isActive: (editor) => editor.isActive("blockquote"),
     run: (editor) => editor.chain().focus().toggleBlockquote().run(),
   },
-];
+]
 
 /** Barre de mise en forme affichée au-dessus d'une sélection de texte. */
 const NoteFormattingMenu = ({ editor }: { editor: Editor }) => {
@@ -127,7 +127,7 @@ const NoteFormattingMenu = ({ editor }: { editor: Editor }) => {
     editor,
     selector: ({ editor: currentEditor }) =>
       FORMAT_ACTIONS.map((action) => action.isActive(currentEditor)),
-  });
+  })
 
   return (
     <BubbleMenu
@@ -142,10 +142,10 @@ const NoteFormattingMenu = ({ editor }: { editor: Editor }) => {
       className="z-50 flex items-center gap-0.5 rounded-md border border-border bg-popover p-1 shadow-md"
     >
       {FORMAT_ACTIONS.map((action, index) => {
-        const Icon = action.icon;
-        const isActive = activeStates[index];
+        const Icon = action.icon
+        const isActive = activeStates[index]
         const startsGroup =
-          index > 0 && FORMAT_ACTIONS[index - 1].group !== action.group;
+          index > 0 && FORMAT_ACTIONS[index - 1].group !== action.group
         return (
           <span key={action.label} className="flex items-center gap-0.5">
             {startsGroup && (
@@ -169,11 +169,11 @@ const NoteFormattingMenu = ({ editor }: { editor: Editor }) => {
               <Icon className="size-4" aria-hidden />
             </Button>
           </span>
-        );
+        )
       })}
     </BubbleMenu>
-  );
-};
+  )
+}
 
 /** Partagées par toutes les instances : des options stables évitent un `setOptions` à chaque rendu. */
 const NOTE_EDITOR_EXTENSIONS = [
@@ -184,26 +184,26 @@ const NOTE_EDITOR_EXTENSIONS = [
     horizontalRule: false,
   }),
   Placeholder.configure({ placeholder: "Écrivez votre note…" }),
-];
+]
 
 /** Même règle que `isNoteContentEmpty`, sans sérialiser le document à chaque frappe. */
 const isEditorEmpty = (editor: Editor): boolean =>
-  editor.getText().trim() === "";
+  editor.getText().trim() === ""
 
 const NOTE_EDITOR_PROPS = {
   attributes: { "aria-label": "Contenu de la note" },
-};
+}
 
 type Props = {
-  initialContent?: string;
-  editable?: boolean;
+  initialContent?: string
+  editable?: boolean
   /** Place le curseur en fin de note au montage */
-  autoFocus?: boolean;
+  autoFocus?: boolean
   /** Appelé quand le contenu change (pour activer/désactiver le bouton Enregistrer) */
-  onContentChange?: (isEmpty: boolean) => void;
+  onContentChange?: (isEmpty: boolean) => void
   /** Appelé avec le contenu JSON brut à chaque modification (pour auto-save debounced) */
-  onRawContentChange?: (content: string) => void;
-};
+  onRawContentChange?: (content: string) => void
+}
 
 /**
  * Éditeur de note Tiptap. `initialContent` n'est lu qu'au montage : pour afficher
@@ -221,15 +221,15 @@ export const NoteEditor = forwardRef<NoteEditorRef, Props>(
     ref
   ) => {
     // Les callbacks passent par des refs : options de useEditor stables d'un rendu à l'autre
-    const onContentChangeRef = useRef(onContentChange);
-    const onRawContentChangeRef = useRef(onRawContentChange);
+    const onContentChangeRef = useRef(onContentChange)
+    const onRawContentChangeRef = useRef(onRawContentChange)
     useEffect(() => {
-      onContentChangeRef.current = onContentChange;
-      onRawContentChangeRef.current = onRawContentChange;
-    }, [onContentChange, onRawContentChange]);
+      onContentChangeRef.current = onContentChange
+      onRawContentChangeRef.current = onRawContentChange
+    }, [onContentChange, onRawContentChange])
 
     // Lu une seule fois : le document de l'éditeur fait foi ensuite
-    const [initialDocument] = useState(() => parseNoteContent(initialContent));
+    const [initialDocument] = useState(() => parseNoteContent(initialContent))
 
     const editorOptions = useMemo(
       () => ({
@@ -241,34 +241,34 @@ export const NoteEditor = forwardRef<NoteEditorRef, Props>(
         immediatelyRender: false,
         editorProps: NOTE_EDITOR_PROPS,
         onCreate: ({ editor: createdEditor }: { editor: Editor }) => {
-          onContentChangeRef.current?.(isEditorEmpty(createdEditor));
+          onContentChangeRef.current?.(isEditorEmpty(createdEditor))
         },
         onUpdate: ({ editor: updatedEditor }: { editor: Editor }) => {
-          onContentChangeRef.current?.(isEditorEmpty(updatedEditor));
+          onContentChangeRef.current?.(isEditorEmpty(updatedEditor))
           onRawContentChangeRef.current?.(
             JSON.stringify(updatedEditor.getJSON())
-          );
+          )
         },
       }),
       [initialDocument, editable, autoFocus]
-    );
-    const editor = useEditor(editorOptions);
+    )
+    const editor = useEditor(editorOptions)
 
     useEffect(() => {
       // false : basculer l'édition ne doit pas émettre d'update (sinon auto-save à l'ouverture)
-      editor?.setEditable(editable, false);
-    }, [editor, editable]);
+      editor?.setEditable(editable, false)
+    }, [editor, editable])
 
     useImperativeHandle(
       ref,
       () => ({
         getContent: () => (editor ? JSON.stringify(editor.getJSON()) : ""),
         focus: () => {
-          editor?.commands.focus();
+          editor?.commands.focus()
         },
       }),
       [editor]
-    );
+    )
 
     return (
       <div
@@ -278,8 +278,8 @@ export const NoteEditor = forwardRef<NoteEditorRef, Props>(
         {editor && editable && <NoteFormattingMenu editor={editor} />}
         <EditorContent editor={editor} />
       </div>
-    );
+    )
   }
-);
+)
 
-NoteEditor.displayName = "NoteEditor";
+NoteEditor.displayName = "NoteEditor"

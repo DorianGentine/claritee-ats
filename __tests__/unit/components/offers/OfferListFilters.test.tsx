@@ -3,7 +3,11 @@
  */
 import { describe, it, expect, vi, afterEach } from "vitest"
 import { render, screen, fireEvent, cleanup } from "@testing-library/react"
-import { OfferListFilters, EMPTY_OFFER_FILTERS, type OfferFilters } from "@/components/offers/OfferListFilters"
+import {
+  OfferListFilters,
+  EMPTY_OFFER_FILTERS,
+  type OfferFilters,
+} from "@/components/offers/OfferListFilters"
 
 vi.mock("@/lib/trpc/client", () => ({
   api: {
@@ -21,8 +25,20 @@ vi.mock("@/lib/trpc/client", () => ({
       list: {
         useQuery: () => ({
           data: [
-            { id: "client-1", name: "Acme Corp", siren: null, contactsCount: 1, offersCount: 2 },
-            { id: "client-2", name: "Beta Inc", siren: null, contactsCount: 0, offersCount: 1 },
+            {
+              id: "client-1",
+              name: "Acme Corp",
+              siren: null,
+              contactsCount: 1,
+              offersCount: 2,
+            },
+            {
+              id: "client-2",
+              name: "Beta Inc",
+              siren: null,
+              contactsCount: 0,
+              offersCount: 1,
+            },
           ],
         }),
       },
@@ -72,12 +88,7 @@ describe("OfferListFilters", () => {
       ...EMPTY_OFFER_FILTERS,
       statuses: ["TODO"],
     }
-    render(
-      <OfferListFilters
-        {...defaultProps}
-        filters={filters}
-      />
-    )
+    render(<OfferListFilters {...defaultProps} filters={filters} />)
 
     expect(screen.getByText("Effacer filtres")).toBeDefined()
   })
@@ -89,11 +100,7 @@ describe("OfferListFilters", () => {
       statuses: ["TODO"],
     }
     const { container } = render(
-      <OfferListFilters
-        {...defaultProps}
-        filters={filters}
-        onClear={onClear}
-      />
+      <OfferListFilters {...defaultProps} filters={filters} onClear={onClear} />
     )
 
     const allButtons = container.querySelectorAll("button")
@@ -110,12 +117,7 @@ describe("OfferListFilters", () => {
       ...EMPTY_OFFER_FILTERS,
       statuses: ["TODO", "DONE"],
     }
-    render(
-      <OfferListFilters
-        {...defaultProps}
-        filters={filters}
-      />
-    )
+    render(<OfferListFilters {...defaultProps} filters={filters} />)
 
     expect(screen.getByText("2 statut(s)")).toBeDefined()
   })
@@ -125,12 +127,7 @@ describe("OfferListFilters", () => {
       ...EMPTY_OFFER_FILTERS,
       tagIds: ["tag-1"],
     }
-    render(
-      <OfferListFilters
-        {...defaultProps}
-        filters={filters}
-      />
-    )
+    render(<OfferListFilters {...defaultProps} filters={filters} />)
 
     expect(screen.getByText("1 tag(s) sélectionné(s)")).toBeDefined()
   })

@@ -1,18 +1,18 @@
-import { TRPCError } from "@trpc/server";
-import { router, publicProcedure, protectedProcedure } from "../trpc";
-import { registerSchema } from "@/lib/validations/auth";
-import { updateProfileSchema } from "@/lib/validations/user";
+import { TRPCError } from "@trpc/server"
+import { router, publicProcedure, protectedProcedure } from "../trpc"
+import { registerSchema } from "@/lib/validations/auth"
+import { updateProfileSchema } from "@/lib/validations/user"
 import {
   checkRateLimit,
   getClientIp,
   RATE_LIMIT_MESSAGE,
   RATE_LIMITS,
-} from "@/lib/rate-limit";
-import { createAdminClient } from "@/lib/supabase/admin";
+} from "@/lib/rate-limit"
+import { createAdminClient } from "@/lib/supabase/admin"
 
 /** Message générique quand email ou SIREN déjà utilisé (option B : tout côté serveur) */
 const REGISTER_UNAVAILABLE_MESSAGE =
-  "Cette combinaison n'est pas disponible. Utilisez un autre email ou un autre numéro SIREN.";
+  "Cette combinaison n'est pas disponible. Utilisez un autre email ou un autre numéro SIREN."
 
 export const authRouter = router({
   /**
@@ -26,36 +26,36 @@ export const authRouter = router({
       const result = await checkRateLimit(
         `auth:${getClientIp(ctx.headers)}`,
         RATE_LIMITS.AUTH_PER_IP.limit,
-        RATE_LIMITS.AUTH_PER_IP.windowMs,
-      );
+        RATE_LIMITS.AUTH_PER_IP.windowMs
+      )
       if (!result.success) {
         throw new TRPCError({
           code: "TOO_MANY_REQUESTS",
           message: RATE_LIMIT_MESSAGE,
-        });
+        })
       }
 
       const existingCompany = await ctx.db.company.findUnique({
         where: { siren: input.siren },
-      });
+      })
       if (existingCompany) {
         throw new TRPCError({
           code: "CONFLICT",
           message: REGISTER_UNAVAILABLE_MESSAGE,
-        });
+        })
       }
 
       const existingUserByEmail = await ctx.db.user.findUnique({
         where: { email: input.email },
-      });
+      })
       if (existingUserByEmail) {
         throw new TRPCError({
           code: "CONFLICT",
           message: REGISTER_UNAVAILABLE_MESSAGE,
-        });
+        })
       }
 
-      const supabaseAdmin = createAdminClient();
+      const supabaseAdmin = createAdminClient()
       const { data: authUser, error: createAuthError } =
         await supabaseAdmin.auth.admin.createUser({
           email: input.email,
@@ -67,21 +67,24 @@ export const authRouter = router({
             companyName: input.companyName,
             siren: input.siren,
           },
-        });
+        })
 
       if (createAuthError || !authUser?.user) {
         throw new TRPCError({
           code: "CONFLICT",
           message: REGISTER_UNAVAILABLE_MESSAGE,
-        });
+        })
       }
 
       const { error: resendError } = await supabaseAdmin.auth.resend({
         type: "signup",
         email: input.email,
-      });
+      })
       if (resendError) {
-        console.warn("[auth.register] Resend confirmation email failed:", resendError.message);
+        console.warn(
+          "[auth.register] Resend confirmation email failed:",
+          resendError.message
+        )
       }
 
       const company = await ctx.db.$transaction(async (tx) => {
@@ -90,7 +93,7 @@ export const authRouter = router({
             name: input.companyName,
             siren: input.siren,
           },
-        });
+        })
         await tx.user.create({
           data: {
             id: authUser.user.id,
@@ -99,20 +102,20 @@ export const authRouter = router({
             lastName: input.lastName,
             companyId: newCompany.id,
           },
-        });
-        return newCompany;
-      });
+        })
+        return newCompany
+      })
 
-      return { companyId: company.id };
+      return { companyId: company.id }
     }),
 
   getMe: protectedProcedure.query(async ({ ctx }) => {
     const user = await ctx.db.user.findUnique({
       where: { id: ctx.user.id },
       select: { id: true, firstName: true, lastName: true, email: true },
-    });
-    if (!user) throw new TRPCError({ code: "NOT_FOUND" });
-    return user;
+    })
+    if (!user) throw new TRPCError({ code: "NOT_FOUND" })
+    return user
   }),
 
   updateProfile: protectedProcedure
@@ -121,11 +124,11 @@ export const authRouter = router({
       await ctx.db.user.update({
         where: { id: ctx.user.id },
         data: { firstName: input.firstName, lastName: input.lastName },
-      });
-      const supabaseAdmin = createAdminClient();
+      })
+      const supabaseAdmin = createAdminClient()
       await supabaseAdmin.auth.admin.updateUserById(ctx.user.id, {
         user_metadata: { firstName: input.firstName, lastName: input.lastName },
-      });
-      return { success: true };
+      })
+      return { success: true }
     }),
-});
+})

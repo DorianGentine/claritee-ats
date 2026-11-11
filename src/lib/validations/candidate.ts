@@ -1,7 +1,7 @@
-import { z } from "zod";
-import { MAX_TAGS_PER_CANDIDATE, tagNameSchema } from "./tag";
+import { z } from "zod"
+import { MAX_TAGS_PER_CANDIDATE, tagNameSchema } from "./tag"
 
-const LIST_PAGE_SIZE = 20;
+const LIST_PAGE_SIZE = 20
 
 /** Input pour la liste paginée des candidats (cursor-based) */
 export const candidateListInputSchema = z.object({
@@ -27,40 +27,40 @@ export const candidateListInputSchema = z.object({
         .slice(0, 20)
       return filtered.length ? filtered : undefined
     }),
-});
+})
 
-export type CandidateListInput = z.infer<typeof candidateListInputSchema>;
+export type CandidateListInput = z.infer<typeof candidateListInputSchema>
 
 /** Trim et vide → undefined pour les champs optionnels */
 const trimToUndefined = (s: string | undefined) =>
-  (typeof s === "string" ? s.trim() : s) || undefined;
+  (typeof s === "string" ? s.trim() : s) || undefined
 
 /**
  * Mise à jour (patch-semantics) : absent → undefined (champ non modifié),
  * vide ou espaces → null (champ effacé), sinon la valeur trimée.
  */
 const trimToClearable = (s: string | undefined) =>
-  s === undefined ? undefined : s.trim() || null;
+  s === undefined ? undefined : s.trim() || null
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const LINKEDIN_URL_PATTERN =
-  /^https?:\/\/(www\.)?linkedin\.com\/in\/[a-zA-Z0-9_-]+\/?(\?[^\s]*)?$/i;
+  /^https?:\/\/(www\.)?linkedin\.com\/in\/[a-zA-Z0-9_-]+\/?(\?[^\s]*)?$/i
 
-const EMAIL_MESSAGE = "Format d'email invalide";
-const LINKEDIN_MESSAGE = "URL LinkedIn invalide (linkedin.com/in/...)";
-const PHONE_MESSAGE = "Numéro de téléphone invalide";
+const EMAIL_MESSAGE = "Format d'email invalide"
+const LINKEDIN_MESSAGE = "URL LinkedIn invalide (linkedin.com/in/...)"
+const PHONE_MESSAGE = "Numéro de téléphone invalide"
 
 const isValidPhone = (value: string) => {
-  const digits = value.replace(/\D/g, "");
-  return digits.length >= 10 && /^[\d\s.\-+]+$/.test(value);
-};
+  const digits = value.replace(/\D/g, "")
+  return digits.length >= 10 && /^[\d\s.\-+]+$/.test(value)
+}
 
 /** Optionnel : si fourni, doit être un email valide (espaces seuls → undefined) */
 const optionalEmail = z
   .string()
   .optional()
   .transform(trimToUndefined)
-  .refine((v) => !v || EMAIL_PATTERN.test(v), { message: EMAIL_MESSAGE });
+  .refine((v) => !v || EMAIL_PATTERN.test(v), { message: EMAIL_MESSAGE })
 
 /** Optionnel : si fourni, doit être une URL LinkedIn linkedin.com/in/... */
 const optionalLinkedInUrl = z
@@ -69,43 +69,41 @@ const optionalLinkedInUrl = z
   .transform(trimToUndefined)
   .refine((v) => !v || LINKEDIN_URL_PATTERN.test(v), {
     message: LINKEDIN_MESSAGE,
-  });
+  })
 
 /** Un couple ville + position (0-based) tel qu'envoyé par le formulaire. */
 const cityInputSchema = z.object({
   cityId: z.uuid(),
   order: z.number().int().min(0),
-});
+})
 
 /** Rejette les listes contenant deux fois la même ville (contrainte @@unique). */
 const hasUniqueCityIds = (cities: Array<{ cityId: string }>) =>
-  new Set(cities.map((city) => city.cityId)).size === cities.length;
+  new Set(cities.map((city) => city.cityId)).size === cities.length
 
-const orderedCitiesArray = z
-  .array(cityInputSchema)
-  .refine(hasUniqueCityIds, {
-    message: "Une ville ne peut pas être ajoutée deux fois",
-  });
+const orderedCitiesArray = z.array(cityInputSchema).refine(hasUniqueCityIds, {
+  message: "Une ville ne peut pas être ajoutée deux fois",
+})
 
 /**
  * Villes ordonnées d'un candidat (relation CandidateCity), pour la création.
  * `order` est 0-based, dérivé de la position du chip dans le composant CityAutocomplete.
  * Absente → tableau vide.
  */
-export const candidateCitiesSchema = orderedCitiesArray.default([]);
+export const candidateCitiesSchema = orderedCitiesArray.default([])
 
 /**
  * Villes ordonnées pour la mise à jour (patch-semantics) : absente → non touchée.
  * Le router ne remplace les villes que si le champ est explicitement fourni.
  */
-export const candidateCitiesUpdateSchema = orderedCitiesArray.optional();
+export const candidateCitiesUpdateSchema = orderedCitiesArray.optional()
 
 /** Optionnel : format flexible français (chiffres, espaces, tirets, points, +33) */
 const optionalPhone = z
   .string()
   .optional()
   .transform(trimToUndefined)
-  .refine((v) => !v || isValidPhone(v), { message: PHONE_MESSAGE });
+  .refine((v) => !v || isValidPhone(v), { message: PHONE_MESSAGE })
 
 /** Niveaux de langue (mirroir de l'enum Prisma LanguageLevel) */
 export const LANGUAGE_LEVELS = [
@@ -114,14 +112,14 @@ export const LANGUAGE_LEVELS = [
   "FLUENT",
   "BILINGUAL",
   "NATIVE",
-] as const;
+] as const
 
 export const languageLevelSchema = z.enum(LANGUAGE_LEVELS, {
   message: "Le niveau de langue est requis",
-});
+})
 
 /** Résumé : 500 caractères maximum (création et mise à jour) */
-const SUMMARY_MAX_MESSAGE = "Le résumé ne peut pas dépasser 500 caractères";
+const SUMMARY_MAX_MESSAGE = "Le résumé ne peut pas dépasser 500 caractères"
 
 /** Expérience fournie à la création (import LinkedIn) */
 const initialExperienceSchema = z.object({
@@ -130,7 +128,7 @@ const initialExperienceSchema = z.object({
   startDate: z.coerce.date(),
   endDate: z.coerce.date().optional().nullable(),
   description: z.string().max(2000).optional().nullable(),
-});
+})
 
 /** Formation fournie à la création (import LinkedIn) */
 const initialFormationSchema = z.object({
@@ -139,7 +137,7 @@ const initialFormationSchema = z.object({
   school: z.string().trim().min(1, "L'établissement est requis"),
   startDate: z.coerce.date().optional().nullable(),
   endDate: z.coerce.date().optional().nullable(),
-});
+})
 
 /**
  * Schéma pour la création d'un candidat : infos de base, et optionnellement
@@ -163,7 +161,11 @@ export const createCandidateSchema = z.object({
   languages: z
     .array(
       z.object({
-        name: z.string().trim().min(1, "Le nom de la langue est requis").max(50),
+        name: z
+          .string()
+          .trim()
+          .min(1, "Le nom de la langue est requis")
+          .max(50),
         level: languageLevelSchema,
       })
     )
@@ -171,9 +173,9 @@ export const createCandidateSchema = z.object({
     .default([]),
   /** Noms de tags (compétences LinkedIn) : tag du cabinet réutilisé ou créé */
   tags: z.array(tagNameSchema).max(MAX_TAGS_PER_CANDIDATE).default([]),
-});
+})
 
-export type CreateCandidateInput = z.infer<typeof createCandidateSchema>;
+export type CreateCandidateInput = z.infer<typeof createCandidateSchema>
 
 /**
  * Champs de base saisis dans les formulaires candidat (création, modale d'identité) :
@@ -186,7 +188,7 @@ export const candidateBasicFieldsSchema = createCandidateSchema.pick({
   phone: true,
   linkedinUrl: true,
   title: true,
-});
+})
 
 /** Schéma pour la mise à jour partielle d'un candidat (champs de base) */
 export const updateCandidateSchema = z.object({
@@ -225,54 +227,54 @@ export const updateCandidateSchema = z.object({
     .optional()
     .transform(trimToClearable),
   cities: candidateCitiesUpdateSchema,
-});
+})
 
-export type UpdateCandidateInput = z.infer<typeof updateCandidateSchema>;
+export type UpdateCandidateInput = z.infer<typeof updateCandidateSchema>
 
 /** Schéma pour l'ajout d'une langue à un candidat */
 export const addLanguageSchema = z.object({
   candidateId: z.uuid(),
   name: z.string().min(1, "Le nom de la langue est requis").max(50),
   level: languageLevelSchema,
-});
+})
 
-export type AddLanguageInput = z.infer<typeof addLanguageSchema>;
+export type AddLanguageInput = z.infer<typeof addLanguageSchema>
 
 /** Schéma pour la suppression d'une langue */
 export const removeLanguageSchema = z.object({
   candidateId: z.uuid(),
   languageId: z.uuid(),
-});
+})
 
-export type RemoveLanguageInput = z.infer<typeof removeLanguageSchema>;
+export type RemoveLanguageInput = z.infer<typeof removeLanguageSchema>
 
 /** Formats MIME acceptés pour les photos candidat */
 export const PHOTO_ACCEPTED_MIMES = [
   "image/jpeg",
   "image/png",
   "image/webp",
-] as const;
+] as const
 
-export const PHOTO_MAX_BYTES = 2 * 1024 * 1024; // 2 Mo
+export const PHOTO_MAX_BYTES = 2 * 1024 * 1024 // 2 Mo
 
 /** Formats MIME acceptés pour les CV candidat */
 export const CV_ACCEPTED_MIMES = [
   "application/pdf",
   "application/msword", // .doc
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
-] as const;
+] as const
 
-export const CV_MAX_BYTES = 5 * 1024 * 1024; // 5 Mo
+export const CV_MAX_BYTES = 5 * 1024 * 1024 // 5 Mo
 
 export const FILE_TOO_LARGE_MESSAGE =
-  "Le fichier dépasse la taille maximale autorisée (2 Mo pour les photos, 5 Mo pour les CVs).";
+  "Le fichier dépasse la taille maximale autorisée (2 Mo pour les photos, 5 Mo pour les CVs)."
 export const PHOTO_FORMAT_MESSAGE =
-  "Format de fichier non supporté. Formats acceptés : JPG, PNG, WebP.";
+  "Format de fichier non supporté. Formats acceptés : JPG, PNG, WebP."
 export const CV_FORMAT_MESSAGE =
-  "Format de fichier non supporté. Formats acceptés : PDF, DOC, DOCX.";
+  "Format de fichier non supporté. Formats acceptés : PDF, DOC, DOCX."
 
 const fileSizeSchema = (maxBytes: number) =>
-  z.number().int().positive().max(maxBytes, FILE_TOO_LARGE_MESSAGE);
+  z.number().int().positive().max(maxBytes, FILE_TOO_LARGE_MESSAGE)
 
 /**
  * Demande d'URL d'upload signée (photo ou CV). Le fichier part ensuite du
@@ -291,9 +293,9 @@ export const createFileUploadUrlSchema = z.discriminatedUnion("kind", [
     mimeType: z.enum(CV_ACCEPTED_MIMES, { message: CV_FORMAT_MESSAGE }),
     size: fileSizeSchema(CV_MAX_BYTES),
   }),
-]);
+])
 
-export type CreateFileUploadUrlInput = z.infer<typeof createFileUploadUrlSchema>;
+export type CreateFileUploadUrlInput = z.infer<typeof createFileUploadUrlSchema>
 
 /** Confirmation d'un upload : le serveur revérifie le fichier stocké à `path`. */
 export const confirmFileUploadSchema = z.discriminatedUnion("kind", [
@@ -311,12 +313,12 @@ export const confirmFileUploadSchema = z.discriminatedUnion("kind", [
       .min(1, "Nom de fichier requis")
       .max(255, "Nom de fichier trop long"),
   }),
-]);
+])
 
-export type ConfirmFileUploadInput = z.infer<typeof confirmFileUploadSchema>;
+export type ConfirmFileUploadInput = z.infer<typeof confirmFileUploadSchema>
 
 /** Date optionnelle (premier jour du mois côté UI → DateTime en base). z.coerce.date() accepte Date ou chaîne ISO. */
-const optionalDate = z.coerce.date().optional().nullable();
+const optionalDate = z.coerce.date().optional().nullable()
 
 /** Schéma pour l'ajout d'une expérience professionnelle */
 export const addExperienceSchema = z.object({
@@ -326,9 +328,9 @@ export const addExperienceSchema = z.object({
   startDate: z.coerce.date(),
   endDate: optionalDate,
   description: z.string().max(2000).optional().nullable(),
-});
+})
 
-export type AddExperienceInput = z.infer<typeof addExperienceSchema>;
+export type AddExperienceInput = z.infer<typeof addExperienceSchema>
 
 /** Schéma pour la mise à jour d'une expérience */
 export const updateExperienceSchema = z.object({
@@ -339,20 +341,20 @@ export const updateExperienceSchema = z.object({
   startDate: z.coerce.date().optional(),
   endDate: optionalDate,
   description: z.string().max(2000).optional().nullable(),
-});
+})
 
-export type UpdateExperienceInput = z.infer<typeof updateExperienceSchema>;
+export type UpdateExperienceInput = z.infer<typeof updateExperienceSchema>
 
 /** Schéma pour la suppression d'une expérience */
 export const deleteExperienceSchema = z.object({
   candidateId: z.uuid(),
   experienceId: z.uuid(),
-});
+})
 
-export type DeleteExperienceInput = z.infer<typeof deleteExperienceSchema>;
+export type DeleteExperienceInput = z.infer<typeof deleteExperienceSchema>
 
 /** Date optionnelle pour formation (année ou mois/année côté UI → DateTime en base). */
-const optionalFormationDate = z.coerce.date().optional().nullable();
+const optionalFormationDate = z.coerce.date().optional().nullable()
 
 /** Schéma pour l'ajout d'une formation */
 export const addFormationSchema = z.object({
@@ -362,9 +364,9 @@ export const addFormationSchema = z.object({
   school: z.string().min(1, "L'établissement est requis"),
   startDate: optionalFormationDate,
   endDate: optionalFormationDate,
-});
+})
 
-export type AddFormationInput = z.infer<typeof addFormationSchema>;
+export type AddFormationInput = z.infer<typeof addFormationSchema>
 
 /** Schéma pour la mise à jour d'une formation */
 export const updateFormationSchema = z.object({
@@ -375,17 +377,17 @@ export const updateFormationSchema = z.object({
   school: z.string().min(1, "L'établissement est requis").optional(),
   startDate: optionalFormationDate,
   endDate: optionalFormationDate,
-});
+})
 
-export type UpdateFormationInput = z.infer<typeof updateFormationSchema>;
+export type UpdateFormationInput = z.infer<typeof updateFormationSchema>
 
 /** Schéma pour la suppression d'une formation */
 export const deleteFormationSchema = z.object({
   candidateId: z.uuid(),
   formationId: z.uuid(),
-});
+})
 
-export type DeleteFormationInput = z.infer<typeof deleteFormationSchema>;
+export type DeleteFormationInput = z.infer<typeof deleteFormationSchema>
 
 /** Prévisualisation d'un import LinkedIn (URL de profil obligatoire) */
 export const linkedinPreviewInputSchema = z.object({
@@ -394,8 +396,8 @@ export const linkedinPreviewInputSchema = z.object({
     .trim()
     .min(1, "L'URL LinkedIn est requise")
     .regex(LINKEDIN_URL_PATTERN, LINKEDIN_MESSAGE),
-});
+})
 
-export type LinkedinPreviewInput = z.infer<typeof linkedinPreviewInputSchema>;
+export type LinkedinPreviewInput = z.infer<typeof linkedinPreviewInputSchema>
 
-export { LIST_PAGE_SIZE };
+export { LIST_PAGE_SIZE }

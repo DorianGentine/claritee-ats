@@ -42,10 +42,7 @@ const jobOfferBaseFieldsSchema = z.object({
     .string()
     .min(1, "Titre est requis.")
     .transform((v) => v.trim()),
-  description: z
-    .string()
-    .optional()
-    .transform(trimToUndefined),
+  description: z.string().optional().transform(trimToUndefined),
   salaryMin: z
     .number({ message: "Le salaire doit être un nombre." })
     .int("Le salaire doit être un nombre entier.")
@@ -69,7 +66,7 @@ const salaryAndContactRefine = (
     clientCompanyId?: string | null
     clientContactId?: string | null
   },
-  ctx: z.RefinementCtx,
+  ctx: z.RefinementCtx
 ) => {
   if (
     typeof value.salaryMin === "number" &&
@@ -94,7 +91,7 @@ const salaryAndContactRefine = (
 
 /** Schéma pour la création d'une offre */
 export const createJobOfferSchema = jobOfferBaseFieldsSchema.superRefine(
-  salaryAndContactRefine,
+  salaryAndContactRefine
 )
 
 /** Pour l'update, on accepte null sur les champs optionnels pour permettre de "vider" une valeur en BDD. */
@@ -102,7 +99,9 @@ const optionalNullableString = z
   .string()
   .optional()
   .nullable()
-  .transform((v) => (v == null || (typeof v === "string" && !v.trim()) ? null : v.trim()))
+  .transform((v) =>
+    v == null || (typeof v === "string" && !v.trim()) ? null : v.trim()
+  )
 
 /** Schéma pour la mise à jour d'une offre existante (patch partiel). On part du schéma de base sans refinements pour pouvoir utiliser .partial(). */
 export const updateJobOfferSchema = jobOfferBaseFieldsSchema
@@ -111,18 +110,8 @@ export const updateJobOfferSchema = jobOfferBaseFieldsSchema
     id: z.uuid(),
     status: jobOfferStatusSchema.optional(),
     description: optionalNullableString,
-    salaryMin: z
-      .number()
-      .int()
-      .nonnegative()
-      .optional()
-      .nullable(),
-    salaryMax: z
-      .number()
-      .int()
-      .nonnegative()
-      .optional()
-      .nullable(),
+    salaryMin: z.number().int().nonnegative().optional().nullable(),
+    salaryMax: z.number().int().nonnegative().optional().nullable(),
     clientCompanyId: z.uuid().optional().nullable(),
     clientContactId: z.uuid().optional().nullable(),
     cityId: z.uuid().optional().nullable(),

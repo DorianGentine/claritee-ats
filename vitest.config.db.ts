@@ -1,6 +1,6 @@
-import { defineConfig } from "vitest/config";
-import { config } from "dotenv";
-import path from "path";
+import { defineConfig } from "vitest/config"
+import { config } from "dotenv"
+import path from "path"
 
 // Config dédiée aux tests nécessitant une base de données (voir script `test:db`).
 // Charge l'env comme prisma.config.ts : .env.local prioritaire, .env en fallback.
@@ -10,8 +10,8 @@ import path from "path";
 // `test:unit` (config par défaut vitest.config.ts) reste volontairement SANS DB : il exclut
 // __tests__/db. Ici, un environnement incomplet fait échouer la suite (__tests__/setup/db-env.ts).
 // `bun run test` enchaîne les deux : test:unit (config.ts) puis test:db (cette config).
-config({ path: ".env.local" });
-config();
+config({ path: ".env.local" })
+config()
 
 export default defineConfig({
   test: {
@@ -22,11 +22,14 @@ export default defineConfig({
     // Compteurs de rate limit remis à zéro avant chaque test : toutes les mutations
     // protégées comptent, et un fichier en enchaîne plus que la limite par minute.
     // db-env : échec immédiat si DATABASE_URL ou Supabase manque (pas de skip silencieux).
-    setupFiles: ["./__tests__/setup/db-env.ts", "./__tests__/setup/rate-limit.ts"],
+    setupFiles: [
+      "./__tests__/setup/db-env.ts",
+      "./__tests__/setup/rate-limit.ts",
+    ],
   },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
   },
-});
+})

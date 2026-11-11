@@ -94,7 +94,8 @@ export default function ClientsPage() {
                     )}
                   </div>
                   <p className="mt-3 text-sm text-muted-foreground">
-                    {client.contactsCount} contacts · {client.offersCount} offres
+                    {client.contactsCount} contacts · {client.offersCount}{" "}
+                    offres
                   </p>
                 </Link>
               </li>
@@ -105,4 +106,3 @@ export default function ClientsPage() {
     </main>
   )
 }
-

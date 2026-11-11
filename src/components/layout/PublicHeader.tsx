@@ -1,14 +1,14 @@
-import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
-import { Button } from "@/components/ui/button";
-import { Logo } from "./Logo";
+import Link from "next/link"
+import { createClient } from "@/lib/supabase/server"
+import { Button } from "@/components/ui/button"
+import { Logo } from "./Logo"
 
 /** En-tête des pages publiques : pilule crème inspirée de claritee.fr. */
 export const PublicHeader = async () => {
-  const supabase = await createClient();
+  const supabase = await createClient()
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await supabase.auth.getUser()
 
   return (
     <header className="sticky top-0 z-30 px-4 pt-4 sm:px-6">
@@ -21,7 +21,11 @@ export const PublicHeader = async () => {
             </Button>
           ) : (
             <>
-              <Button asChild variant="ghost" className="hidden rounded-full sm:inline-flex">
+              <Button
+                asChild
+                variant="ghost"
+                className="hidden rounded-full sm:inline-flex"
+              >
                 <Link href="/login">Se connecter</Link>
               </Button>
               <Button asChild className="rounded-full px-5">
@@ -32,5 +36,5 @@ export const PublicHeader = async () => {
         </div>
       </div>
     </header>
-  );
-};
+  )
+}

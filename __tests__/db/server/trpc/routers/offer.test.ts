@@ -131,7 +131,10 @@ describe("offer router", () => {
     const ctx = createContext(companyAId)
     const caller = appRouter.createCaller(ctx)
 
-    const result = await caller.offer.list({ sortBy: "createdAt", sortOrder: "desc" })
+    const result = await caller.offer.list({
+      sortBy: "createdAt",
+      sortOrder: "desc",
+    })
 
     expect(result.items.length).toBeGreaterThanOrEqual(2)
     const [o1, o2] = await Promise.all([
@@ -147,14 +150,26 @@ describe("offer router", () => {
     const ctx = createContext(companyAId)
     const caller = appRouter.createCaller(ctx)
 
-    const resultAsc = await caller.offer.list({ sortBy: "status", sortOrder: "asc" })
-    const resultDesc = await caller.offer.list({ sortBy: "status", sortOrder: "desc" })
+    const resultAsc = await caller.offer.list({
+      sortBy: "status",
+      sortOrder: "asc",
+    })
+    const resultDesc = await caller.offer.list({
+      sortBy: "status",
+      sortOrder: "desc",
+    })
 
     expect(resultAsc.items.length).toBe(2)
     expect(resultDesc.items.length).toBe(2)
     // Postgres trie un enum dans son ordre de déclaration (ordre du pipeline), pas alphabétiquement
-    expect(resultAsc.items.map((offer) => offer.status)).toEqual(["TODO", "IN_PROGRESS"])
-    expect(resultDesc.items.map((offer) => offer.status)).toEqual(["IN_PROGRESS", "TODO"])
+    expect(resultAsc.items.map((offer) => offer.status)).toEqual([
+      "TODO",
+      "IN_PROGRESS",
+    ])
+    expect(resultDesc.items.map((offer) => offer.status)).toEqual([
+      "IN_PROGRESS",
+      "TODO",
+    ])
   })
 
   it("pagination returns correct slice and totalCount", async () => {
@@ -247,7 +262,7 @@ describe("offer router", () => {
         title: "Invalid client",
         clientCompanyId: clientB.id,
         status: "TODO",
-      }),
+      })
     ).rejects.toMatchObject({
       code: "BAD_REQUEST",
     })
@@ -282,7 +297,7 @@ describe("offer router", () => {
       callerB.offer.update({
         id: offer.id,
         title: "Should not update",
-      }),
+      })
     ).rejects.toMatchObject({
       code: "NOT_FOUND",
     })
@@ -316,11 +331,11 @@ describe("offer router", () => {
     const ctx = createContext(companyAId)
     const caller = appRouter.createCaller(ctx)
 
-    const updated = await caller.offer.update({
+    const updated = (await caller.offer.update({
       id: offer.id,
       clientCompanyId: null,
       clientContactId: null,
-    }) as OfferMutationResult
+    })) as OfferMutationResult
 
     expect(updated.clientCompanyId).toBeNull()
     expect(updated.clientContactId).toBeNull()
@@ -441,7 +456,7 @@ describe("offer router", () => {
       caller.offer.addTag({
         offerId: offer.id,
         tagName: "Tag overflow",
-      }),
+      })
     ).rejects.toMatchObject({
       code: "BAD_REQUEST",
       message:
@@ -470,7 +485,7 @@ describe("offer router", () => {
       callerB.offer.addTag({
         offerId: offerCompanyA.id,
         tagName: "Should fail",
-      }),
+      })
     ).rejects.toMatchObject({
       code: "NOT_FOUND",
     })
@@ -479,7 +494,7 @@ describe("offer router", () => {
       callerB.offer.removeTag({
         offerId: offerCompanyA.id,
         tagId: tagCompanyAId,
-      }),
+      })
     ).rejects.toMatchObject({
       code: "NOT_FOUND",
     })
@@ -555,7 +570,9 @@ describe("offer router", () => {
       expect(result.candidatureCountByStatus["APPLIED"]).toBe(1)
     } finally {
       await db.candidature.delete({ where: { id: candidature.id } })
-      await db.offerTag.delete({ where: { offerId_tagId: { offerId: offer.id, tagId: tag.id } } })
+      await db.offerTag.delete({
+        where: { offerId_tagId: { offerId: offer.id, tagId: tag.id } },
+      })
       await db.tag.delete({ where: { id: tag.id } })
       await db.jobOffer.delete({ where: { id: offer.id } })
       await db.clientContact.delete({ where: { id: contact.id } })
@@ -568,7 +585,9 @@ describe("offer router", () => {
     const ctxB = createContext(companyBId)
     const callerB = appRouter.createCaller(ctxB)
 
-    await expect(callerB.offer.getById({ id: offerA1Id })).rejects.toMatchObject({
+    await expect(
+      callerB.offer.getById({ id: offerA1Id })
+    ).rejects.toMatchObject({
       code: "NOT_FOUND",
     })
   })
@@ -603,13 +622,25 @@ describe("offer router", () => {
       },
     })
     const c1 = await db.candidature.create({
-      data: { candidateId: candidate1.id, offerId: offer.id, status: "APPLIED" },
+      data: {
+        candidateId: candidate1.id,
+        offerId: offer.id,
+        status: "APPLIED",
+      },
     })
     const c2 = await db.candidature.create({
-      data: { candidateId: candidate2.id, offerId: offer.id, status: "APPLIED" },
+      data: {
+        candidateId: candidate2.id,
+        offerId: offer.id,
+        status: "APPLIED",
+      },
     })
     const c3 = await db.candidature.create({
-      data: { candidateId: candidate3.id, offerId: offer.id, status: "ACCEPTED" },
+      data: {
+        candidateId: candidate3.id,
+        offerId: offer.id,
+        status: "ACCEPTED",
+      },
     })
 
     try {
@@ -620,11 +651,17 @@ describe("offer router", () => {
 
       expect(result.candidatureCountByStatus["APPLIED"]).toBe(2)
       expect(result.candidatureCountByStatus["ACCEPTED"]).toBe(1)
-      expect(result.candidatureCountByStatus["CONTACTED_LINKEDIN"]).toBeUndefined()
+      expect(
+        result.candidatureCountByStatus["CONTACTED_LINKEDIN"]
+      ).toBeUndefined()
     } finally {
-      await db.candidature.deleteMany({ where: { id: { in: [c1.id, c2.id, c3.id] } } })
+      await db.candidature.deleteMany({
+        where: { id: { in: [c1.id, c2.id, c3.id] } },
+      })
       await db.jobOffer.delete({ where: { id: offer.id } })
-      await db.candidate.deleteMany({ where: { id: { in: [candidate1.id, candidate2.id, candidate3.id] } } })
+      await db.candidate.deleteMany({
+        where: { id: { in: [candidate1.id, candidate2.id, candidate3.id] } },
+      })
     }
   })
 
@@ -759,7 +796,9 @@ describe("offer router", () => {
       const result = await caller.offer.list({})
       const found = result.items.find((o) => o.id === offer.id)
 
-      expect(found?.cityName).toBe((await db.city.findUniqueOrThrow({ where: { id: cityId } })).name)
+      expect(found?.cityName).toBe(
+        (await db.city.findUniqueOrThrow({ where: { id: cityId } })).name
+      )
 
       await db.jobOffer.delete({ where: { id: offer.id } })
     })

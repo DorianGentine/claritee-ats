@@ -14,7 +14,6 @@ const NewOfferPage = () => (
       <JobOfferForm mode="create" />
     </div>
   </main>
-);
+)
 
-export default NewOfferPage;
-
+export default NewOfferPage

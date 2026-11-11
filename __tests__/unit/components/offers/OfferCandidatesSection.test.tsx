@@ -17,10 +17,16 @@ vi.mock("@/lib/trpc/client", () => ({
   api: {
     candidature: {
       updateStatus: {
-        useMutation: vi.fn(() => ({ mutate: mockMutateUpdate, isPending: false })),
+        useMutation: vi.fn(() => ({
+          mutate: mockMutateUpdate,
+          isPending: false,
+        })),
       },
       delete: {
-        useMutation: vi.fn(() => ({ mutate: mockMutateDelete, isPending: false })),
+        useMutation: vi.fn(() => ({
+          mutate: mockMutateDelete,
+          isPending: false,
+        })),
       },
     },
     offer: {
@@ -30,7 +36,11 @@ vi.mock("@/lib/trpc/client", () => ({
     },
     candidate: {
       list: {
-        useQuery: vi.fn(() => ({ data: { items: [] }, isLoading: false, error: null })),
+        useQuery: vi.fn(() => ({
+          data: { items: [] },
+          isLoading: false,
+          error: null,
+        })),
       },
     },
     useUtils: vi.fn(() => ({
@@ -116,7 +126,7 @@ describe("OfferCandidatesSection", () => {
         offerId="offer-1"
         candidatures={[]}
         candidatureCountByStatus={{}}
-      />,
+      />
     )
     expect(within(container).getByText("Aucun candidat associé")).toBeDefined()
   })
@@ -129,7 +139,7 @@ describe("OfferCandidatesSection", () => {
     expect(card.getByText("Bob Martin")).toBeDefined()
 
     const links = Array.from(container.querySelectorAll("a")).map((a) =>
-      a.getAttribute("href"),
+      a.getAttribute("href")
     )
     expect(links).toContain("/candidates/c1")
     expect(links).toContain("/candidates/c2")
@@ -137,13 +147,17 @@ describe("OfferCandidatesSection", () => {
 
   it("renders one status dropdown per candidature", () => {
     const { container } = render(<OfferCandidatesSection {...baseProps} />)
-    const dropdowns = container.querySelectorAll("[data-testid='status-dropdown']")
+    const dropdowns = container.querySelectorAll(
+      "[data-testid='status-dropdown']"
+    )
     expect(dropdowns).toHaveLength(2)
   })
 
   it("calls candidature.updateStatus mutation when a status is selected", () => {
     const { container } = render(<OfferCandidatesSection {...baseProps} />)
-    const dropdowns = container.querySelectorAll("[data-testid='status-dropdown']")
+    const dropdowns = container.querySelectorAll(
+      "[data-testid='status-dropdown']"
+    )
     fireEvent.click(dropdowns[0])
 
     expect(mockMutateUpdate).toHaveBeenCalledWith({
@@ -155,7 +169,9 @@ describe("OfferCandidatesSection", () => {
   it("shows dissociation confirmation dialog when trash button clicked", () => {
     const { container } = render(<OfferCandidatesSection {...baseProps} />)
 
-    const trashBtn = container.querySelector("[aria-label='Dissocier Alice Dupont']")!
+    const trashBtn = container.querySelector(
+      "[aria-label='Dissocier Alice Dupont']"
+    )!
     fireEvent.click(trashBtn)
 
     // AlertDialog renders in portal — use screen to find content in document.body
@@ -166,7 +182,9 @@ describe("OfferCandidatesSection", () => {
     const { container } = render(<OfferCandidatesSection {...baseProps} />)
 
     // Open dialog
-    const trashBtn = container.querySelector("[aria-label='Dissocier Alice Dupont']")!
+    const trashBtn = container.querySelector(
+      "[aria-label='Dissocier Alice Dupont']"
+    )!
     fireEvent.click(trashBtn)
 
     // Confirm dissociation — button is in dialog portal

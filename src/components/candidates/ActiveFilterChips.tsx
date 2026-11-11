@@ -1,9 +1,15 @@
 "use client"
 
 import { api } from "@/lib/trpc/client"
-import { FilterChipsBar, type FilterChipDescriptor } from "@/components/shared/FilterChipsBar"
+import {
+  FilterChipsBar,
+  type FilterChipDescriptor,
+} from "@/components/shared/FilterChipsBar"
 import type { CityOption } from "@/components/shared/CityAutocomplete"
-import { hasActiveCandidateFilters, type CandidateFilters } from "./CandidateListFilters"
+import {
+  hasActiveCandidateFilters,
+  type CandidateFilters,
+} from "./CandidateListFilters"
 
 type ActiveFilterChipsProps = {
   filters: CandidateFilters
@@ -29,7 +35,9 @@ export const ActiveFilterChips = ({
 }: ActiveFilterChipsProps) => {
   const { data: tags = [] } = api.tag.list.useQuery()
   const tagById = Object.fromEntries(tags.map((t) => [t.id, t]))
-  const cityById = Object.fromEntries(selectedCities.map((city) => [city.id, city]))
+  const cityById = Object.fromEntries(
+    selectedCities.map((city) => [city.id, city])
+  )
 
   if (!hasActiveCandidateFilters(filters)) return null
 

@@ -130,7 +130,8 @@ describe("search", () => {
     const offer = await db.jobOffer.create({
       data: {
         title: "Développeur React Senior",
-        description: "Nous recherchons un expert React pour notre équipe produit.",
+        description:
+          "Nous recherchons un expert React pour notre équipe produit.",
         companyId: companyAId,
         clientCompanyId: clientCompany.id,
       },
@@ -261,9 +262,9 @@ describe("search", () => {
     const result = await caller.search.search({ q: "React Senior" })
     expect(result.offers.length).toBeGreaterThanOrEqual(1)
     expect(result.offers.some((o) => o.id === offerAId)).toBe(true)
-    expect(result.offers.find((o) => o.id === offerAId)?.clientCompany?.name).toBe(
-      "Acme Corp"
-    )
+    expect(
+      result.offers.find((o) => o.id === offerAId)?.clientCompany?.name
+    ).toBe("Acme Corp")
   })
 
   it("search: finds offer by description", async () => {

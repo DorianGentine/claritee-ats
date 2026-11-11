@@ -1,7 +1,7 @@
-import { TRPCError } from "@trpc/server";
-import type { Prisma } from "@prisma/client";
-import { z } from "zod";
-import { router, protectedProcedure, publicProcedure } from "../trpc";
+import { TRPCError } from "@trpc/server"
+import type { Prisma } from "@prisma/client"
+import { z } from "zod"
+import { router, protectedProcedure, publicProcedure } from "../trpc"
 import {
   candidateListInputSchema,
   createCandidateSchema,
@@ -35,19 +35,19 @@ import {
   enforceRateLimit,
   getClientIp,
   RATE_LIMITS,
-} from "@/lib/rate-limit";
-import { createAdminClient } from "@/lib/supabase/admin";
+} from "@/lib/rate-limit"
+import { createAdminClient } from "@/lib/supabase/admin"
 import {
   createCandidateFilePath,
   getCandidateFilePathFromUrl,
   parseCandidateFilePath,
   removeCandidateFiles,
-} from "@/server/candidateStorage";
+} from "@/server/candidateStorage"
 
 /** Le contenu commence-t-il par ces octets ? */
 const startsWith = (buffer: Buffer, bytes: number[]) =>
   buffer.length >= bytes.length &&
-  bytes.every((byte, index) => buffer[index] === byte);
+  bytes.every((byte, index) => buffer[index] === byte)
 
 /** Magic bytes attendus par extension, pour vérifier que le contenu correspond au format. */
 const FILE_SIGNATURES: Record<string, (buffer: Buffer) => boolean> = {
@@ -61,7 +61,7 @@ const FILE_SIGNATURES: Record<string, (buffer: Buffer) => boolean> = {
   doc: (buffer) =>
     startsWith(buffer, [0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]), // OLE
   docx: (buffer) => startsWith(buffer, [0x50, 0x4b, 0x03, 0x04]), // ZIP
-};
+}
 
 const MIME_EXTENSIONS: Record<
   (typeof PHOTO_ACCEPTED_MIMES)[number] | (typeof CV_ACCEPTED_MIMES)[number],
@@ -74,7 +74,7 @@ const MIME_EXTENSIONS: Record<
   "application/msword": "doc",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
     "docx",
-};
+}
 
 /** Bucket, taille max et message de format par type de fichier candidat. */
 const FILE_KINDS = {
@@ -83,10 +83,14 @@ const FILE_KINDS = {
     maxBytes: PHOTO_MAX_BYTES,
     formatMessage: PHOTO_FORMAT_MESSAGE,
   },
-  cv: { bucket: "cvs", maxBytes: CV_MAX_BYTES, formatMessage: CV_FORMAT_MESSAGE },
-} as const;
+  cv: {
+    bucket: "cvs",
+    maxBytes: CV_MAX_BYTES,
+    formatMessage: CV_FORMAT_MESSAGE,
+  },
+} as const
 
-const GENERIC_ERROR_MESSAGE = "Une erreur est survenue. Réessayez.";
+const GENERIC_ERROR_MESSAGE = "Une erreur est survenue. Réessayez."
 
 /**
  * Rattache des tags à un candidat par leur nom : un tag existant du cabinet est
@@ -104,7 +108,7 @@ const attachTagsByName = async (
       tagNames.findIndex(
         (otherName) => otherName.toLowerCase() === name.toLowerCase()
       ) === index
-  );
+  )
   const existingTags = await tx.tag.findMany({
     where: {
       companyId,
@@ -112,61 +116,61 @@ const attachTagsByName = async (
         name: { equals: name, mode: "insensitive" as const },
       })),
     },
-  });
-  const tagIds: string[] = [];
+  })
+  const tagIds: string[] = []
   for (const name of uniqueNames) {
     const existing = existingTags.find(
       (tag) => tag.name.toLowerCase() === name.toLowerCase()
-    );
+    )
     if (existing) {
-      tagIds.push(existing.id);
-      continue;
+      tagIds.push(existing.id)
+      continue
     }
     const created = await tx.tag.create({
       data: { name, color: getTagColor(name), companyId },
-    });
-    tagIds.push(created.id);
+    })
+    tagIds.push(created.id)
   }
   await tx.candidateTag.createMany({
     data: tagIds.map((tagId) => ({ candidateId, tagId })),
     skipDuplicates: true,
-  });
-};
+  })
+}
 
 /** Génère une URL signée (15 min) pour le CV dans le bucket cvs */
 const createCvSignedUrl = async (
   companyId: string,
   candidateId: string,
-  cvUrl: string | null,
+  cvUrl: string | null
 ): Promise<string> => {
   const storagePath = getCandidateFilePathFromUrl(
     "cvs",
     companyId,
     candidateId,
-    cvUrl,
-  );
+    cvUrl
+  )
   if (!storagePath) {
-    throw new TRPCError({ code: "NOT_FOUND" });
+    throw new TRPCError({ code: "NOT_FOUND" })
   }
-  const supabase = createAdminClient();
+  const supabase = createAdminClient()
   const { data, error } = await supabase.storage
     .from("cvs")
-    .createSignedUrl(storagePath, 15 * 60);
+    .createSignedUrl(storagePath, 15 * 60)
   if (error) {
-    console.error("[createCvSignedUrl] Supabase error:", error);
+    console.error("[createCvSignedUrl] Supabase error:", error)
     throw new TRPCError({
       code: "INTERNAL_SERVER_ERROR",
       message: "Une erreur est survenue. Réessayez.",
-    });
+    })
   }
   if (!data?.signedUrl) {
     throw new TRPCError({
       code: "INTERNAL_SERVER_ERROR",
       message: "Une erreur est survenue. Réessayez.",
-    });
+    })
   }
-  return data.signedUrl;
-};
+  return data.signedUrl
+}
 
 export const candidateRouter = router({
   /**
@@ -176,18 +180,18 @@ export const candidateRouter = router({
   list: protectedProcedure
     .input(candidateListInputSchema)
     .query(async ({ ctx, input }) => {
-      const limit = input.limit;
-      const take = limit + 1;
+      const limit = input.limit
+      const take = limit + 1
 
       const tagIds = input.tagIds?.filter(Boolean).length
         ? input.tagIds
-        : undefined;
+        : undefined
       const cityIds = input.cityIds?.filter(Boolean).length
         ? input.cityIds
-        : undefined;
+        : undefined
       const languageNames = input.languageNames?.filter(Boolean).length
         ? input.languageNames
-        : undefined;
+        : undefined
 
       const whereConditions = [
         { companyId: ctx.companyId },
@@ -208,7 +212,7 @@ export const candidateRouter = router({
               },
             }))
           : []),
-      ];
+      ]
 
       const candidates = await ctx.db.candidate.findMany({
         where: { AND: whereConditions },
@@ -238,12 +242,12 @@ export const candidateRouter = router({
             },
           },
         },
-      });
+      })
 
-      const hasMore = candidates.length > limit;
-      const items = hasMore ? candidates.slice(0, limit) : candidates;
+      const hasMore = candidates.length > limit
+      const items = hasMore ? candidates.slice(0, limit) : candidates
       const nextCursor =
-        items.length > 0 && hasMore ? items[items.length - 1]?.id : null;
+        items.length > 0 && hasMore ? items[items.length - 1]?.id : null
 
       return {
         items: items.map((c) => ({
@@ -257,7 +261,7 @@ export const candidateRouter = router({
         })),
         nextCursor,
         hasMore: !!nextCursor,
-      };
+      }
     }),
 
   /**
@@ -271,8 +275,8 @@ export const candidateRouter = router({
       distinct: ["name"],
       select: { name: true },
       orderBy: { name: "asc" },
-    });
-    return rows.map((r) => r.name);
+    })
+    return rows.map((r) => r.name)
   }),
 
   /**
@@ -285,7 +289,9 @@ export const candidateRouter = router({
       const candidate = await ctx.db.candidate.findFirst({
         where: { id: input.id, companyId: ctx.companyId },
         include: {
-          experiences: { orderBy: [{ endDate: "desc" }, { startDate: "desc" }] },
+          experiences: {
+            orderBy: [{ endDate: "desc" }, { startDate: "desc" }],
+          },
           formations: { orderBy: [{ endDate: "desc" }, { startDate: "desc" }] },
           languages: true,
           tags: { include: { tag: true } },
@@ -302,14 +308,14 @@ export const candidateRouter = router({
             },
           },
         },
-      });
+      })
       if (!candidate) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND" })
       }
       return {
         ...candidate,
         tags: candidate.tags.map((ct) => ct.tag),
-      };
+      }
     }),
 
   /**
@@ -322,26 +328,29 @@ export const candidateRouter = router({
     .mutation(async ({ ctx, input }) => {
       const existing = await ctx.db.candidate.findFirst({
         where: { id: input.id, companyId: ctx.companyId },
-      });
+      })
       if (!existing) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND" })
       }
-      const supabase = createAdminClient();
+      const supabase = createAdminClient()
       const storageErrors = (
         await Promise.all([
           removeCandidateFiles(supabase, ctx.companyId, input.id, "photos"),
           removeCandidateFiles(supabase, ctx.companyId, input.id, "cvs"),
         ])
-      ).filter((error) => error !== null);
+      ).filter((error) => error !== null)
       if (storageErrors.length > 0) {
-        console.error("[candidate.delete] Storage remove failed:", storageErrors);
+        console.error(
+          "[candidate.delete] Storage remove failed:",
+          storageErrors
+        )
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Une erreur est survenue. Réessayez.",
-        });
+        })
       }
-      await ctx.db.candidate.delete({ where: { id: input.id } });
-      return { success: true };
+      await ctx.db.candidate.delete({ where: { id: input.id } })
+      return { success: true }
     }),
 
   /**
@@ -351,27 +360,27 @@ export const candidateRouter = router({
   update: protectedProcedure
     .input(updateCandidateSchema)
     .mutation(async ({ ctx, input }) => {
-      const { id, cities, ...rest } = input;
+      const { id, cities, ...rest } = input
       const existing = await ctx.db.candidate.findFirst({
         where: { id, companyId: ctx.companyId },
-      });
+      })
       if (!existing) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND" })
       }
       const data = Object.fromEntries(
         Object.entries(rest).filter(([, v]) => v !== undefined)
-      );
+      )
 
       // Champs scalaires + remplacement des villes dans une seule transaction :
       // sur échec du createMany, le deleteMany est annulé (pas de perte de villes).
       return ctx.db.$transaction(async (tx) => {
-        const updated = await tx.candidate.update({ where: { id }, data });
+        const updated = await tx.candidate.update({ where: { id }, data })
 
         // Patch-semantics : les villes ne sont touchées que si explicitement fournies.
         // Prisma ne gère pas nativement la mise à jour d'une liste N-N ordonnée →
         // remplacement complet (delete + createMany).
         if (cities !== undefined) {
-          await tx.candidateCity.deleteMany({ where: { candidateId: id } });
+          await tx.candidateCity.deleteMany({ where: { candidateId: id } })
           if (cities.length > 0) {
             await tx.candidateCity.createMany({
               data: cities.map((cityInput) => ({
@@ -379,12 +388,12 @@ export const candidateRouter = router({
                 cityId: cityInput.cityId,
                 order: cityInput.order,
               })),
-            });
+            })
           }
         }
 
-        return updated;
-      });
+        return updated
+      })
     }),
 
   /**
@@ -408,7 +417,7 @@ export const candidateRouter = router({
             summary: input.summary || null,
             companyId: ctx.companyId,
           },
-        });
+        })
         // Parcours optionnel (import LinkedIn) : l'ordre suit celui du profil
         if (input.experiences.length > 0) {
           await tx.experience.createMany({
@@ -421,7 +430,7 @@ export const candidateRouter = router({
               description: experience.description?.trim() || null,
               order: index,
             })),
-          });
+          })
         }
         if (input.formations.length > 0) {
           await tx.formation.createMany({
@@ -434,7 +443,7 @@ export const candidateRouter = router({
               endDate: formation.endDate ?? null,
               order: index,
             })),
-          });
+          })
         }
         if (input.languages.length > 0) {
           await tx.language.createMany({
@@ -443,10 +452,10 @@ export const candidateRouter = router({
               name: language.name,
               level: language.level,
             })),
-          });
+          })
         }
         if (input.tags.length > 0) {
-          await attachTagsByName(tx, ctx.companyId, candidate.id, input.tags);
+          await attachTagsByName(tx, ctx.companyId, candidate.id, input.tags)
         }
         if (input.cities.length > 0) {
           await tx.candidateCity.createMany({
@@ -455,10 +464,10 @@ export const candidateRouter = router({
               cityId: cityInput.cityId,
               order: cityInput.order,
             })),
-          });
+          })
         }
-        return candidate;
-      });
+        return candidate
+      })
     }),
 
   /**
@@ -470,9 +479,9 @@ export const candidateRouter = router({
     .mutation(async ({ ctx, input }) => {
       const candidate = await ctx.db.candidate.findFirst({
         where: { id: input.candidateId, companyId: ctx.companyId },
-      });
+      })
       if (!candidate) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND" })
       }
       return ctx.db.language.create({
         data: {
@@ -480,7 +489,7 @@ export const candidateRouter = router({
           name: input.name.trim(),
           level: input.level,
         },
-      });
+      })
     }),
 
   /**
@@ -492,18 +501,18 @@ export const candidateRouter = router({
     .mutation(async ({ ctx, input }) => {
       const candidate = await ctx.db.candidate.findFirst({
         where: { id: input.candidateId, companyId: ctx.companyId },
-      });
+      })
       if (!candidate) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND" })
       }
       const language = await ctx.db.language.findFirst({
         where: { id: input.languageId, candidateId: input.candidateId },
-      });
+      })
       if (!language) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND" })
       }
-      await ctx.db.language.delete({ where: { id: input.languageId } });
-      return { success: true };
+      await ctx.db.language.delete({ where: { id: input.languageId } })
+      return { success: true }
     }),
 
   /**
@@ -515,9 +524,9 @@ export const candidateRouter = router({
     .mutation(async ({ ctx, input }) => {
       const candidate = await ctx.db.candidate.findFirst({
         where: { id: input.candidateId, companyId: ctx.companyId },
-      });
+      })
       if (!candidate) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND" })
       }
       return ctx.db.experience.create({
         data: {
@@ -528,7 +537,7 @@ export const candidateRouter = router({
           endDate: input.endDate ?? null,
           description: input.description ?? null,
         },
-      });
+      })
     }),
 
   /**
@@ -540,17 +549,17 @@ export const candidateRouter = router({
     .mutation(async ({ ctx, input }) => {
       const candidate = await ctx.db.candidate.findFirst({
         where: { id: input.candidateId, companyId: ctx.companyId },
-      });
+      })
       if (!candidate) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND" })
       }
       const experience = await ctx.db.experience.findFirst({
         where: { id: input.experienceId, candidateId: input.candidateId },
-      });
+      })
       if (!experience) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND" })
       }
-      const { candidateId: _cid, experienceId, ...data } = input;
+      const { candidateId: _cid, experienceId, ...data } = input
       return ctx.db.experience.update({
         where: { id: experienceId },
         data: {
@@ -562,7 +571,7 @@ export const candidateRouter = router({
             description: data.description,
           }),
         },
-      });
+      })
     }),
 
   /**
@@ -574,18 +583,18 @@ export const candidateRouter = router({
     .mutation(async ({ ctx, input }) => {
       const candidate = await ctx.db.candidate.findFirst({
         where: { id: input.candidateId, companyId: ctx.companyId },
-      });
+      })
       if (!candidate) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND" })
       }
       const experience = await ctx.db.experience.findFirst({
         where: { id: input.experienceId, candidateId: input.candidateId },
-      });
+      })
       if (!experience) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND" })
       }
-      await ctx.db.experience.delete({ where: { id: input.experienceId } });
-      return { success: true };
+      await ctx.db.experience.delete({ where: { id: input.experienceId } })
+      return { success: true }
     }),
 
   /**
@@ -597,9 +606,9 @@ export const candidateRouter = router({
     .mutation(async ({ ctx, input }) => {
       const candidate = await ctx.db.candidate.findFirst({
         where: { id: input.candidateId, companyId: ctx.companyId },
-      });
+      })
       if (!candidate) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND" })
       }
       return ctx.db.formation.create({
         data: {
@@ -610,7 +619,7 @@ export const candidateRouter = router({
           startDate: input.startDate ?? null,
           endDate: input.endDate ?? null,
         },
-      });
+      })
     }),
 
   /**
@@ -622,17 +631,17 @@ export const candidateRouter = router({
     .mutation(async ({ ctx, input }) => {
       const candidate = await ctx.db.candidate.findFirst({
         where: { id: input.candidateId, companyId: ctx.companyId },
-      });
+      })
       if (!candidate) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND" })
       }
       const formation = await ctx.db.formation.findFirst({
         where: { id: input.formationId, candidateId: input.candidateId },
-      });
+      })
       if (!formation) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND" })
       }
-      const { candidateId: _cid, formationId, ...data } = input;
+      const { candidateId: _cid, formationId, ...data } = input
       return ctx.db.formation.update({
         where: { id: formationId },
         data: {
@@ -642,7 +651,7 @@ export const candidateRouter = router({
           ...(data.startDate !== undefined && { startDate: data.startDate }),
           ...(data.endDate !== undefined && { endDate: data.endDate }),
         },
-      });
+      })
     }),
 
   /**
@@ -654,18 +663,18 @@ export const candidateRouter = router({
     .mutation(async ({ ctx, input }) => {
       const candidate = await ctx.db.candidate.findFirst({
         where: { id: input.candidateId, companyId: ctx.companyId },
-      });
+      })
       if (!candidate) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND" })
       }
       const formation = await ctx.db.formation.findFirst({
         where: { id: input.formationId, candidateId: input.candidateId },
-      });
+      })
       if (!formation) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND" })
       }
-      await ctx.db.formation.delete({ where: { id: input.formationId } });
-      return { success: true };
+      await ctx.db.formation.delete({ where: { id: input.formationId } })
+      return { success: true }
     }),
 
   /**
@@ -679,23 +688,23 @@ export const candidateRouter = router({
       const candidate = await ctx.db.candidate.findFirst({
         where: { id: input.candidateId, companyId: ctx.companyId },
         include: { tags: true },
-      });
+      })
       if (!candidate) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND" })
       }
       if (candidate.tags.length >= MAX_TAGS_PER_CANDIDATE) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message:
             "Maximum 20 tags par élément. Supprimez un tag existant pour en ajouter un nouveau.",
-        });
+        })
       }
-      const tagName = input.tagName;
+      const tagName = input.tagName
       let tag = await ctx.db.tag.findUnique({
         where: {
           name_companyId: { name: tagName, companyId: ctx.companyId },
         },
-      });
+      })
       if (!tag) {
         tag = await ctx.db.tag.create({
           data: {
@@ -703,7 +712,7 @@ export const candidateRouter = router({
             color: getTagColor(tagName),
             companyId: ctx.companyId,
           },
-        });
+        })
       }
       const existingLink = await ctx.db.candidateTag.findUnique({
         where: {
@@ -712,14 +721,14 @@ export const candidateRouter = router({
             tagId: tag.id,
           },
         },
-      });
+      })
       if (existingLink) {
-        return { tag };
+        return { tag }
       }
       await ctx.db.candidateTag.create({
         data: { candidateId: input.candidateId, tagId: tag.id },
-      });
-      return { tag };
+      })
+      return { tag }
     }),
 
   /**
@@ -731,9 +740,9 @@ export const candidateRouter = router({
     .mutation(async ({ ctx, input }) => {
       const candidate = await ctx.db.candidate.findFirst({
         where: { id: input.candidateId, companyId: ctx.companyId },
-      });
+      })
       if (!candidate) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND" })
       }
       const existing = await ctx.db.candidateTag.findUnique({
         where: {
@@ -743,9 +752,9 @@ export const candidateRouter = router({
           },
         },
         include: { tag: true },
-      });
+      })
       if (!existing || existing.tag.companyId !== ctx.companyId) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND" })
       }
       await ctx.db.candidateTag.delete({
         where: {
@@ -754,8 +763,8 @@ export const candidateRouter = router({
             tagId: input.tagId,
           },
         },
-      });
-      return { success: true };
+      })
+      return { success: true }
     }),
 
   /**
@@ -770,35 +779,35 @@ export const candidateRouter = router({
     .mutation(async ({ ctx, input }) => {
       await enforceRateLimit(
         `upload:${ctx.user.id}`,
-        RATE_LIMITS.UPLOAD_PER_USER,
-      );
+        RATE_LIMITS.UPLOAD_PER_USER
+      )
 
       const candidate = await ctx.db.candidate.findFirst({
         where: { id: input.candidateId, companyId: ctx.companyId },
         select: { id: true },
-      });
+      })
       if (!candidate) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND" })
       }
 
-      const { bucket } = FILE_KINDS[input.kind];
+      const { bucket } = FILE_KINDS[input.kind]
       const path = createCandidateFilePath(
         ctx.companyId,
         input.candidateId,
         bucket,
-        MIME_EXTENSIONS[input.mimeType],
-      );
+        MIME_EXTENSIONS[input.mimeType]
+      )
       const { data, error } = await createAdminClient()
         .storage.from(bucket)
-        .createSignedUploadUrl(path);
+        .createSignedUploadUrl(path)
       if (error || !data) {
-        console.error("[createFileUploadUrl] Supabase Storage error:", error);
+        console.error("[createFileUploadUrl] Supabase Storage error:", error)
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: GENERIC_ERROR_MESSAGE,
-        });
+        })
       }
-      return { bucket, path: data.path, token: data.token };
+      return { bucket, path: data.path, token: data.token }
     }),
 
   /**
@@ -812,82 +821,97 @@ export const candidateRouter = router({
       const candidate = await ctx.db.candidate.findFirst({
         where: { id: input.candidateId, companyId: ctx.companyId },
         select: { id: true },
-      });
+      })
       if (!candidate) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND" })
       }
 
-      const { bucket, maxBytes, formatMessage } = FILE_KINDS[input.kind];
-      const parsedPath = parseCandidateFilePath(bucket, input.path);
+      const { bucket, maxBytes, formatMessage } = FILE_KINDS[input.kind]
+      const parsedPath = parseCandidateFilePath(bucket, input.path)
       if (
         parsedPath?.companyId !== ctx.companyId ||
         parsedPath.candidateId !== input.candidateId
       ) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: GENERIC_ERROR_MESSAGE });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: GENERIC_ERROR_MESSAGE,
+        })
       }
 
-      const supabase = createAdminClient();
+      const supabase = createAdminClient()
       const { data: storedFile, error: downloadError } = await supabase.storage
         .from(bucket)
-        .download(input.path);
+        .download(input.path)
       if (downloadError || !storedFile) {
-        console.error("[confirmFileUpload] Supabase Storage error:", downloadError);
-        throw new TRPCError({ code: "BAD_REQUEST", message: GENERIC_ERROR_MESSAGE });
+        console.error(
+          "[confirmFileUpload] Supabase Storage error:",
+          downloadError
+        )
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: GENERIC_ERROR_MESSAGE,
+        })
       }
 
-      const buffer = Buffer.from(await storedFile.arrayBuffer());
+      const buffer = Buffer.from(await storedFile.arrayBuffer())
       const hasValidSignature =
-        FILE_SIGNATURES[parsedPath.extension]?.(buffer) ?? false;
+        FILE_SIGNATURES[parsedPath.extension]?.(buffer) ?? false
       const rejectionMessage =
         buffer.length > maxBytes
           ? FILE_TOO_LARGE_MESSAGE
           : hasValidSignature
             ? null
-            : formatMessage;
+            : formatMessage
       if (rejectionMessage) {
         const { error: removeError } = await supabase.storage
           .from(bucket)
-          .remove([input.path]);
+          .remove([input.path])
         if (removeError) {
-          console.warn("[confirmFileUpload] Rejected file removal failed:", removeError);
+          console.warn(
+            "[confirmFileUpload] Rejected file removal failed:",
+            removeError
+          )
         }
-        throw new TRPCError({ code: "BAD_REQUEST", message: rejectionMessage });
+        throw new TRPCError({ code: "BAD_REQUEST", message: rejectionMessage })
       }
 
       const {
         data: { publicUrl },
-      } = supabase.storage.from(bucket).getPublicUrl(input.path);
+      } = supabase.storage.from(bucket).getPublicUrl(input.path)
       const updated = await ctx.db.candidate.update({
         where: { id: input.candidateId },
         data:
           input.kind === "photo"
             ? { photoUrl: publicUrl }
             : { cvUrl: publicUrl, cvFileName: input.fileName },
-      });
+      })
 
       // Relecture : si un autre upload a été confirmé entre-temps, c'est son
       // fichier (celui que la fiche référence) qui est conservé.
       const current = await ctx.db.candidate.findUnique({
         where: { id: input.candidateId },
         select: { photoUrl: true, cvUrl: true },
-      });
+      })
       const currentPath = getCandidateFilePathFromUrl(
         bucket,
         ctx.companyId,
         input.candidateId,
-        (input.kind === "photo" ? current?.photoUrl : current?.cvUrl) ?? null,
-      );
+        (input.kind === "photo" ? current?.photoUrl : current?.cvUrl) ?? null
+      )
       const cleanupError = await removeCandidateFiles(
         supabase,
         ctx.companyId,
         input.candidateId,
         bucket,
-        currentPath ?? input.path,
-      );
+        currentPath ?? input.path
+      )
       if (cleanupError) {
-        console.warn("[confirmFileUpload] Previous file removal failed:", cleanupError);
+        console.warn(
+          "[confirmFileUpload] Previous file removal failed:",
+          cleanupError
+        )
       }
-      return updated;
+      return updated
     }),
 
   /**
@@ -898,9 +922,9 @@ export const candidateRouter = router({
     .mutation(async ({ ctx, input }) => {
       const candidate = await ctx.db.candidate.findFirst({
         where: { id: input.candidateId, companyId: ctx.companyId },
-      });
+      })
       if (!candidate) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND" })
       }
 
       if (candidate.cvUrl || candidate.cvFileName) {
@@ -908,18 +932,18 @@ export const candidateRouter = router({
           createAdminClient(),
           ctx.companyId,
           input.candidateId,
-          "cvs",
-        );
+          "cvs"
+        )
         if (error) {
-          console.warn("[deleteCv] Storage remove failed (continuing):", error);
+          console.warn("[deleteCv] Storage remove failed (continuing):", error)
         }
       }
 
       await ctx.db.candidate.update({
         where: { id: input.candidateId },
         data: { cvUrl: null, cvFileName: null },
-      });
-      return { success: true };
+      })
+      return { success: true }
     }),
 
   /**
@@ -932,16 +956,16 @@ export const candidateRouter = router({
       const candidate = await ctx.db.candidate.findFirst({
         where: { id: input.candidateId, companyId: ctx.companyId },
         select: { cvUrl: true, cvFileName: true },
-      });
+      })
       if (!candidate || !candidate.cvUrl) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND" })
       }
       const url = await createCvSignedUrl(
         ctx.companyId,
         input.candidateId,
-        candidate.cvUrl,
-      );
-      return { url };
+        candidate.cvUrl
+      )
+      return { url }
     }),
 
   /**
@@ -954,36 +978,33 @@ export const candidateRouter = router({
       const rateResult = await checkRateLimit(
         `cv-share:${getClientIp(ctx.headers)}`,
         RATE_LIMITS.CV_DOWNLOAD_SHARE_PER_IP.limit,
-        RATE_LIMITS.CV_DOWNLOAD_SHARE_PER_IP.windowMs,
-      );
+        RATE_LIMITS.CV_DOWNLOAD_SHARE_PER_IP.windowMs
+      )
       if (!rateResult.success) {
         throw new TRPCError({
           code: "TOO_MANY_REQUESTS",
           message: "Trop de requêtes. Réessayez dans quelques minutes.",
-        });
+        })
       }
       const shareLink = await ctx.db.shareLink.findUnique({
         where: { token: input.token },
         include: { candidate: true },
-      });
+      })
       if (!shareLink) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND" })
       }
-      if (
-        shareLink.expiresAt &&
-        shareLink.expiresAt.getTime() < Date.now()
-      ) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+      if (shareLink.expiresAt && shareLink.expiresAt.getTime() < Date.now()) {
+        throw new TRPCError({ code: "NOT_FOUND" })
       }
-      const candidate = shareLink.candidate;
+      const candidate = shareLink.candidate
       if (!candidate.cvUrl) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND" })
       }
       const url = await createCvSignedUrl(
         candidate.companyId,
         candidate.id,
-        candidate.cvUrl,
-      );
-      return { url };
+        candidate.cvUrl
+      )
+      return { url }
     }),
-});
+})

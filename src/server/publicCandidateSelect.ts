@@ -77,7 +77,10 @@ export type AnonymousPublicCandidate = {
  * Transforme un candidat issu de publicCandidateSelect en DTO public :
  * les villes structurées deviennent un libellé unique `city`.
  */
-export const mapToPublicDto = ({ cities, ...candidate }: PublicCandidateRecord) => ({
+export const mapToPublicDto = ({
+  cities,
+  ...candidate
+}: PublicCandidateRecord) => ({
   ...candidate,
   city: formatCandidateCities(cities),
 })

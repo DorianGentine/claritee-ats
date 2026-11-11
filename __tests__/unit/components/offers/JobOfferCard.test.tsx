@@ -3,7 +3,10 @@
  */
 import { describe, it, expect } from "vitest"
 import { render, within } from "@testing-library/react"
-import { JobOfferCard, type JobOfferCardItem } from "@/components/offers/JobOfferCard"
+import {
+  JobOfferCard,
+  type JobOfferCardItem,
+} from "@/components/offers/JobOfferCard"
 
 const mockOffer: JobOfferCardItem = {
   id: "offer-1",

@@ -20,11 +20,21 @@ import {
 } from "@/components/offers/OfferListFilters"
 import { ActiveOfferFilterChips } from "@/components/offers/ActiveOfferFilterChips"
 
-type SortOption = "createdAt_desc" | "createdAt_asc" | "status_asc" | "status_desc"
+type SortOption =
+  | "createdAt_desc"
+  | "createdAt_asc"
+  | "status_asc"
+  | "status_desc"
 
 const SORT_OPTIONS: { value: SortOption; label: string }[] = [
-  { value: "createdAt_desc", label: "Date de création (plus récentes d'abord)" },
-  { value: "createdAt_asc", label: "Date de création (plus anciennes d'abord)" },
+  {
+    value: "createdAt_desc",
+    label: "Date de création (plus récentes d'abord)",
+  },
+  {
+    value: "createdAt_asc",
+    label: "Date de création (plus anciennes d'abord)",
+  },
   { value: "status_asc", label: "Par statut (A–Z)" },
   { value: "status_desc", label: "Par statut (Z–A)" },
 ]
@@ -210,7 +220,10 @@ export default function OffersPage() {
         ) : (
           <>
             {!hasActiveFilters && totalCount > 0 ? (
-              <p className="mt-4 text-sm text-muted-foreground" aria-live="polite">
+              <p
+                className="mt-4 text-sm text-muted-foreground"
+                aria-live="polite"
+              >
                 {totalCount <= PAGE_SIZE
                   ? `${totalCount} offre${totalCount > 1 ? "s" : ""}`
                   : `1–${PAGE_SIZE} sur ${totalCount} offres`}

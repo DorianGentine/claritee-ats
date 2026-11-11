@@ -1,25 +1,25 @@
-"use client";
+"use client"
 
-import type { FieldErrors, UseFormRegister } from "react-hook-form";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import type { FieldErrors, UseFormRegister } from "react-hook-form"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 
 export type CandidateBasicFields = {
-  firstName: string;
-  lastName: string;
-  email?: string;
-  phone?: string;
-  linkedinUrl?: string;
-  title?: string;
-  summary?: string;
-};
+  firstName: string
+  lastName: string
+  email?: string
+  phone?: string
+  linkedinUrl?: string
+  title?: string
+  summary?: string
+}
 
 type Props = {
-  register: UseFormRegister<CandidateBasicFields>;
-  errors: FieldErrors<CandidateBasicFields>;
-  showSummary?: boolean;
-};
+  register: UseFormRegister<CandidateBasicFields>
+  errors: FieldErrors<CandidateBasicFields>
+  showSummary?: boolean
+}
 
 export const CandidateBasicFieldsForm = ({
   register,
@@ -150,4 +150,4 @@ export const CandidateBasicFieldsForm = ({
       </div>
     )}
   </>
-);
+)

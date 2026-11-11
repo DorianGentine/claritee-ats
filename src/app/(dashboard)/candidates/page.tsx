@@ -327,7 +327,7 @@ export default function CandidatesPage() {
               ))}
             </ul>
 
-            {(nextCursor || cursor) ? (
+            {nextCursor || cursor ? (
               <nav
                 className="mt-6 flex justify-center gap-2"
                 aria-label="Pagination de la liste des candidats"

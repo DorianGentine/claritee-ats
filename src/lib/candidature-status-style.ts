@@ -16,19 +16,24 @@ export const CANDIDATURE_STATUS_LABELS: Record<CandidatureStatus, string> = {
 }
 
 /** Classes Tailwind pour le badge (design tokens quand possible). */
-export const CANDIDATURE_STATUS_BADGE_CLASS: Record<CandidatureStatus, string> = {
-  CONTACTED_LINKEDIN: "bg-secondary text-secondary-foreground border-transparent",
-  PHONE_CONTACT: "bg-primary/10 text-primary border-transparent",
-  APPLIED: "bg-primary/20 text-primary border-transparent",
-  ACCEPTED: "bg-success text-success-foreground border-transparent",
-  REJECTED_BY_EMPLOYER: "bg-destructive/10 text-destructive border-transparent",
-  REJECTED_BY_CANDIDATE: "bg-muted text-muted-foreground border-transparent",
-}
+export const CANDIDATURE_STATUS_BADGE_CLASS: Record<CandidatureStatus, string> =
+  {
+    CONTACTED_LINKEDIN:
+      "bg-secondary text-secondary-foreground border-transparent",
+    PHONE_CONTACT: "bg-primary/10 text-primary border-transparent",
+    APPLIED: "bg-primary/20 text-primary border-transparent",
+    ACCEPTED: "bg-success text-success-foreground border-transparent",
+    REJECTED_BY_EMPLOYER:
+      "bg-destructive/10 text-destructive border-transparent",
+    REJECTED_BY_CANDIDATE: "bg-muted text-muted-foreground border-transparent",
+  }
 
 export const getCandidatureStatusLabel = (status: CandidatureStatus): string =>
   CANDIDATURE_STATUS_LABELS[status] ?? status
 
-export const getCandidatureStatusBadgeClass = (status: CandidatureStatus): string =>
+export const getCandidatureStatusBadgeClass = (
+  status: CandidatureStatus
+): string =>
   CANDIDATURE_STATUS_BADGE_CLASS[status] ?? "bg-muted text-muted-foreground"
 
 export type CandidatureStatusStyle = {
@@ -36,7 +41,9 @@ export type CandidatureStatusStyle = {
   badgeClassName: string
 }
 
-export const getCandidatureStatusStyle = (status: CandidatureStatus): CandidatureStatusStyle => ({
+export const getCandidatureStatusStyle = (
+  status: CandidatureStatus
+): CandidatureStatusStyle => ({
   label: getCandidatureStatusLabel(status),
   badgeClassName: getCandidatureStatusBadgeClass(status),
 })

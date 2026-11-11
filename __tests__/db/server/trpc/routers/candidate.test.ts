@@ -1,15 +1,12 @@
-import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "@prisma/client";
-import { appRouter } from "@/server/trpc/routers/_app";
-import type { Context } from "@/server/trpc/context";
-import { idsNewestFirst } from "../../../helpers/order";
-import {
-  PHOTO_MAX_BYTES,
-  CV_MAX_BYTES,
-} from "@/lib/validations/candidate";
+import { describe, it, expect, beforeAll, afterAll, vi } from "vitest"
+import { PrismaPg } from "@prisma/adapter-pg"
+import { PrismaClient } from "@prisma/client"
+import { appRouter } from "@/server/trpc/routers/_app"
+import type { Context } from "@/server/trpc/context"
+import { idsNewestFirst } from "../../../helpers/order"
+import { PHOTO_MAX_BYTES, CV_MAX_BYTES } from "@/lib/validations/candidate"
 
-const connectionString = process.env.DATABASE_URL;
+const connectionString = process.env.DATABASE_URL
 
 /** Faux Storage : fichiers en mémoire, clé `${bucket}:${path}`. */
 const { storageRemove, storedFiles } = vi.hoisted(() => ({
@@ -18,7 +15,7 @@ const { storageRemove, storedFiles } = vi.hoisted(() => ({
       Promise.resolve({ error: null })
   ),
   storedFiles: new Map<string, Buffer>(),
-}));
+}))
 
 vi.mock("@/lib/supabase/admin", () => ({
   createAdminClient: () => ({
@@ -30,23 +27,25 @@ vi.mock("@/lib/supabase/admin", () => ({
             error: null,
           }),
         download: (path: string) => {
-          const content = storedFiles.get(`${bucket}:${path}`);
+          const content = storedFiles.get(`${bucket}:${path}`)
           return Promise.resolve(
             content
               ? { data: new Blob([new Uint8Array(content)]), error: null }
               : { data: null, error: new Error("Object not found") }
-          );
+          )
         },
         list: (folder: string) =>
           Promise.resolve({
             data: [...storedFiles.keys()]
               .filter((key) => key.startsWith(`${bucket}:${folder}/`))
-              .map((key) => ({ name: key.slice(`${bucket}:${folder}/`.length) })),
+              .map((key) => ({
+                name: key.slice(`${bucket}:${folder}/`.length),
+              })),
             error: null,
           }),
         remove: (paths: string[]) => {
-          for (const path of paths) storedFiles.delete(`${bucket}:${path}`);
-          return storageRemove(bucket, paths);
+          for (const path of paths) storedFiles.delete(`${bucket}:${path}`)
+          return storageRemove(bucket, paths)
         },
         getPublicUrl: (path: string) => ({
           data: {
@@ -63,15 +62,15 @@ vi.mock("@/lib/supabase/admin", () => ({
       }),
     },
   }),
-}));
+}))
 
 describe("candidate", () => {
-  let db: PrismaClient;
-  let companyAId: string;
-  let companyBId: string;
-  let candidateA1Id: string;
-  let candidateA2Id: string;
-  let candidateB1Id: string;
+  let db: PrismaClient
+  let companyAId: string
+  let companyBId: string
+  let candidateA1Id: string
+  let candidateA2Id: string
+  let candidateB1Id: string
 
   const createContext = (companyId: string | null): Context =>
     ({
@@ -79,11 +78,11 @@ describe("candidate", () => {
       user: companyId ? { id: "test-user", email: "admin@test.com" } : null,
       companyId,
       headers: new Headers(),
-    }) as unknown as Context;
+    }) as unknown as Context
 
   beforeAll(async () => {
-    const adapter = new PrismaPg({ connectionString: connectionString! });
-    db = new PrismaClient({ adapter });
+    const adapter = new PrismaPg({ connectionString: connectionString! })
+    db = new PrismaClient({ adapter })
 
     const [companyA, companyB] = await Promise.all([
       db.company.create({
@@ -98,9 +97,9 @@ describe("candidate", () => {
           siren: `8${Date.now().toString().slice(-8)}`,
         },
       }),
-    ]);
-    companyAId = companyA.id;
-    companyBId = companyB.id;
+    ])
+    companyAId = companyA.id
+    companyBId = companyB.id
 
     const [cA1, cA2, cB1] = await Promise.all([
       db.candidate.create({
@@ -127,72 +126,72 @@ describe("candidate", () => {
           title: "PM",
         },
       }),
-    ]);
-    candidateA1Id = cA1.id;
-    candidateA2Id = cA2.id;
-    candidateB1Id = cB1.id;
-  });
+    ])
+    candidateA1Id = cA1.id
+    candidateA2Id = cA2.id
+    candidateB1Id = cB1.id
+  })
 
   afterAll(async () => {
     await db.candidate.deleteMany({
       where: {
         id: { in: [candidateA1Id, candidateA2Id, candidateB1Id] },
       },
-    });
+    })
     await db.company.deleteMany({
       where: { id: { in: [companyAId, companyBId] } },
-    });
-    await db.$disconnect();
-  });
+    })
+    await db.$disconnect()
+  })
 
   it("list: returns only candidates for the caller company", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
-    const result = await caller.candidate.list({ limit: 20 });
+    const result = await caller.candidate.list({ limit: 20 })
 
-    expect(result.items).toHaveLength(2);
-    const ids = result.items.map((c) => c.id).sort();
-    expect(ids).toEqual([candidateA1Id, candidateA2Id].sort());
-    expect(result.items.some((c) => c.id === candidateB1Id)).toBe(false);
-  });
+    expect(result.items).toHaveLength(2)
+    const ids = result.items.map((c) => c.id).sort()
+    expect(ids).toEqual([candidateA1Id, candidateA2Id].sort())
+    expect(result.items.some((c) => c.id === candidateB1Id)).toBe(false)
+  })
 
   it("list: returns items sorted by createdAt desc", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
-    const result = await caller.candidate.list({ limit: 20 });
+    const result = await caller.candidate.list({ limit: 20 })
 
-    expect(result.items.length).toBeGreaterThanOrEqual(2);
+    expect(result.items.length).toBeGreaterThanOrEqual(2)
     const [cA1, cA2] = await Promise.all([
       db.candidate.findUniqueOrThrow({ where: { id: candidateA1Id } }),
       db.candidate.findUniqueOrThrow({ where: { id: candidateA2Id } }),
-    ]);
-    const expectedOrder = idsNewestFirst([cA1, cA2]);
-    expect(result.items[0].id).toBe(expectedOrder[0]);
-    expect(result.items[1].id).toBe(expectedOrder[1]);
-  });
+    ])
+    const expectedOrder = idsNewestFirst([cA1, cA2])
+    expect(result.items[0].id).toBe(expectedOrder[0])
+    expect(result.items[1].id).toBe(expectedOrder[1])
+  })
 
   it("list: pagination returns nextCursor and hasMore when more than limit", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
-    const page1 = await caller.candidate.list({ limit: 1 });
-    expect(page1.items).toHaveLength(1);
-    expect(page1.nextCursor).not.toBeNull();
-    expect(page1.hasMore).toBe(true);
+    const page1 = await caller.candidate.list({ limit: 1 })
+    expect(page1.items).toHaveLength(1)
+    expect(page1.nextCursor).not.toBeNull()
+    expect(page1.hasMore).toBe(true)
 
     const page2 = await caller.candidate.list({
       limit: 1,
       cursor: page1.nextCursor!,
-    });
-    expect(page2.items).toHaveLength(1);
-    expect(page2.items[0].id).not.toBe(page1.items[0].id);
-  });
+    })
+    expect(page2.items).toHaveLength(1)
+    expect(page2.items[0].id).not.toBe(page1.items[0].id)
+  })
 
   it("list: filters by cityIds (OR logic - candidate must have at least one)", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     const [cityParis, cityLyon] = await Promise.all([
       db.city.create({
@@ -211,46 +210,46 @@ describe("candidate", () => {
           longitude: 4.8357,
         },
       }),
-    ]);
+    ])
 
     await db.candidateCity.createMany({
       data: [
         { candidateId: candidateA1Id, cityId: cityParis.id, order: 0 },
         { candidateId: candidateA2Id, cityId: cityLyon.id, order: 0 },
       ],
-    });
+    })
 
     const onlyParis = await caller.candidate.list({
       limit: 20,
       cityIds: [cityParis.id],
-    });
-    expect(onlyParis.items.map((c) => c.id)).toEqual([candidateA1Id]);
+    })
+    expect(onlyParis.items.map((c) => c.id)).toEqual([candidateA1Id])
 
     const parisOrLyon = await caller.candidate.list({
       limit: 20,
       cityIds: [cityParis.id, cityLyon.id],
-    });
+    })
     expect(parisOrLyon.items.map((c) => c.id).sort()).toEqual(
-      [candidateA1Id, candidateA2Id].sort(),
-    );
+      [candidateA1Id, candidateA2Id].sort()
+    )
 
-    const noFilter = await caller.candidate.list({ limit: 20, cityIds: [] });
-    expect(noFilter.items.length).toBeGreaterThanOrEqual(2);
+    const noFilter = await caller.candidate.list({ limit: 20, cityIds: [] })
+    expect(noFilter.items.length).toBeGreaterThanOrEqual(2)
 
     await db.candidateCity.deleteMany({
       where: {
         candidateId: { in: [candidateA1Id, candidateA2Id] },
         cityId: { in: [cityParis.id, cityLyon.id] },
       },
-    });
+    })
     await db.city.deleteMany({
       where: { id: { in: [cityParis.id, cityLyon.id] } },
-    });
-  });
+    })
+  })
 
   it("list: filters by tagIds (AND logic - candidate must have ALL tags)", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     const [tag1, tag2] = await Promise.all([
       db.tag.create({
@@ -267,43 +266,43 @@ describe("candidate", () => {
           companyId: companyAId,
         },
       }),
-    ]);
+    ])
 
     await db.candidateTag.create({
       data: { candidateId: candidateA1Id, tagId: tag1.id },
-    });
+    })
     await db.candidateTag.create({
       data: { candidateId: candidateA1Id, tagId: tag2.id },
-    });
+    })
     await db.candidateTag.create({
       data: { candidateId: candidateA2Id, tagId: tag1.id },
-    });
+    })
 
     const bothTags = await caller.candidate.list({
       limit: 20,
       tagIds: [tag1.id, tag2.id],
-    });
-    expect(bothTags.items).toHaveLength(1);
-    expect(bothTags.items[0].id).toBe(candidateA1Id);
+    })
+    expect(bothTags.items).toHaveLength(1)
+    expect(bothTags.items[0].id).toBe(candidateA1Id)
 
     const oneTag = await caller.candidate.list({
       limit: 20,
       tagIds: [tag1.id],
-    });
-    expect(oneTag.items).toHaveLength(2);
+    })
+    expect(oneTag.items).toHaveLength(2)
 
     await db.candidateTag.deleteMany({
       where: {
         candidateId: { in: [candidateA1Id, candidateA2Id] },
         tagId: { in: [tag1.id, tag2.id] },
       },
-    });
-    await db.tag.deleteMany({ where: { id: { in: [tag1.id, tag2.id] } } });
-  });
+    })
+    await db.tag.deleteMany({ where: { id: { in: [tag1.id, tag2.id] } } })
+  })
 
   it("list: combines cityIds and tagIds filters", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     const city = await db.city.create({
       data: {
@@ -312,48 +311,48 @@ describe("candidate", () => {
         latitude: 48.8566,
         longitude: 2.3522,
       },
-    });
+    })
     const tag = await db.tag.create({
       data: {
         name: `FilterComboTag-${Date.now()}`,
         color: "#9B8BA8",
         companyId: companyAId,
       },
-    });
+    })
 
     await db.candidateCity.createMany({
       data: [
         { candidateId: candidateA1Id, cityId: city.id, order: 0 },
         { candidateId: candidateA2Id, cityId: city.id, order: 0 },
       ],
-    });
+    })
     await db.candidateTag.create({
       data: { candidateId: candidateA1Id, tagId: tag.id },
-    });
+    })
 
     const result = await caller.candidate.list({
       limit: 20,
       cityIds: [city.id],
       tagIds: [tag.id],
-    });
-    expect(result.items.map((c) => c.id)).toEqual([candidateA1Id]);
+    })
+    expect(result.items.map((c) => c.id)).toEqual([candidateA1Id])
 
     await db.candidateTag.deleteMany({
       where: { candidateId: candidateA1Id, tagId: tag.id },
-    });
+    })
     await db.candidateCity.deleteMany({
       where: {
         candidateId: { in: [candidateA1Id, candidateA2Id] },
         cityId: city.id,
       },
-    });
-    await db.tag.delete({ where: { id: tag.id } });
-    await db.city.delete({ where: { id: city.id } });
-  });
+    })
+    await db.tag.delete({ where: { id: tag.id } })
+    await db.city.delete({ where: { id: city.id } })
+  })
 
   it("list: filters by languageNames (AND logic)", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     const [langFrA1, langEnA2, langFrA2] = await Promise.all([
       db.language.create({
@@ -377,61 +376,61 @@ describe("candidate", () => {
           level: "INTERMEDIATE",
         },
       }),
-    ]);
+    ])
 
     const oneLang = await caller.candidate.list({
       limit: 20,
       languageNames: ["Français"],
-    });
-    expect(oneLang.items).toHaveLength(2);
+    })
+    expect(oneLang.items).toHaveLength(2)
 
     const bothLangs = await caller.candidate.list({
       limit: 20,
       languageNames: ["Français", "Anglais"],
-    });
-    expect(bothLangs.items).toHaveLength(1);
-    expect(bothLangs.items[0].id).toBe(candidateA2Id);
+    })
+    expect(bothLangs.items).toHaveLength(1)
+    expect(bothLangs.items[0].id).toBe(candidateA2Id)
 
     await db.language.deleteMany({
       where: { id: { in: [langFrA1.id, langEnA2.id, langFrA2.id] } },
-    });
-  });
+    })
+  })
 
   it("listDistinctLanguageNames: returns distinct language names for the cabinet only", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     await db.language.createMany({
       data: [
         { candidateId: candidateA1Id, name: "Français", level: "NATIVE" },
         { candidateId: candidateA2Id, name: "Anglais", level: "FLUENT" },
       ],
-    });
+    })
 
-    const names = await caller.candidate.listDistinctLanguageNames();
-    expect(names).toContain("Français");
-    expect(names).toContain("Anglais");
+    const names = await caller.candidate.listDistinctLanguageNames()
+    expect(names).toContain("Français")
+    expect(names).toContain("Anglais")
 
     await db.language.deleteMany({
       where: {
         candidateId: { in: [candidateA1Id, candidateA2Id] },
         name: { in: ["Français", "Anglais"] },
       },
-    });
-  });
+    })
+  })
 
   it("list: throws UNAUTHORIZED when not authenticated", async () => {
-    const ctx = createContext(null);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(null)
+    const caller = appRouter.createCaller(ctx)
 
     await expect(caller.candidate.list({ limit: 20 })).rejects.toMatchObject({
       code: "UNAUTHORIZED",
-    });
-  });
+    })
+  })
 
   it("create: creates candidate with caller companyId and returns id", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     const result = await caller.candidate.create({
       firstName: "New",
@@ -439,45 +438,45 @@ describe("candidate", () => {
       email: "new@test.com",
       phone: "06 11 22 33 44",
       title: "QA",
-    });
+    })
 
-    expect(result.id).toBeDefined();
-    expect(result.firstName).toBe("New");
-    expect(result.lastName).toBe("Candidate");
-    expect(result.companyId).toBe(companyAId);
+    expect(result.id).toBeDefined()
+    expect(result.firstName).toBe("New")
+    expect(result.lastName).toBe("Candidate")
+    expect(result.companyId).toBe(companyAId)
 
     const inDb = await db.candidate.findUniqueOrThrow({
       where: { id: result.id },
-    });
-    expect(inDb.companyId).toBe(companyAId);
-    expect(inDb.email).toBe("new@test.com");
-    expect(inDb.phone).toBe("06 11 22 33 44");
-    expect(inDb.title).toBe("QA");
+    })
+    expect(inDb.companyId).toBe(companyAId)
+    expect(inDb.email).toBe("new@test.com")
+    expect(inDb.phone).toBe("06 11 22 33 44")
+    expect(inDb.title).toBe("QA")
 
-    await db.candidate.delete({ where: { id: result.id } });
-  });
+    await db.candidate.delete({ where: { id: result.id } })
+  })
 
   it("create: does not allow creating candidate for another company", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     const result = await caller.candidate.create({
       firstName: "Scoped",
       lastName: "User",
-    });
+    })
 
-    expect(result.companyId).toBe(companyAId);
+    expect(result.companyId).toBe(companyAId)
     const inDb = await db.candidate.findUniqueOrThrow({
       where: { id: result.id },
-    });
-    expect(inDb.companyId).toBe(companyAId);
+    })
+    expect(inDb.companyId).toBe(companyAId)
 
-    await db.candidate.delete({ where: { id: result.id } });
-  });
+    await db.candidate.delete({ where: { id: result.id } })
+  })
 
   it("create: creates the imported background (summary, experiences, formations, languages)", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     const result = await caller.candidate.create({
       firstName: "Imported",
@@ -492,16 +491,27 @@ describe("candidate", () => {
           endDate: null,
           description: "Équipe de 5",
         },
-        { title: "Dev", company: "Initech", startDate: "2019-02-01", endDate: "2022-10-01" },
+        {
+          title: "Dev",
+          company: "Initech",
+          startDate: "2019-02-01",
+          endDate: "2022-10-01",
+        },
       ],
       formations: [
-        { degree: "Master", field: "Informatique", school: "INSA Lyon", startDate: null, endDate: "2018-06-01" },
+        {
+          degree: "Master",
+          field: "Informatique",
+          school: "INSA Lyon",
+          startDate: null,
+          endDate: "2018-06-01",
+        },
       ],
       languages: [
         { name: "Anglais", level: "FLUENT" },
         { name: "Français", level: "NATIVE" },
       ],
-    });
+    })
 
     const inDb = await db.candidate.findUniqueOrThrow({
       where: { id: result.id },
@@ -510,85 +520,115 @@ describe("candidate", () => {
         formations: true,
         languages: { orderBy: { name: "asc" } },
       },
-    });
-    expect(inDb.summary).toBe("Développeuse full-stack.");
-    expect(inDb.experiences.map((experience) => [experience.company, experience.order])).toEqual([
+    })
+    expect(inDb.summary).toBe("Développeuse full-stack.")
+    expect(
+      inDb.experiences.map((experience) => [
+        experience.company,
+        experience.order,
+      ])
+    ).toEqual([
       ["Acme", 0],
       ["Initech", 1],
-    ]);
-    expect(inDb.experiences[0]!.startDate.toISOString()).toBe("2022-11-01T00:00:00.000Z");
-    expect(inDb.experiences[0]!.endDate).toBeNull();
-    expect(inDb.formations).toHaveLength(1);
-    expect(inDb.formations[0]!.school).toBe("INSA Lyon");
-    expect(inDb.languages.map((language) => language.level)).toEqual(["FLUENT", "NATIVE"]);
+    ])
+    expect(inDb.experiences[0]!.startDate.toISOString()).toBe(
+      "2022-11-01T00:00:00.000Z"
+    )
+    expect(inDb.experiences[0]!.endDate).toBeNull()
+    expect(inDb.formations).toHaveLength(1)
+    expect(inDb.formations[0]!.school).toBe("INSA Lyon")
+    expect(inDb.languages.map((language) => language.level)).toEqual([
+      "FLUENT",
+      "NATIVE",
+    ])
 
-    await db.candidate.delete({ where: { id: result.id } });
-  });
+    await db.candidate.delete({ where: { id: result.id } })
+  })
 
   it("create: attaches tags by name, reusing an existing company tag regardless of case", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
     const existingTag = await db.tag.create({
-      data: { name: `React-${Date.now()}`, color: "#000000", companyId: companyAId },
-    });
-    const newTagName = `Sourcing-${Date.now()}`;
+      data: {
+        name: `React-${Date.now()}`,
+        color: "#000000",
+        companyId: companyAId,
+      },
+    })
+    const newTagName = `Sourcing-${Date.now()}`
 
     const result = await caller.candidate.create({
       firstName: "Tagged",
       lastName: "Import",
-      tags: [existingTag.name.toLowerCase(), newTagName, newTagName.toUpperCase()],
-    });
+      tags: [
+        existingTag.name.toLowerCase(),
+        newTagName,
+        newTagName.toUpperCase(),
+      ],
+    })
 
     const links = await db.candidateTag.findMany({
       where: { candidateId: result.id },
       include: { tag: true },
-    });
+    })
     expect(links.map((link) => link.tag.name).sort()).toEqual(
       [existingTag.name, newTagName].sort()
-    );
-    const createdTag = links.find((link) => link.tag.name === newTagName)!.tag;
-    expect(createdTag.companyId).toBe(companyAId);
+    )
+    const createdTag = links.find((link) => link.tag.name === newTagName)!.tag
+    expect(createdTag.companyId).toBe(companyAId)
 
-    await db.candidate.delete({ where: { id: result.id } });
-    await db.tag.deleteMany({ where: { id: { in: [existingTag.id, createdTag.id] } } });
-  });
+    await db.candidate.delete({ where: { id: result.id } })
+    await db.tag.deleteMany({
+      where: { id: { in: [existingTag.id, createdTag.id] } },
+    })
+  })
 
   it("create: throws UNAUTHORIZED when not authenticated", async () => {
-    const ctx = createContext(null);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(null)
+    const caller = appRouter.createCaller(ctx)
 
     await expect(
-      caller.candidate.create({ firstName: "X", lastName: "Y" }),
-    ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
-  });
+      caller.candidate.create({ firstName: "X", lastName: "Y" })
+    ).rejects.toMatchObject({ code: "UNAUTHORIZED" })
+  })
 
   // ─── Upload direct (URL signée) : photo et CV ───
 
-  const minimalJpeg = Buffer.from([0xff, 0xd8, 0xff, ...Array(20).fill(0)]);
-  const minimalPdf = Buffer.from([0x25, 0x50, 0x44, 0x46, ...Array(20).fill(0)]);
-  const minimalDocx = Buffer.from([0x50, 0x4b, 0x03, 0x04, ...Array(20).fill(0)]);
-  const PDF_MIME = "application/pdf" as const;
+  const minimalJpeg = Buffer.from([0xff, 0xd8, 0xff, ...Array(20).fill(0)])
+  const minimalPdf = Buffer.from([0x25, 0x50, 0x44, 0x46, ...Array(20).fill(0)])
+  const minimalDocx = Buffer.from([
+    0x50,
+    0x4b,
+    0x03,
+    0x04,
+    ...Array(20).fill(0),
+  ])
+  const PDF_MIME = "application/pdf" as const
   const DOCX_MIME =
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document" as const;
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document" as const
 
-  type Caller = ReturnType<typeof appRouter.createCaller>;
+  type Caller = ReturnType<typeof appRouter.createCaller>
 
   /** Simule le navigateur : URL signée, dépôt du fichier dans le faux Storage, confirmation. */
-  const uploadPhoto = async (caller: Caller, candidateId: string, content: Buffer) => {
+  const uploadPhoto = async (
+    caller: Caller,
+    candidateId: string,
+    content: Buffer
+  ) => {
     const { bucket, path } = await caller.candidate.createFileUploadUrl({
       kind: "photo",
       candidateId,
       mimeType: "image/jpeg",
       size: content.length,
-    });
-    storedFiles.set(`${bucket}:${path}`, content);
+    })
+    storedFiles.set(`${bucket}:${path}`, content)
     const updated = await caller.candidate.confirmFileUpload({
       kind: "photo",
       candidateId,
       path,
-    });
-    return { path, updated };
-  };
+    })
+    return { path, updated }
+  }
 
   const uploadCv = async (
     caller: Caller,
@@ -602,47 +642,49 @@ describe("candidate", () => {
       candidateId,
       mimeType,
       size: content.length,
-    });
-    storedFiles.set(`${bucket}:${path}`, content);
+    })
+    storedFiles.set(`${bucket}:${path}`, content)
     const updated = await caller.candidate.confirmFileUpload({
       kind: "cv",
       candidateId,
       path,
       fileName,
-    });
-    return { path, updated };
-  };
+    })
+    return { path, updated }
+  }
 
   const clearFiles = async (candidateId: string) => {
-    storedFiles.clear();
+    storedFiles.clear()
     await db.candidate.update({
       where: { id: candidateId },
       data: { photoUrl: null, cvUrl: null, cvFileName: null },
-    });
-  };
+    })
+  }
 
   it("createFileUploadUrl: returns a unique path in the candidate folder", async () => {
-    const caller = appRouter.createCaller(createContext(companyAId));
+    const caller = appRouter.createCaller(createContext(companyAId))
     const input = {
       kind: "cv" as const,
       candidateId: candidateA2Id,
       mimeType: DOCX_MIME,
       size: 1000,
-    };
+    }
 
-    const first = await caller.candidate.createFileUploadUrl(input);
-    const second = await caller.candidate.createFileUploadUrl(input);
+    const first = await caller.candidate.createFileUploadUrl(input)
+    const second = await caller.candidate.createFileUploadUrl(input)
 
-    expect(first.bucket).toBe("cvs");
-    expect(first.token).toBe("upload-token");
+    expect(first.bucket).toBe("cvs")
+    expect(first.token).toBe("upload-token")
     expect(first.path).toMatch(
-      new RegExp(`^${companyAId}/candidates/${candidateA2Id}/cv-[0-9a-f-]{36}\\.docx$`)
-    );
-    expect(second.path).not.toBe(first.path);
-  });
+      new RegExp(
+        `^${companyAId}/candidates/${candidateA2Id}/cv-[0-9a-f-]{36}\\.docx$`
+      )
+    )
+    expect(second.path).not.toBe(first.path)
+  })
 
   it("createFileUploadUrl: rejects a file above the limit with PRD message", async () => {
-    const caller = appRouter.createCaller(createContext(companyAId));
+    const caller = appRouter.createCaller(createContext(companyAId))
 
     await expect(
       caller.candidate.createFileUploadUrl({
@@ -656,11 +698,11 @@ describe("candidate", () => {
       message: expect.stringContaining(
         "Le fichier dépasse la taille maximale autorisée (2 Mo pour les photos, 5 Mo pour les CVs)"
       ),
-    });
-  });
+    })
+  })
 
   it("createFileUploadUrl: throws NOT_FOUND when candidate belongs to another company", async () => {
-    const caller = appRouter.createCaller(createContext(companyAId));
+    const caller = appRouter.createCaller(createContext(companyAId))
 
     await expect(
       caller.candidate.createFileUploadUrl({
@@ -669,71 +711,84 @@ describe("candidate", () => {
         mimeType: PDF_MIME,
         size: 1000,
       })
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
-  });
+    ).rejects.toMatchObject({ code: "NOT_FOUND" })
+  })
 
   it("confirmFileUpload: sets photoUrl and removes the previous photos, not the new one", async () => {
-    const caller = appRouter.createCaller(createContext(companyAId));
-    const prefix = `${companyAId}/candidates/${candidateA1Id}`;
-    storedFiles.set(`photos:${prefix}/photo.png`, minimalJpeg);
+    const caller = appRouter.createCaller(createContext(companyAId))
+    const prefix = `${companyAId}/candidates/${candidateA1Id}`
+    storedFiles.set(`photos:${prefix}/photo.png`, minimalJpeg)
 
-    const { path, updated } = await uploadPhoto(caller, candidateA1Id, minimalJpeg);
+    const { path, updated } = await uploadPhoto(
+      caller,
+      candidateA1Id,
+      minimalJpeg
+    )
 
-    expect(updated.photoUrl).toBe(`https://storage.example.com/photos/${path}`);
-    expect(storedFiles.has(`photos:${path}`)).toBe(true);
-    expect(storedFiles.has(`photos:${prefix}/photo.png`)).toBe(false);
+    expect(updated.photoUrl).toBe(`https://storage.example.com/photos/${path}`)
+    expect(storedFiles.has(`photos:${path}`)).toBe(true)
+    expect(storedFiles.has(`photos:${prefix}/photo.png`)).toBe(false)
 
-    await clearFiles(candidateA1Id);
-  });
+    await clearFiles(candidateA1Id)
+  })
 
   it("confirmFileUpload: sets cvUrl and cvFileName, replacing the previous CV", async () => {
-    const caller = appRouter.createCaller(createContext(companyAId));
+    const caller = appRouter.createCaller(createContext(companyAId))
 
-    const { path: firstPath } = await uploadCv(caller, candidateA2Id, minimalPdf, "v1.pdf");
+    const { path: firstPath } = await uploadCv(
+      caller,
+      candidateA2Id,
+      minimalPdf,
+      "v1.pdf"
+    )
     const { path, updated } = await uploadCv(
       caller,
       candidateA2Id,
       minimalDocx,
       "v2.docx",
       DOCX_MIME
-    );
+    )
 
-    expect(updated.cvFileName).toBe("v2.docx");
-    expect(updated.cvUrl).toBe(`https://storage.example.com/cvs/${path}`);
-    expect(storedFiles.has(`cvs:${firstPath}`)).toBe(false);
-    const inDb = await db.candidate.findUniqueOrThrow({ where: { id: candidateA2Id } });
-    expect(inDb.cvUrl).toBe(updated.cvUrl);
+    expect(updated.cvFileName).toBe("v2.docx")
+    expect(updated.cvUrl).toBe(`https://storage.example.com/cvs/${path}`)
+    expect(storedFiles.has(`cvs:${firstPath}`)).toBe(false)
+    const inDb = await db.candidate.findUniqueOrThrow({
+      where: { id: candidateA2Id },
+    })
+    expect(inDb.cvUrl).toBe(updated.cvUrl)
 
-    await clearFiles(candidateA2Id);
-  });
+    await clearFiles(candidateA2Id)
+  })
 
   it("confirmFileUpload: rejects and removes a stored file whose content does not match its format", async () => {
-    const caller = appRouter.createCaller(createContext(companyAId));
+    const caller = appRouter.createCaller(createContext(companyAId))
 
     await expect(
       uploadCv(caller, candidateA2Id, Buffer.from("not a pdf"), "fake.pdf")
     ).rejects.toMatchObject({
       code: "BAD_REQUEST",
       message: expect.stringContaining("Format de fichier non supporté"),
-    });
-    expect(storedFiles.size).toBe(0);
-    const inDb = await db.candidate.findUniqueOrThrow({ where: { id: candidateA2Id } });
-    expect(inDb.cvUrl).toBeNull();
-  });
+    })
+    expect(storedFiles.size).toBe(0)
+    const inDb = await db.candidate.findUniqueOrThrow({
+      where: { id: candidateA2Id },
+    })
+    expect(inDb.cvUrl).toBeNull()
+  })
 
   it("confirmFileUpload: rejects and removes a stored file above the limit", async () => {
-    const caller = appRouter.createCaller(createContext(companyAId));
+    const caller = appRouter.createCaller(createContext(companyAId))
     const { bucket, path } = await caller.candidate.createFileUploadUrl({
       kind: "cv",
       candidateId: candidateA2Id,
       mimeType: PDF_MIME,
       size: 1000,
-    });
+    })
     // Taille annoncée mensongère : le fichier réellement déposé dépasse 5 Mo.
     storedFiles.set(
       `${bucket}:${path}`,
       Buffer.concat([minimalPdf, Buffer.alloc(CV_MAX_BYTES)])
-    );
+    )
 
     await expect(
       caller.candidate.confirmFileUpload({
@@ -744,13 +799,15 @@ describe("candidate", () => {
       })
     ).rejects.toMatchObject({
       code: "BAD_REQUEST",
-      message: expect.stringContaining("Le fichier dépasse la taille maximale autorisée"),
-    });
-    expect(storedFiles.has(`${bucket}:${path}`)).toBe(false);
-  });
+      message: expect.stringContaining(
+        "Le fichier dépasse la taille maximale autorisée"
+      ),
+    })
+    expect(storedFiles.has(`${bucket}:${path}`)).toBe(false)
+  })
 
   it("confirmFileUpload: rejects a path outside the candidate folder", async () => {
-    const caller = appRouter.createCaller(createContext(companyAId));
+    const caller = appRouter.createCaller(createContext(companyAId))
 
     await expect(
       caller.candidate.confirmFileUpload({
@@ -758,25 +815,29 @@ describe("candidate", () => {
         candidateId: candidateA1Id,
         path: `${companyBId}/candidates/${candidateB1Id}/photo.jpg`,
       })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-  });
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" })
+  })
 
   it("confirmFileUpload: rejects a file that was never uploaded", async () => {
-    const caller = appRouter.createCaller(createContext(companyAId));
+    const caller = appRouter.createCaller(createContext(companyAId))
     const { path } = await caller.candidate.createFileUploadUrl({
       kind: "photo",
       candidateId: candidateA1Id,
       mimeType: "image/jpeg",
       size: 100,
-    });
+    })
 
     await expect(
-      caller.candidate.confirmFileUpload({ kind: "photo", candidateId: candidateA1Id, path })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-  });
+      caller.candidate.confirmFileUpload({
+        kind: "photo",
+        candidateId: candidateA1Id,
+        path,
+      })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" })
+  })
 
   it("confirmFileUpload: throws NOT_FOUND when candidate belongs to another company", async () => {
-    const caller = appRouter.createCaller(createContext(companyAId));
+    const caller = appRouter.createCaller(createContext(companyAId))
 
     await expect(
       caller.candidate.confirmFileUpload({
@@ -784,64 +845,83 @@ describe("candidate", () => {
         candidateId: candidateB1Id,
         path: `${companyBId}/candidates/${candidateB1Id}/photo.jpg`,
       })
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
-  });
+    ).rejects.toMatchObject({ code: "NOT_FOUND" })
+  })
 
   // ─── deleteCv / téléchargement ───
 
   it("deleteCv: clears cvUrl and cvFileName and removes the stored CV", async () => {
-    const caller = appRouter.createCaller(createContext(companyAId));
-    const { path } = await uploadCv(caller, candidateA2Id, minimalPdf, "to-delete.pdf");
+    const caller = appRouter.createCaller(createContext(companyAId))
+    const { path } = await uploadCv(
+      caller,
+      candidateA2Id,
+      minimalPdf,
+      "to-delete.pdf"
+    )
 
-    const result = await caller.candidate.deleteCv({ candidateId: candidateA2Id });
+    const result = await caller.candidate.deleteCv({
+      candidateId: candidateA2Id,
+    })
 
-    expect(result.success).toBe(true);
-    expect(storedFiles.has(`cvs:${path}`)).toBe(false);
-    const inDb = await db.candidate.findUniqueOrThrow({ where: { id: candidateA2Id } });
-    expect(inDb.cvUrl).toBeNull();
-    expect(inDb.cvFileName).toBeNull();
-  });
+    expect(result.success).toBe(true)
+    expect(storedFiles.has(`cvs:${path}`)).toBe(false)
+    const inDb = await db.candidate.findUniqueOrThrow({
+      where: { id: candidateA2Id },
+    })
+    expect(inDb.cvUrl).toBeNull()
+    expect(inDb.cvFileName).toBeNull()
+  })
 
   it("deleteCv: succeeds when no CV present (idempotent)", async () => {
-    const caller = appRouter.createCaller(createContext(companyAId));
+    const caller = appRouter.createCaller(createContext(companyAId))
 
-    const result = await caller.candidate.deleteCv({ candidateId: candidateA2Id });
-    expect(result.success).toBe(true);
-  });
+    const result = await caller.candidate.deleteCv({
+      candidateId: candidateA2Id,
+    })
+    expect(result.success).toBe(true)
+  })
 
   it("deleteCv: throws NOT_FOUND when candidate belongs to another company", async () => {
-    const caller = appRouter.createCaller(createContext(companyAId));
+    const caller = appRouter.createCaller(createContext(companyAId))
 
     await expect(
-      caller.candidate.deleteCv({ candidateId: candidateB1Id }),
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
-  });
+      caller.candidate.deleteCv({ candidateId: candidateB1Id })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" })
+  })
 
   it("getCvDownloadUrl: signs the stored path even when the file name has no extension", async () => {
-    const caller = appRouter.createCaller(createContext(companyAId));
-    const { path } = await uploadCv(caller, candidateA2Id, minimalDocx, "CV", DOCX_MIME);
+    const caller = appRouter.createCaller(createContext(companyAId))
+    const { path } = await uploadCv(
+      caller,
+      candidateA2Id,
+      minimalDocx,
+      "CV",
+      DOCX_MIME
+    )
 
-    const result = await caller.candidate.getCvDownloadUrl({ candidateId: candidateA2Id });
+    const result = await caller.candidate.getCvDownloadUrl({
+      candidateId: candidateA2Id,
+    })
 
-    expect(result.url).toBe(`https://storage.example.com/cvs/${path}?signed`);
-    await clearFiles(candidateA2Id);
-  });
+    expect(result.url).toBe(`https://storage.example.com/cvs/${path}?signed`)
+    await clearFiles(candidateA2Id)
+  })
 
   it("getCvDownloadUrl: throws NOT_FOUND when no CV", async () => {
-    const caller = appRouter.createCaller(createContext(companyAId));
+    const caller = appRouter.createCaller(createContext(companyAId))
 
     await expect(
-      caller.candidate.getCvDownloadUrl({ candidateId: candidateA2Id }),
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
-  });
+      caller.candidate.getCvDownloadUrl({ candidateId: candidateA2Id })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" })
+  })
 
   it("getCvDownloadUrl: throws NOT_FOUND for candidate of another company", async () => {
-    const caller = appRouter.createCaller(createContext(companyAId));
+    const caller = appRouter.createCaller(createContext(companyAId))
 
     await expect(
-      caller.candidate.getCvDownloadUrl({ candidateId: candidateB1Id }),
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
-  });
+      caller.candidate.getCvDownloadUrl({ candidateId: candidateB1Id })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" })
+  })
 
   it("getCvDownloadUrlByShareToken: throws NOT_FOUND when token expired", async () => {
     const shareLink = await db.shareLink.create({
@@ -851,161 +931,169 @@ describe("candidate", () => {
         type: "NORMAL",
         expiresAt: new Date(Date.now() - 60000),
       },
-    });
-    const publicCaller = appRouter.createCaller(createContext(null));
+    })
+    const publicCaller = appRouter.createCaller(createContext(null))
 
     await expect(
       publicCaller.candidate.getCvDownloadUrlByShareToken({
         token: shareLink.token,
-      }),
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+      })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" })
 
-    await db.shareLink.delete({ where: { id: shareLink.id } });
-  });
+    await db.shareLink.delete({ where: { id: shareLink.id } })
+  })
 
   it("getCvDownloadUrlByShareToken: returns signed URL when token valid", async () => {
-    const caller = appRouter.createCaller(createContext(companyAId));
-    const { path } = await uploadCv(caller, candidateA2Id, minimalPdf, "cv.pdf");
+    const caller = appRouter.createCaller(createContext(companyAId))
+    const { path } = await uploadCv(caller, candidateA2Id, minimalPdf, "cv.pdf")
     const shareLink = await db.shareLink.create({
       data: {
         candidateId: candidateA2Id,
         token: `share-${Date.now()}`,
         type: "NORMAL",
       },
-    });
-    const publicCaller = appRouter.createCaller(createContext(null));
+    })
+    const publicCaller = appRouter.createCaller(createContext(null))
 
     const result = await publicCaller.candidate.getCvDownloadUrlByShareToken({
       token: shareLink.token,
-    });
+    })
 
-    expect(result.url).toBe(`https://storage.example.com/cvs/${path}?signed`);
-    await db.shareLink.delete({ where: { id: shareLink.id } });
-    await clearFiles(candidateA2Id);
-  });
+    expect(result.url).toBe(`https://storage.example.com/cvs/${path}?signed`)
+    await db.shareLink.delete({ where: { id: shareLink.id } })
+    await clearFiles(candidateA2Id)
+  })
 
   it("getById: returns candidate with relations for own company", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
-    const result = await caller.candidate.getById({ id: candidateA1Id });
+    const result = await caller.candidate.getById({ id: candidateA1Id })
 
-    expect(result.id).toBe(candidateA1Id);
-    expect(result.firstName).toBe("Alice");
-    expect(result.lastName).toBe("A1");
-    expect(result.companyId).toBe(companyAId);
-    expect(result.title).toBe("Dev");
-    expect(Array.isArray(result.experiences)).toBe(true);
-    expect(Array.isArray(result.formations)).toBe(true);
-    expect(Array.isArray(result.languages)).toBe(true);
-    expect(Array.isArray(result.tags)).toBe(true);
-  });
+    expect(result.id).toBe(candidateA1Id)
+    expect(result.firstName).toBe("Alice")
+    expect(result.lastName).toBe("A1")
+    expect(result.companyId).toBe(companyAId)
+    expect(result.title).toBe("Dev")
+    expect(Array.isArray(result.experiences)).toBe(true)
+    expect(Array.isArray(result.formations)).toBe(true)
+    expect(Array.isArray(result.languages)).toBe(true)
+    expect(Array.isArray(result.tags)).toBe(true)
+  })
 
   it("getById: throws NOT_FOUND when candidate belongs to another company", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     await expect(
-      caller.candidate.getById({ id: candidateB1Id }),
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
-  });
+      caller.candidate.getById({ id: candidateB1Id })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" })
+  })
 
   it("getById: throws NOT_FOUND for non-existent id", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
-    const fakeId = "00000000-0000-0000-0000-000000000000";
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
+    const fakeId = "00000000-0000-0000-0000-000000000000"
 
     await expect(
-      caller.candidate.getById({ id: fakeId }),
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
-  });
+      caller.candidate.getById({ id: fakeId })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" })
+  })
 
   it("delete: removes candidate and respects companyId", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     const created = await caller.candidate.create({
       firstName: "ToDelete",
       lastName: "User",
-    });
-    expect(created.id).toBeDefined();
+    })
+    expect(created.id).toBeDefined()
 
-    const result = await caller.candidate.delete({ id: created.id });
-    expect(result.success).toBe(true);
+    const result = await caller.candidate.delete({ id: created.id })
+    expect(result.success).toBe(true)
 
     const inDb = await db.candidate.findUnique({
       where: { id: created.id },
-    });
-    expect(inDb).toBeNull();
-  });
+    })
+    expect(inDb).toBeNull()
+  })
 
   it("delete: removes photo and CV from Storage", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
     const created = await caller.candidate.create({
       firstName: "ToDelete",
       lastName: "WithFiles",
-    });
-    const prefix = `${companyAId}/candidates/${created.id}`;
-    storedFiles.set(`photos:${prefix}/photo.jpg`, minimalJpeg);
-    storedFiles.set(`cvs:${prefix}/cv-3f2b8c1e-9a4d-4e7b-8c6f-1d2e3f4a5b6c.pdf`, minimalPdf);
-    storageRemove.mockClear();
+    })
+    const prefix = `${companyAId}/candidates/${created.id}`
+    storedFiles.set(`photos:${prefix}/photo.jpg`, minimalJpeg)
+    storedFiles.set(
+      `cvs:${prefix}/cv-3f2b8c1e-9a4d-4e7b-8c6f-1d2e3f4a5b6c.pdf`,
+      minimalPdf
+    )
+    storageRemove.mockClear()
 
-    await caller.candidate.delete({ id: created.id });
+    await caller.candidate.delete({ id: created.id })
 
-    expect(storageRemove).toHaveBeenCalledWith("photos", [`${prefix}/photo.jpg`]);
+    expect(storageRemove).toHaveBeenCalledWith("photos", [
+      `${prefix}/photo.jpg`,
+    ])
     expect(storageRemove).toHaveBeenCalledWith("cvs", [
       `${prefix}/cv-3f2b8c1e-9a4d-4e7b-8c6f-1d2e3f4a5b6c.pdf`,
-    ]);
-    expect(storedFiles.size).toBe(0);
-  });
+    ])
+    expect(storedFiles.size).toBe(0)
+  })
 
   it("delete: keeps the candidate when Storage removal fails", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
     const created = await caller.candidate.create({
       firstName: "Kept",
       lastName: "StorageDown",
-    });
-    storedFiles.set(`photos:${companyAId}/candidates/${created.id}/photo.jpg`, minimalJpeg);
-    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
-    storageRemove.mockResolvedValueOnce({ error: new Error("Storage down") });
+    })
+    storedFiles.set(
+      `photos:${companyAId}/candidates/${created.id}/photo.jpg`,
+      minimalJpeg
+    )
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {})
+    storageRemove.mockResolvedValueOnce({ error: new Error("Storage down") })
 
     try {
       await expect(
-        caller.candidate.delete({ id: created.id }),
-      ).rejects.toMatchObject({ code: "INTERNAL_SERVER_ERROR" });
+        caller.candidate.delete({ id: created.id })
+      ).rejects.toMatchObject({ code: "INTERNAL_SERVER_ERROR" })
 
       const stillExists = await db.candidate.findUnique({
         where: { id: created.id },
-      });
-      expect(stillExists).not.toBeNull();
+      })
+      expect(stillExists).not.toBeNull()
     } finally {
-      consoleError.mockRestore();
-      storedFiles.clear();
-      await db.candidate.delete({ where: { id: created.id } });
+      consoleError.mockRestore()
+      storedFiles.clear()
+      await db.candidate.delete({ where: { id: created.id } })
     }
-  });
+  })
 
   it("delete: throws NOT_FOUND when candidate belongs to another company", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     await expect(
-      caller.candidate.delete({ id: candidateB1Id }),
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+      caller.candidate.delete({ id: candidateB1Id })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" })
 
     const stillExists = await db.candidate.findUnique({
       where: { id: candidateB1Id },
-    });
-    expect(stillExists).not.toBeNull();
-  });
+    })
+    expect(stillExists).not.toBeNull()
+  })
 
   // ─── update (base fields) ───
 
   it("update: updates all base fields for own candidate", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     const result = await caller.candidate.update({
       id: candidateA1Id,
@@ -1016,25 +1104,25 @@ describe("candidate", () => {
       linkedinUrl: "https://linkedin.com/in/alice-a1",
       title: "Senior Dev",
       summary: "Profil mis à jour via formulaire complet",
-    });
+    })
 
-    expect(result.firstName).toBe("Alice-Updated");
-    expect(result.lastName).toBe("A1-Updated");
-    expect(result.email).toBe("alice@example.com");
-    expect(result.phone).toBe("06 99 88 77 66");
-    expect(result.linkedinUrl).toBe("https://linkedin.com/in/alice-a1");
-    expect(result.title).toBe("Senior Dev");
-    expect(result.summary).toBe("Profil mis à jour via formulaire complet");
+    expect(result.firstName).toBe("Alice-Updated")
+    expect(result.lastName).toBe("A1-Updated")
+    expect(result.email).toBe("alice@example.com")
+    expect(result.phone).toBe("06 99 88 77 66")
+    expect(result.linkedinUrl).toBe("https://linkedin.com/in/alice-a1")
+    expect(result.title).toBe("Senior Dev")
+    expect(result.summary).toBe("Profil mis à jour via formulaire complet")
 
     const inDb = await db.candidate.findUniqueOrThrow({
       where: { id: candidateA1Id },
-    });
-    expect(inDb.firstName).toBe("Alice-Updated");
-    expect(inDb.lastName).toBe("A1-Updated");
-    expect(inDb.email).toBe("alice@example.com");
-    expect(inDb.phone).toBe("06 99 88 77 66");
-    expect(inDb.title).toBe("Senior Dev");
-    expect(inDb.summary).toBe("Profil mis à jour via formulaire complet");
+    })
+    expect(inDb.firstName).toBe("Alice-Updated")
+    expect(inDb.lastName).toBe("A1-Updated")
+    expect(inDb.email).toBe("alice@example.com")
+    expect(inDb.phone).toBe("06 99 88 77 66")
+    expect(inDb.title).toBe("Senior Dev")
+    expect(inDb.summary).toBe("Profil mis à jour via formulaire complet")
 
     await db.candidate.update({
       where: { id: candidateA1Id },
@@ -1047,95 +1135,95 @@ describe("candidate", () => {
         title: "Dev",
         summary: null,
       },
-    });
-  });
+    })
+  })
 
   it("update: updates summary for own candidate", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     const result = await caller.candidate.update({
       id: candidateA1Id,
       summary: "Développeur full-stack senior",
-    });
+    })
 
-    expect(result.summary).toBe("Développeur full-stack senior");
+    expect(result.summary).toBe("Développeur full-stack senior")
 
     const inDb = await db.candidate.findUniqueOrThrow({
       where: { id: candidateA1Id },
-    });
-    expect(inDb.summary).toBe("Développeur full-stack senior");
+    })
+    expect(inDb.summary).toBe("Développeur full-stack senior")
 
     await db.candidate.update({
       where: { id: candidateA1Id },
       data: { summary: null },
-    });
-  });
+    })
+  })
 
   it("update: clears summary when empty string sent", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     await caller.candidate.update({
       id: candidateA1Id,
       summary: "Temp",
-    });
+    })
 
     const result = await caller.candidate.update({
       id: candidateA1Id,
       summary: "",
-    });
+    })
 
-    expect(result.summary).toBeNull();
-  });
+    expect(result.summary).toBeNull()
+  })
 
   it("update: keeps omitted fields and clears fields sent empty", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     await caller.candidate.update({
       id: candidateA1Id,
       summary: "Résumé conservé",
       email: "garde@example.com",
-    });
+    })
 
     // Mise à jour partielle : le résumé, absent de l'input, ne doit pas être effacé
     const partial = await caller.candidate.update({
       id: candidateA1Id,
       title: "Lead dev",
-    });
-    expect(partial.summary).toBe("Résumé conservé");
-    expect(partial.email).toBe("garde@example.com");
+    })
+    expect(partial.summary).toBe("Résumé conservé")
+    expect(partial.email).toBe("garde@example.com")
 
     const cleared = await caller.candidate.update({
       id: candidateA1Id,
       email: "",
       title: "",
-    });
-    expect(cleared.email).toBeNull();
-    expect(cleared.title).toBeNull();
-    expect(cleared.summary).toBe("Résumé conservé");
+    })
+    expect(cleared.email).toBeNull()
+    expect(cleared.title).toBeNull()
+    expect(cleared.summary).toBe("Résumé conservé")
 
     await db.candidate.update({
       where: { id: candidateA1Id },
       data: { summary: null, title: "Dev" },
-    });
-  });
+    })
+  })
 
   it("update: throws NOT_FOUND for candidate of another company", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     await expect(
-      caller.candidate.update({ id: candidateB1Id, summary: "Nope" }),
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
-  });
+      caller.candidate.update({ id: candidateB1Id, summary: "Nope" })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" })
+  })
 
   // ─── cities (CandidateCity, multi ordonné) ───
 
   it("create: persists ordered cities and getById returns them sorted by order", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     const [cityParis, cityLyon] = await Promise.all([
       db.city.create({
@@ -1154,7 +1242,7 @@ describe("candidate", () => {
           longitude: 4.8357,
         },
       }),
-    ]);
+    ])
 
     const created = await caller.candidate.create({
       firstName: "Villes",
@@ -1163,49 +1251,49 @@ describe("candidate", () => {
         { cityId: cityParis.id, order: 0 },
         { cityId: cityLyon.id, order: 1 },
       ],
-    });
+    })
 
     const inDb = await db.candidateCity.findMany({
       where: { candidateId: created.id },
       orderBy: { order: "asc" },
-    });
-    expect(inDb).toHaveLength(2);
-    expect(inDb[0]).toMatchObject({ cityId: cityParis.id, order: 0 });
-    expect(inDb[1]).toMatchObject({ cityId: cityLyon.id, order: 1 });
+    })
+    expect(inDb).toHaveLength(2)
+    expect(inDb[0]).toMatchObject({ cityId: cityParis.id, order: 0 })
+    expect(inDb[1]).toMatchObject({ cityId: cityLyon.id, order: 1 })
 
-    const fetched = await caller.candidate.getById({ id: created.id });
-    expect(fetched.cities).toHaveLength(2);
-    expect(fetched.cities[0].order).toBe(0);
-    expect(fetched.cities[0].city.id).toBe(cityParis.id);
-    expect(fetched.cities[1].order).toBe(1);
-    expect(fetched.cities[1].city.id).toBe(cityLyon.id);
+    const fetched = await caller.candidate.getById({ id: created.id })
+    expect(fetched.cities).toHaveLength(2)
+    expect(fetched.cities[0].order).toBe(0)
+    expect(fetched.cities[0].city.id).toBe(cityParis.id)
+    expect(fetched.cities[1].order).toBe(1)
+    expect(fetched.cities[1].city.id).toBe(cityLyon.id)
 
-    await db.candidate.delete({ where: { id: created.id } });
+    await db.candidate.delete({ where: { id: created.id } })
     await db.city.deleteMany({
       where: { id: { in: [cityParis.id, cityLyon.id] } },
-    });
-  });
+    })
+  })
 
   it("create: succeeds without cities (empty relation in DB)", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     const created = await caller.candidate.create({
       firstName: "Sans",
       lastName: "Villes",
-    });
+    })
 
     const count = await db.candidateCity.count({
       where: { candidateId: created.id },
-    });
-    expect(count).toBe(0);
+    })
+    expect(count).toBe(0)
 
-    await db.candidate.delete({ where: { id: created.id } });
-  });
+    await db.candidate.delete({ where: { id: created.id } })
+  })
 
   it("update: replaces all cities (old removed, new inserted in order)", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     const [cityA, cityB, cityC] = await Promise.all([
       db.city.create({
@@ -1232,13 +1320,13 @@ describe("candidate", () => {
           longitude: 3.0573,
         },
       }),
-    ]);
+    ])
 
     const created = await caller.candidate.create({
       firstName: "Update",
       lastName: "Villes",
       cities: [{ cityId: cityA.id, order: 0 }],
-    });
+    })
 
     await caller.candidate.update({
       id: created.id,
@@ -1246,25 +1334,25 @@ describe("candidate", () => {
         { cityId: cityB.id, order: 0 },
         { cityId: cityC.id, order: 1 },
       ],
-    });
+    })
 
     const inDb = await db.candidateCity.findMany({
       where: { candidateId: created.id },
       orderBy: { order: "asc" },
-    });
-    expect(inDb).toHaveLength(2);
-    expect(inDb.map((cc) => cc.cityId)).toEqual([cityB.id, cityC.id]);
-    expect(inDb.some((cc) => cc.cityId === cityA.id)).toBe(false);
+    })
+    expect(inDb).toHaveLength(2)
+    expect(inDb.map((cc) => cc.cityId)).toEqual([cityB.id, cityC.id])
+    expect(inDb.some((cc) => cc.cityId === cityA.id)).toBe(false)
 
-    await db.candidate.delete({ where: { id: created.id } });
+    await db.candidate.delete({ where: { id: created.id } })
     await db.city.deleteMany({
       where: { id: { in: [cityA.id, cityB.id, cityC.id] } },
-    });
-  });
+    })
+  })
 
   it("update: clears all cities when empty array sent", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     const city = await db.city.create({
       data: {
@@ -1273,28 +1361,28 @@ describe("candidate", () => {
         latitude: 43.6047,
         longitude: 1.4442,
       },
-    });
+    })
 
     const created = await caller.candidate.create({
       firstName: "Clear",
       lastName: "Villes",
       cities: [{ cityId: city.id, order: 0 }],
-    });
+    })
 
-    await caller.candidate.update({ id: created.id, cities: [] });
+    await caller.candidate.update({ id: created.id, cities: [] })
 
     const count = await db.candidateCity.count({
       where: { candidateId: created.id },
-    });
-    expect(count).toBe(0);
+    })
+    expect(count).toBe(0)
 
-    await db.candidate.delete({ where: { id: created.id } });
-    await db.city.delete({ where: { id: city.id } });
-  });
+    await db.candidate.delete({ where: { id: created.id } })
+    await db.city.delete({ where: { id: city.id } })
+  })
 
   it("list: returns primary city name (order=0)", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     const primaryCity = await db.city.create({
       data: {
@@ -1303,7 +1391,7 @@ describe("candidate", () => {
         latitude: 43.2965,
         longitude: 5.3698,
       },
-    });
+    })
     const secondaryCity = await db.city.create({
       data: {
         name: `Nice-${Date.now()}`,
@@ -1311,7 +1399,7 @@ describe("candidate", () => {
         latitude: 43.7102,
         longitude: 7.262,
       },
-    });
+    })
 
     const created = await caller.candidate.create({
       firstName: "Liste",
@@ -1320,129 +1408,133 @@ describe("candidate", () => {
         { cityId: secondaryCity.id, order: 1 },
         { cityId: primaryCity.id, order: 0 },
       ],
-    });
+    })
 
-    const result = await caller.candidate.list({ limit: 100 });
-    const item = result.items.find((c) => c.id === created.id);
-    expect(item).toBeDefined();
-    expect(item!.city).toBe(primaryCity.name);
+    const result = await caller.candidate.list({ limit: 100 })
+    const item = result.items.find((c) => c.id === created.id)
+    expect(item).toBeDefined()
+    expect(item!.city).toBe(primaryCity.name)
 
-    await db.candidate.delete({ where: { id: created.id } });
+    await db.candidate.delete({ where: { id: created.id } })
     await db.city.deleteMany({
       where: { id: { in: [primaryCity.id, secondaryCity.id] } },
-    });
-  });
+    })
+  })
 
   // ─── addLanguage / removeLanguage ───
 
   it("addLanguage: adds language to own candidate", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     const lang = await caller.candidate.addLanguage({
       candidateId: candidateA1Id,
       name: "Français",
       level: "NATIVE",
-    });
+    })
 
-    expect(lang.id).toBeDefined();
-    expect(lang.name).toBe("Français");
-    expect(lang.level).toBe("NATIVE");
-    expect(lang.candidateId).toBe(candidateA1Id);
+    expect(lang.id).toBeDefined()
+    expect(lang.name).toBe("Français")
+    expect(lang.level).toBe("NATIVE")
+    expect(lang.candidateId).toBe(candidateA1Id)
 
-    await db.language.delete({ where: { id: lang.id } });
-  });
+    await db.language.delete({ where: { id: lang.id } })
+  })
 
   it("addLanguage: trims language name", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     const lang = await caller.candidate.addLanguage({
       candidateId: candidateA1Id,
       name: "  Anglais  ",
       level: "FLUENT",
-    });
+    })
 
-    expect(lang.name).toBe("Anglais");
-    await db.language.delete({ where: { id: lang.id } });
-  });
+    expect(lang.name).toBe("Anglais")
+    await db.language.delete({ where: { id: lang.id } })
+  })
 
   it("addLanguage: throws NOT_FOUND for candidate of another company", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     await expect(
       caller.candidate.addLanguage({
         candidateId: candidateB1Id,
         name: "Français",
         level: "NATIVE",
-      }),
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
-  });
+      })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" })
+  })
 
   it("removeLanguage: removes language from own candidate", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     const lang = await db.language.create({
       data: { candidateId: candidateA1Id, name: "Espagnol", level: "NOTION" },
-    });
+    })
 
     const result = await caller.candidate.removeLanguage({
       candidateId: candidateA1Id,
       languageId: lang.id,
-    });
+    })
 
-    expect(result.success).toBe(true);
+    expect(result.success).toBe(true)
 
-    const inDb = await db.language.findUnique({ where: { id: lang.id } });
-    expect(inDb).toBeNull();
-  });
+    const inDb = await db.language.findUnique({ where: { id: lang.id } })
+    expect(inDb).toBeNull()
+  })
 
   it("removeLanguage: throws NOT_FOUND for candidate of another company", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     const lang = await db.language.create({
-      data: { candidateId: candidateB1Id, name: "Allemand", level: "INTERMEDIATE" },
-    });
+      data: {
+        candidateId: candidateB1Id,
+        name: "Allemand",
+        level: "INTERMEDIATE",
+      },
+    })
 
     await expect(
       caller.candidate.removeLanguage({
         candidateId: candidateB1Id,
         languageId: lang.id,
-      }),
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+      })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" })
 
-    await db.language.delete({ where: { id: lang.id } });
-  });
+    await db.language.delete({ where: { id: lang.id } })
+  })
 
   it("removeLanguage: throws NOT_FOUND if language does not belong to candidate", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     const lang = await db.language.create({
       data: { candidateId: candidateA2Id, name: "Italien", level: "NOTION" },
-    });
+    })
 
     await expect(
       caller.candidate.removeLanguage({
         candidateId: candidateA1Id,
         languageId: lang.id,
-      }),
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+      })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" })
 
-    await db.language.delete({ where: { id: lang.id } });
-  });
+    await db.language.delete({ where: { id: lang.id } })
+  })
 
   // ─── addExperience / updateExperience / deleteExperience ───
 
   it("addExperience: adds experience to own candidate", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
-    const startDate = new Date("2022-06-01");
-    const endDate = new Date("2024-03-01");
+    const startDate = new Date("2022-06-01")
+    const endDate = new Date("2024-03-01")
 
     const exp = await caller.candidate.addExperience({
       candidateId: candidateA1Id,
@@ -1451,21 +1543,21 @@ describe("candidate", () => {
       startDate,
       endDate,
       description: "Mission principale",
-    });
+    })
 
-    expect(exp.id).toBeDefined();
-    expect(exp.title).toBe("Développeur");
-    expect(exp.company).toBe("Acme");
-    expect(new Date(exp.startDate).toISOString()).toBe(startDate.toISOString());
-    expect(exp.endDate).not.toBeNull();
-    expect(exp.description).toBe("Mission principale");
+    expect(exp.id).toBeDefined()
+    expect(exp.title).toBe("Développeur")
+    expect(exp.company).toBe("Acme")
+    expect(new Date(exp.startDate).toISOString()).toBe(startDate.toISOString())
+    expect(exp.endDate).not.toBeNull()
+    expect(exp.description).toBe("Mission principale")
 
-    await db.experience.delete({ where: { id: exp.id } });
-  });
+    await db.experience.delete({ where: { id: exp.id } })
+  })
 
   it("addExperience: allows null endDate (current job)", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     const exp = await caller.candidate.addExperience({
       candidateId: candidateA1Id,
@@ -1474,16 +1566,16 @@ describe("candidate", () => {
       startDate: new Date("2023-01-01"),
       endDate: null,
       description: null,
-    });
+    })
 
-    expect(exp.endDate).toBeNull();
-    expect(exp.description).toBeNull();
-    await db.experience.delete({ where: { id: exp.id } });
-  });
+    expect(exp.endDate).toBeNull()
+    expect(exp.description).toBeNull()
+    await db.experience.delete({ where: { id: exp.id } })
+  })
 
   it("addExperience: throws NOT_FOUND for candidate of another company", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     await expect(
       caller.candidate.addExperience({
@@ -1491,13 +1583,13 @@ describe("candidate", () => {
         title: "Dev",
         company: "Other",
         startDate: new Date("2020-01-01"),
-      }),
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
-  });
+      })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" })
+  })
 
   it("updateExperience: updates experience of own candidate", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     const exp = await db.experience.create({
       data: {
@@ -1507,23 +1599,23 @@ describe("candidate", () => {
         startDate: new Date("2021-06-01"),
         endDate: new Date("2021-08-01"),
       },
-    });
+    })
 
     const updated = await caller.candidate.updateExperience({
       candidateId: candidateA1Id,
       experienceId: exp.id,
       title: "Développeur stagiaire",
       company: "Gamma Corp",
-    });
+    })
 
-    expect(updated.title).toBe("Développeur stagiaire");
-    expect(updated.company).toBe("Gamma Corp");
-    await db.experience.delete({ where: { id: exp.id } });
-  });
+    expect(updated.title).toBe("Développeur stagiaire")
+    expect(updated.company).toBe("Gamma Corp")
+    await db.experience.delete({ where: { id: exp.id } })
+  })
 
   it("updateExperience: throws NOT_FOUND for candidate of another company", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     const exp = await db.experience.create({
       data: {
@@ -1532,22 +1624,22 @@ describe("candidate", () => {
         company: "Other",
         startDate: new Date("2020-01-01"),
       },
-    });
+    })
 
     await expect(
       caller.candidate.updateExperience({
         candidateId: candidateB1Id,
         experienceId: exp.id,
         title: "Updated",
-      }),
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+      })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" })
 
-    await db.experience.delete({ where: { id: exp.id } });
-  });
+    await db.experience.delete({ where: { id: exp.id } })
+  })
 
   it("updateExperience: throws NOT_FOUND if experience does not belong to candidate", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     const exp = await db.experience.create({
       data: {
@@ -1556,22 +1648,22 @@ describe("candidate", () => {
         company: "Studio",
         startDate: new Date("2022-01-01"),
       },
-    });
+    })
 
     await expect(
       caller.candidate.updateExperience({
         candidateId: candidateA1Id,
         experienceId: exp.id,
         title: "Hacked",
-      }),
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+      })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" })
 
-    await db.experience.delete({ where: { id: exp.id } });
-  });
+    await db.experience.delete({ where: { id: exp.id } })
+  })
 
   it("deleteExperience: removes experience of own candidate", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     const exp = await db.experience.create({
       data: {
@@ -1580,21 +1672,21 @@ describe("candidate", () => {
         company: "Tmp",
         startDate: new Date("2020-01-01"),
       },
-    });
+    })
 
     const result = await caller.candidate.deleteExperience({
       candidateId: candidateA1Id,
       experienceId: exp.id,
-    });
+    })
 
-    expect(result.success).toBe(true);
-    const inDb = await db.experience.findUnique({ where: { id: exp.id } });
-    expect(inDb).toBeNull();
-  });
+    expect(result.success).toBe(true)
+    const inDb = await db.experience.findUnique({ where: { id: exp.id } })
+    expect(inDb).toBeNull()
+  })
 
   it("deleteExperience: throws NOT_FOUND for candidate of another company", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     const exp = await db.experience.create({
       data: {
@@ -1603,21 +1695,21 @@ describe("candidate", () => {
         company: "Other",
         startDate: new Date("2020-01-01"),
       },
-    });
+    })
 
     await expect(
       caller.candidate.deleteExperience({
         candidateId: candidateB1Id,
         experienceId: exp.id,
-      }),
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+      })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" })
 
-    await db.experience.delete({ where: { id: exp.id } });
-  });
+    await db.experience.delete({ where: { id: exp.id } })
+  })
 
   it("deleteExperience: throws NOT_FOUND if experience does not belong to candidate", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     const exp = await db.experience.create({
       data: {
@@ -1626,21 +1718,21 @@ describe("candidate", () => {
         company: "Studio",
         startDate: new Date("2022-01-01"),
       },
-    });
+    })
 
     await expect(
       caller.candidate.deleteExperience({
         candidateId: candidateA1Id,
         experienceId: exp.id,
-      }),
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+      })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" })
 
-    await db.experience.delete({ where: { id: exp.id } });
-  });
+    await db.experience.delete({ where: { id: exp.id } })
+  })
 
   it("getById: returns experiences ordered by startDate desc", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     const [e1, e2] = await Promise.all([
       db.experience.create({
@@ -1661,24 +1753,24 @@ describe("candidate", () => {
           endDate: null,
         },
       }),
-    ]);
+    ])
 
-    const result = await caller.candidate.getById({ id: candidateA1Id });
-    expect(result.experiences).toHaveLength(2);
-    expect(result.experiences[0].title).toBe("Second");
-    expect(result.experiences[1].title).toBe("First");
+    const result = await caller.candidate.getById({ id: candidateA1Id })
+    expect(result.experiences).toHaveLength(2)
+    expect(result.experiences[0].title).toBe("Second")
+    expect(result.experiences[1].title).toBe("First")
 
-    await db.experience.deleteMany({ where: { id: { in: [e1.id, e2.id] } } });
-  });
+    await db.experience.deleteMany({ where: { id: { in: [e1.id, e2.id] } } })
+  })
 
   // ─── addFormation / updateFormation / deleteFormation ───
 
   it("addFormation: adds formation to own candidate", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
-    const startDate = new Date("2018-09-01");
-    const endDate = new Date("2020-06-01");
+    const startDate = new Date("2018-09-01")
+    const endDate = new Date("2020-06-01")
 
     const form = await caller.candidate.addFormation({
       candidateId: candidateA1Id,
@@ -1687,21 +1779,23 @@ describe("candidate", () => {
       school: "HEC Paris",
       startDate,
       endDate,
-    });
+    })
 
-    expect(form.id).toBeDefined();
-    expect(form.degree).toBe("Master Informatique");
-    expect(form.field).toBe("Systèmes distribués");
-    expect(form.school).toBe("HEC Paris");
-    expect(new Date(form.startDate!).toISOString()).toBe(startDate.toISOString());
-    expect(new Date(form.endDate!).toISOString()).toBe(endDate.toISOString());
+    expect(form.id).toBeDefined()
+    expect(form.degree).toBe("Master Informatique")
+    expect(form.field).toBe("Systèmes distribués")
+    expect(form.school).toBe("HEC Paris")
+    expect(new Date(form.startDate!).toISOString()).toBe(
+      startDate.toISOString()
+    )
+    expect(new Date(form.endDate!).toISOString()).toBe(endDate.toISOString())
 
-    await db.formation.delete({ where: { id: form.id } });
-  });
+    await db.formation.delete({ where: { id: form.id } })
+  })
 
   it("addFormation: allows optional dates and field", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     const form = await caller.candidate.addFormation({
       candidateId: candidateA1Id,
@@ -1710,30 +1804,30 @@ describe("candidate", () => {
       field: null,
       startDate: null,
       endDate: null,
-    });
+    })
 
-    expect(form.startDate).toBeNull();
-    expect(form.endDate).toBeNull();
-    expect(form.field).toBeNull();
-    await db.formation.delete({ where: { id: form.id } });
-  });
+    expect(form.startDate).toBeNull()
+    expect(form.endDate).toBeNull()
+    expect(form.field).toBeNull()
+    await db.formation.delete({ where: { id: form.id } })
+  })
 
   it("addFormation: throws NOT_FOUND for candidate of another company", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     await expect(
       caller.candidate.addFormation({
         candidateId: candidateB1Id,
         degree: "MBA",
         school: "INSEAD",
-      }),
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
-  });
+      })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" })
+  })
 
   it("updateFormation: updates formation of own candidate", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     const form = await db.formation.create({
       data: {
@@ -1743,23 +1837,23 @@ describe("candidate", () => {
         startDate: new Date("2015-09-01"),
         endDate: new Date("2017-06-01"),
       },
-    });
+    })
 
     const updated = await caller.candidate.updateFormation({
       candidateId: candidateA1Id,
       formationId: form.id,
       degree: "BTS SIO",
       school: "Lycée Y",
-    });
+    })
 
-    expect(updated.degree).toBe("BTS SIO");
-    expect(updated.school).toBe("Lycée Y");
-    await db.formation.delete({ where: { id: form.id } });
-  });
+    expect(updated.degree).toBe("BTS SIO")
+    expect(updated.school).toBe("Lycée Y")
+    await db.formation.delete({ where: { id: form.id } })
+  })
 
   it("updateFormation: throws NOT_FOUND for candidate of another company", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     const form = await db.formation.create({
       data: {
@@ -1767,22 +1861,22 @@ describe("candidate", () => {
         degree: "PhD",
         school: "MIT",
       },
-    });
+    })
 
     await expect(
       caller.candidate.updateFormation({
         candidateId: candidateB1Id,
         formationId: form.id,
         degree: "PhD CS",
-      }),
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+      })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" })
 
-    await db.formation.delete({ where: { id: form.id } });
-  });
+    await db.formation.delete({ where: { id: form.id } })
+  })
 
   it("updateFormation: throws NOT_FOUND if formation does not belong to candidate", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     const form = await db.formation.create({
       data: {
@@ -1790,22 +1884,22 @@ describe("candidate", () => {
         degree: "Master",
         school: "ESSEC",
       },
-    });
+    })
 
     await expect(
       caller.candidate.updateFormation({
         candidateId: candidateA1Id,
         formationId: form.id,
         degree: "Hacked",
-      }),
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+      })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" })
 
-    await db.formation.delete({ where: { id: form.id } });
-  });
+    await db.formation.delete({ where: { id: form.id } })
+  })
 
   it("deleteFormation: removes formation of own candidate", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     const form = await db.formation.create({
       data: {
@@ -1813,21 +1907,21 @@ describe("candidate", () => {
         degree: "To Delete",
         school: "Tmp School",
       },
-    });
+    })
 
     const result = await caller.candidate.deleteFormation({
       candidateId: candidateA1Id,
       formationId: form.id,
-    });
+    })
 
-    expect(result.success).toBe(true);
-    const inDb = await db.formation.findUnique({ where: { id: form.id } });
-    expect(inDb).toBeNull();
-  });
+    expect(result.success).toBe(true)
+    const inDb = await db.formation.findUnique({ where: { id: form.id } })
+    expect(inDb).toBeNull()
+  })
 
   it("deleteFormation: throws NOT_FOUND for candidate of another company", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     const form = await db.formation.create({
       data: {
@@ -1835,21 +1929,21 @@ describe("candidate", () => {
         degree: "MBA",
         school: "HEC",
       },
-    });
+    })
 
     await expect(
       caller.candidate.deleteFormation({
         candidateId: candidateB1Id,
         formationId: form.id,
-      }),
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+      })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" })
 
-    await db.formation.delete({ where: { id: form.id } });
-  });
+    await db.formation.delete({ where: { id: form.id } })
+  })
 
   it("deleteFormation: throws NOT_FOUND if formation does not belong to candidate", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     const form = await db.formation.create({
       data: {
@@ -1857,21 +1951,21 @@ describe("candidate", () => {
         degree: "Master",
         school: "ESSEC",
       },
-    });
+    })
 
     await expect(
       caller.candidate.deleteFormation({
         candidateId: candidateA1Id,
         formationId: form.id,
-      }),
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+      })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" })
 
-    await db.formation.delete({ where: { id: form.id } });
-  });
+    await db.formation.delete({ where: { id: form.id } })
+  })
 
   it("getById: returns formations ordered by startDate desc", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     const [f1, f2] = await Promise.all([
       db.formation.create({
@@ -1892,31 +1986,31 @@ describe("candidate", () => {
           endDate: new Date("2018-06-01"),
         },
       }),
-    ]);
+    ])
 
-    const result = await caller.candidate.getById({ id: candidateA1Id });
-    expect(result.formations).toHaveLength(2);
-    expect(result.formations[0].degree).toBe("Master");
-    expect(result.formations[1].degree).toBe("Licence");
+    const result = await caller.candidate.getById({ id: candidateA1Id })
+    expect(result.formations).toHaveLength(2)
+    expect(result.formations[0].degree).toBe("Master")
+    expect(result.formations[1].degree).toBe("Licence")
 
-    await db.formation.deleteMany({ where: { id: { in: [f1.id, f2.id] } } });
-  });
+    await db.formation.deleteMany({ where: { id: { in: [f1.id, f2.id] } } })
+  })
 
   // ─── addTag / removeTag ───
 
   it("addTag: creates new tag and links to candidate when tag does not exist", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     const result = await caller.candidate.addTag({
       candidateId: candidateA1Id,
       tagName: "Python",
-    });
+    })
 
-    expect(result.tag.id).toBeDefined();
-    expect(result.tag.name).toBe("Python");
-    expect(result.tag.color).toMatch(/^#[0-9A-Fa-f]{6}$/);
-    expect(result.tag.companyId).toBe(companyAId);
+    expect(result.tag.id).toBeDefined()
+    expect(result.tag.name).toBe("Python")
+    expect(result.tag.color).toMatch(/^#[0-9A-Fa-f]{6}$/)
+    expect(result.tag.companyId).toBe(companyAId)
 
     const inDb = await db.candidateTag.findUnique({
       where: {
@@ -1925,8 +2019,8 @@ describe("candidate", () => {
           tagId: result.tag.id,
         },
       },
-    });
-    expect(inDb).not.toBeNull();
+    })
+    expect(inDb).not.toBeNull()
 
     await db.candidateTag.delete({
       where: {
@@ -1935,13 +2029,13 @@ describe("candidate", () => {
           tagId: result.tag.id,
         },
       },
-    });
-    await db.tag.delete({ where: { id: result.tag.id } });
-  });
+    })
+    await db.tag.delete({ where: { id: result.tag.id } })
+  })
 
   it("addTag: returns tag when candidate already has this tag (idempotent)", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     const tag = await db.tag.create({
       data: {
@@ -1949,33 +2043,33 @@ describe("candidate", () => {
         color: "#9B8BA8",
         companyId: companyAId,
       },
-    });
+    })
     await db.candidateTag.create({
       data: { candidateId: candidateA1Id, tagId: tag.id },
-    });
+    })
 
     const result = await caller.candidate.addTag({
       candidateId: candidateA1Id,
       tagName: tag.name,
-    });
+    })
 
-    expect(result.tag.id).toBe(tag.id);
+    expect(result.tag.id).toBe(tag.id)
     const linkCount = await db.candidateTag.count({
       where: { candidateId: candidateA1Id, tagId: tag.id },
-    });
-    expect(linkCount).toBe(1);
+    })
+    expect(linkCount).toBe(1)
 
     await db.candidateTag.delete({
       where: {
         candidateId_tagId: { candidateId: candidateA1Id, tagId: tag.id },
       },
-    });
-    await db.tag.delete({ where: { id: tag.id } });
-  });
+    })
+    await db.tag.delete({ where: { id: tag.id } })
+  })
 
   it("addTag: reuses existing tag when tag exists for company", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     const existingTag = await db.tag.create({
       data: {
@@ -1983,20 +2077,20 @@ describe("candidate", () => {
         color: "#9B8BA8",
         companyId: companyAId,
       },
-    });
+    })
 
     const result = await caller.candidate.addTag({
       candidateId: candidateA1Id,
       tagName: "React",
-    });
+    })
 
-    expect(result.tag.id).toBe(existingTag.id);
-    expect(result.tag.name).toBe("React");
+    expect(result.tag.id).toBe(existingTag.id)
+    expect(result.tag.name).toBe("React")
 
     const count = await db.tag.count({
       where: { name: "React", companyId: companyAId },
-    });
-    expect(count).toBe(1);
+    })
+    expect(count).toBe(1)
 
     await db.candidateTag.delete({
       where: {
@@ -2005,20 +2099,20 @@ describe("candidate", () => {
           tagId: existingTag.id,
         },
       },
-    });
-    await db.tag.delete({ where: { id: existingTag.id } });
-  });
+    })
+    await db.tag.delete({ where: { id: existingTag.id } })
+  })
 
   it("addTag: trims tagName", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     const result = await caller.candidate.addTag({
       candidateId: candidateA1Id,
       tagName: "  TypeScript  ",
-    });
+    })
 
-    expect(result.tag.name).toBe("TypeScript");
+    expect(result.tag.name).toBe("TypeScript")
 
     await db.candidateTag.delete({
       where: {
@@ -2027,13 +2121,13 @@ describe("candidate", () => {
           tagId: result.tag.id,
         },
       },
-    });
-    await db.tag.delete({ where: { id: result.tag.id } });
-  });
+    })
+    await db.tag.delete({ where: { id: result.tag.id } })
+  })
 
   it("addTag: throws BAD_REQUEST when candidate has 20 tags", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     const tags = await Promise.all(
       Array.from({ length: 20 }, (_, i) =>
@@ -2043,50 +2137,53 @@ describe("candidate", () => {
             color: "#D4A5A5",
             companyId: companyAId,
           },
-        }),
-      ),
-    );
+        })
+      )
+    )
     await db.candidateTag.createMany({
       data: tags.map((t) => ({
         candidateId: candidateA1Id,
         tagId: t.id,
       })),
-    });
+    })
 
     await expect(
       caller.candidate.addTag({
         candidateId: candidateA1Id,
         tagName: "Extra",
-      }),
+      })
     ).rejects.toMatchObject({
       code: "BAD_REQUEST",
       message:
         "Maximum 20 tags par élément. Supprimez un tag existant pour en ajouter un nouveau.",
-    });
+    })
 
     await db.candidateTag.deleteMany({
-      where: { candidateId: candidateA1Id, tagId: { in: tags.map((t) => t.id) } },
-    });
+      where: {
+        candidateId: candidateA1Id,
+        tagId: { in: tags.map((t) => t.id) },
+      },
+    })
     await db.tag.deleteMany({
       where: { id: { in: tags.map((t) => t.id) } },
-    });
-  });
+    })
+  })
 
   it("addTag: throws NOT_FOUND for candidate of another company", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     await expect(
       caller.candidate.addTag({
         candidateId: candidateB1Id,
         tagName: "Python",
-      }),
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
-  });
+      })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" })
+  })
 
   it("removeTag: removes tag from candidate", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     const tag = await db.tag.create({
       data: {
@@ -2094,31 +2191,31 @@ describe("candidate", () => {
         color: "#D4A5A5",
         companyId: companyAId,
       },
-    });
+    })
     await db.candidateTag.create({
       data: { candidateId: candidateA1Id, tagId: tag.id },
-    });
+    })
 
     const result = await caller.candidate.removeTag({
       candidateId: candidateA1Id,
       tagId: tag.id,
-    });
+    })
 
-    expect(result.success).toBe(true);
+    expect(result.success).toBe(true)
 
     const inDb = await db.candidateTag.findUnique({
       where: {
         candidateId_tagId: { candidateId: candidateA1Id, tagId: tag.id },
       },
-    });
-    expect(inDb).toBeNull();
+    })
+    expect(inDb).toBeNull()
 
-    await db.tag.delete({ where: { id: tag.id } });
-  });
+    await db.tag.delete({ where: { id: tag.id } })
+  })
 
   it("removeTag: throws NOT_FOUND for candidate of another company", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     const tag = await db.tag.create({
       data: {
@@ -2126,29 +2223,29 @@ describe("candidate", () => {
         color: "#D4A5A5",
         companyId: companyBId,
       },
-    });
+    })
     await db.candidateTag.create({
       data: { candidateId: candidateB1Id, tagId: tag.id },
-    });
+    })
 
     await expect(
       caller.candidate.removeTag({
         candidateId: candidateB1Id,
         tagId: tag.id,
-      }),
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+      })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" })
 
     await db.candidateTag.delete({
       where: {
         candidateId_tagId: { candidateId: candidateB1Id, tagId: tag.id },
       },
-    });
-    await db.tag.delete({ where: { id: tag.id } });
-  });
+    })
+    await db.tag.delete({ where: { id: tag.id } })
+  })
 
   it("removeTag: throws NOT_FOUND when tag is not linked to candidate", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const ctx = createContext(companyAId)
+    const caller = appRouter.createCaller(ctx)
 
     const tag = await db.tag.create({
       data: {
@@ -2156,15 +2253,15 @@ describe("candidate", () => {
         color: "#D4A5A5",
         companyId: companyAId,
       },
-    });
+    })
 
     await expect(
       caller.candidate.removeTag({
         candidateId: candidateA1Id,
         tagId: tag.id,
-      }),
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+      })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" })
 
-    await db.tag.delete({ where: { id: tag.id } });
-  });
-});
+    await db.tag.delete({ where: { id: tag.id } })
+  })
+})

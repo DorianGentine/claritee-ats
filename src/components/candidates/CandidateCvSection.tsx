@@ -1,81 +1,77 @@
-"use client";
+"use client"
 
-import { useRef, useState } from "react";
-import { FileUp, Trash2 } from "lucide-react";
-import { api } from "@/lib/trpc/client";
-import { CvDownloadLink } from "@/components/shared/CvDownloadLink";
-import { Button } from "@/components/ui/button";
-import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
-import { useCandidateFileUpload } from "@/hooks/useCandidateFileUpload";
+import { useRef, useState } from "react"
+import { FileUp, Trash2 } from "lucide-react"
+import { api } from "@/lib/trpc/client"
+import { CvDownloadLink } from "@/components/shared/CvDownloadLink"
+import { Button } from "@/components/ui/button"
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
+import { useCandidateFileUpload } from "@/hooks/useCandidateFileUpload"
 import {
   CV_ACCEPTED_MIMES,
   CV_FORMAT_MESSAGE,
   CV_MAX_BYTES,
   FILE_TOO_LARGE_MESSAGE,
-} from "@/lib/validations/candidate";
+} from "@/lib/validations/candidate"
 
 const CV_ACCEPT_ATTR =
-  ".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-const GENERIC_ERROR = "Une erreur est survenue. Réessayez.";
+  ".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+const GENERIC_ERROR = "Une erreur est survenue. Réessayez."
 
 type Props = {
-  candidateId: string;
-  cvUrl: string | null;
-  cvFileName: string | null;
-};
+  candidateId: string
+  cvUrl: string | null
+  cvFileName: string | null
+}
 
 export const CandidateCvSection = ({
   candidateId,
   cvUrl,
   cvFileName,
 }: Props) => {
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const utils = api.useUtils();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const utils = api.useUtils()
 
-  const { uploadFile, isUploading } = useCandidateFileUpload();
+  const { uploadFile, isUploading } = useCandidateFileUpload()
 
   const deleteMutation = api.candidate.deleteCv.useMutation({
     onSuccess: () => {
-      setDeleteDialogOpen(false);
-      void utils.candidate.getById.invalidate({ id: candidateId });
+      setDeleteDialogOpen(false)
+      void utils.candidate.getById.invalidate({ id: candidateId })
     },
-  });
+  })
 
-  const handleFileChange = async (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    setUploadError(null);
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    setUploadError(null)
+    const file = e.target.files?.[0]
+    if (!file) return
 
-    const mime = file.type as (typeof CV_ACCEPTED_MIMES)[number];
+    const mime = file.type as (typeof CV_ACCEPTED_MIMES)[number]
     if (!CV_ACCEPTED_MIMES.includes(mime)) {
-      setUploadError(CV_FORMAT_MESSAGE);
-      return;
+      setUploadError(CV_FORMAT_MESSAGE)
+      return
     }
     if (file.size > CV_MAX_BYTES) {
-      setUploadError(FILE_TOO_LARGE_MESSAGE);
-      return;
+      setUploadError(FILE_TOO_LARGE_MESSAGE)
+      return
     }
 
     try {
-      await uploadFile({ kind: "cv", candidateId, file });
-      void utils.candidate.getById.invalidate({ id: candidateId });
-      if (fileInputRef.current) fileInputRef.current.value = "";
+      await uploadFile({ kind: "cv", candidateId, file })
+      void utils.candidate.getById.invalidate({ id: candidateId })
+      if (fileInputRef.current) fileInputRef.current.value = ""
     } catch (err) {
-      setUploadError(
-        (err as { message?: string })?.message ?? GENERIC_ERROR,
-      );
+      setUploadError((err as { message?: string })?.message ?? GENERIC_ERROR)
     }
-  };
+  }
 
-  const triggerFileInput = () => fileInputRef.current?.click();
-  const handleConfirmDelete = () => deleteMutation.mutate({ candidateId });
+  const triggerFileInput = () => fileInputRef.current?.click()
+  const handleConfirmDelete = () => deleteMutation.mutate({ candidateId })
 
-  const displayName = cvFileName ?? "CV";
-  const hasCv = !!cvUrl;
+  const displayName = cvFileName ?? "CV"
+  const hasCv = !!cvUrl
 
   return (
     <section>
@@ -136,10 +132,7 @@ export const CandidateCvSection = ({
       )}
 
       {uploadError && (
-        <p
-          role="alert"
-          className="mt-2 text-sm text-destructive"
-        >
+        <p role="alert" className="mt-2 text-sm text-destructive">
           {uploadError}
         </p>
       )}
@@ -157,5 +150,5 @@ export const CandidateCvSection = ({
         confirmVariant="destructive"
       />
     </section>
-  );
-};
+  )
+}

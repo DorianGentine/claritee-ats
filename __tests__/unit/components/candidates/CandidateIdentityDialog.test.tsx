@@ -1,8 +1,22 @@
 /**
  * @vitest-environment jsdom
  */
-import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from "vitest"
-import { render, screen, fireEvent, waitFor, cleanup } from "@testing-library/react"
+import {
+  describe,
+  it,
+  expect,
+  vi,
+  beforeAll,
+  beforeEach,
+  afterEach,
+} from "vitest"
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  cleanup,
+} from "@testing-library/react"
 import { CandidateIdentityDialog } from "@/components/candidates/CandidateIdentityDialog"
 
 const { mockUpdate, mockUpload } = vi.hoisted(() => ({
@@ -19,16 +33,23 @@ vi.mock("@/lib/trpc/client", () => ({
       },
     }),
     candidate: {
-      update: { useMutation: () => ({ mutateAsync: mockUpdate, isPending: false }) },
+      update: {
+        useMutation: () => ({ mutateAsync: mockUpdate, isPending: false }),
+      },
     },
     city: {
-      autocomplete: { useQuery: () => ({ data: [], isLoading: false, isError: false }) },
+      autocomplete: {
+        useQuery: () => ({ data: [], isLoading: false, isError: false }),
+      },
     },
   },
 }))
 
 vi.mock("@/hooks/useCandidateFileUpload", () => ({
-  useCandidateFileUpload: () => ({ uploadFile: mockUpload, isUploading: false }),
+  useCandidateFileUpload: () => ({
+    uploadFile: mockUpload,
+    isUploading: false,
+  }),
 }))
 
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }))
@@ -42,7 +63,14 @@ const candidate = {
   linkedinUrl: null,
   title: "Lead dev",
   photoUrl: null,
-  cities: [{ id: "550e8400-e29b-41d4-a716-446655440010", name: "Lyon", region: "Auvergne-Rhône-Alpes", country: "France" }],
+  cities: [
+    {
+      id: "550e8400-e29b-41d4-a716-446655440010",
+      name: "Lyon",
+      region: "Auvergne-Rhône-Alpes",
+      country: "France",
+    },
+  ],
 }
 
 describe("CandidateIdentityDialog", () => {
@@ -64,11 +92,19 @@ describe("CandidateIdentityDialog", () => {
 
   it("préremplit le formulaire et envoie une chaîne vide pour effacer un champ", async () => {
     const onOpenChange = vi.fn()
-    render(<CandidateIdentityDialog open onOpenChange={onOpenChange} candidate={candidate} />)
+    render(
+      <CandidateIdentityDialog
+        open
+        onOpenChange={onOpenChange}
+        candidate={candidate}
+      />
+    )
 
     const emailInput = screen.getByLabelText("Email") as HTMLInputElement
     expect(emailInput.value).toBe("camille@example.com")
-    expect((screen.getByLabelText(/Prénom/) as HTMLInputElement).value).toBe("Camille")
+    expect((screen.getByLabelText(/Prénom/) as HTMLInputElement).value).toBe(
+      "Camille"
+    )
 
     fireEvent.change(emailInput, { target: { value: "" } })
     fireEvent.click(screen.getByRole("button", { name: "Enregistrer" }))
@@ -89,7 +125,13 @@ describe("CandidateIdentityDialog", () => {
   })
 
   it("bloque l'envoi si le prénom est vide", async () => {
-    render(<CandidateIdentityDialog open onOpenChange={vi.fn()} candidate={candidate} />)
+    render(
+      <CandidateIdentityDialog
+        open
+        onOpenChange={vi.fn()}
+        candidate={candidate}
+      />
+    )
 
     fireEvent.change(screen.getByLabelText(/Prénom/), { target: { value: "" } })
     fireEvent.click(screen.getByRole("button", { name: "Enregistrer" }))
