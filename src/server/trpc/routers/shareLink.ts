@@ -32,8 +32,7 @@ export const shareLinkRouter = router({
     .input(createShareLinkSchema)
     .mutation(async ({ ctx, input }) => {
       const rl = await checkRateLimit(
-        // user is guaranteed non-null when companyId is set (see context.ts)
-        `share-link:${ctx.user!.id}`,
+        `share-link:${ctx.user.id}`,
         RATE_LIMITS.SHARE_LINK_PER_USER.limit,
         RATE_LIMITS.SHARE_LINK_PER_USER.windowMs
       )

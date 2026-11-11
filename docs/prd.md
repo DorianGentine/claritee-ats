@@ -132,7 +132,7 @@ Contrastes suffisants, navigation complète au clavier, focus visible, libellés
 | 3. Offres, clients & pipeline    | Clients et contacts, offres, candidatures avec statuts, notes partagées et rapides                    | Livré  |
 | 4. Recherche, filtres & partage  | Recherche globale, filtres, partage public complet ou anonymisé, tableau de bord, paramètres          | Livré  |
 | 5. Villes structurées            | Remplacer les villes en texte libre par un référentiel commun, autocomplété et filtrable              | Livré  |
-| 6. Import LinkedIn               | Créer une fiche candidat complète depuis l'URL d'un profil LinkedIn (FR22), service surveillé chaque jour | En test |
+| 6. Import LinkedIn               | Créer une fiche candidat complète depuis l'URL d'un profil LinkedIn (FR22), service surveillé chaque jour | Livré  |
 
 ### Épic 1 — Fondations & authentification
 

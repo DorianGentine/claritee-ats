@@ -1,5 +1,7 @@
+import { randomUUID } from "crypto"
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { cityRouter } from "@/server/trpc/routers/city"
+import { RATE_LIMITS } from "@/lib/rate-limit"
 import type { Context } from "@/server/trpc/context"
 
 const queryRaw = vi.fn()
@@ -12,8 +14,8 @@ const makeCtx = (): Context =>
       $queryRaw: queryRaw,
       city: { upsert, findUnique },
     },
-    user: null,
-    companyId: null,
+    user: { id: `user-${randomUUID()}` },
+    companyId: "company-1",
     headers: new Headers(),
   }) as unknown as Context
 
@@ -426,5 +428,33 @@ describe("city.autocomplete", () => {
       { id: "city-nice", name: "Nice", region: "PACA", country: "France" },
     ])
     expect(consoleError).toHaveBeenCalledOnce()
+  })
+
+  it("rejects an anonymous caller with UNAUTHORIZED", async () => {
+    const anonymousCaller = cityRouter.createCaller({
+      ...makeCtx(),
+      user: null,
+      companyId: null,
+    } as unknown as Context)
+
+    await expect(anonymousCaller.autocomplete({ q: "Par" })).rejects.toMatchObject({
+      code: "UNAUTHORIZED",
+    })
+    expect(queryRaw).not.toHaveBeenCalled()
+  })
+
+  it("rejects the user once CITY_AUTOCOMPLETE_PER_USER is exceeded", async () => {
+    queryRaw.mockResolvedValue([
+      { id: "city-paris", name: "Paris", region: null, country: "France" },
+    ])
+    const sameUserCaller = cityRouter.createCaller(makeCtx())
+
+    for (let call = 0; call < RATE_LIMITS.CITY_AUTOCOMPLETE_PER_USER.limit; call++) {
+      await sameUserCaller.autocomplete({ q: "Par" })
+    }
+
+    await expect(sameUserCaller.autocomplete({ q: "Par" })).rejects.toMatchObject({
+      code: "TOO_MANY_REQUESTS",
+    })
   })
 })

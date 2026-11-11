@@ -2,16 +2,12 @@ import { type NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import {
   checkRateLimit,
+  getClientIp,
   RATE_LIMITS,
 } from "@/lib/rate-limit";
 
 const LOGIN_URL = "/login";
 const RATE_LIMIT_ERROR = "rate_limit";
-
-const getIp = (request: NextRequest): string =>
-  request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-  request.headers.get("x-real-ip") ??
-  "unknown";
 
 export const proxy = async (request: NextRequest) => {
   const { pathname } = request.nextUrl;
@@ -23,7 +19,7 @@ export const proxy = async (request: NextRequest) => {
     pathname === LOGIN_URL &&
     request.nextUrl.searchParams.get("error") === RATE_LIMIT_ERROR;
   if ((pathname === "/login" || pathname === "/register") && !isRateLimitErrorPage) {
-    const ip = getIp(request);
+    const ip = getClientIp(request.headers);
     const result = await checkRateLimit(
       `auth:${ip}`,
       RATE_LIMITS.AUTH_PER_IP.limit,

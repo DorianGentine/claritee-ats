@@ -7,7 +7,6 @@ import {
   createClientContactSchema,
   updateClientContactSchema,
 } from "@/lib/validations/client";
-import { checkMutationRateLimit } from "@/lib/rate-limit";
 
 export const clientRouter = router({
   /**
@@ -99,7 +98,6 @@ export const clientRouter = router({
   create: protectedProcedure
     .input(createClientCompanySchema)
     .mutation(async ({ ctx, input }) => {
-      await checkMutationRateLimit(ctx.user!.id);
       // Client + villes dans une seule transaction : un échec du createMany
       // annule la création du client (pas de client orphelin sans ses villes).
       return ctx.db.$transaction(async (tx) => {
@@ -131,7 +129,6 @@ export const clientRouter = router({
   update: protectedProcedure
     .input(updateClientCompanySchema)
     .mutation(async ({ ctx, input }) => {
-      await checkMutationRateLimit(ctx.user!.id);
       const existing = await ctx.db.clientCompany.findFirst({
         where: { id: input.id, companyId: ctx.companyId },
       });
@@ -173,7 +170,6 @@ export const clientRouter = router({
       z.object({ clientCompanyId: z.uuid() }).merge(createClientContactSchema)
     )
     .mutation(async ({ ctx, input }) => {
-      await checkMutationRateLimit(ctx.user!.id);
       const company = await ctx.db.clientCompany.findFirst({
         where: {
           id: input.clientCompanyId,
@@ -206,7 +202,6 @@ export const clientRouter = router({
   updateContact: protectedProcedure
     .input(updateClientContactSchema)
     .mutation(async ({ ctx, input }) => {
-      await checkMutationRateLimit(ctx.user!.id);
       const contact = await ctx.db.clientContact.findFirst({
         where: { id: input.id },
         include: { clientCompany: true },
@@ -239,7 +234,6 @@ export const clientRouter = router({
   deleteContact: protectedProcedure
     .input(z.object({ id: z.uuid() }))
     .mutation(async ({ ctx, input }) => {
-      await checkMutationRateLimit(ctx.user!.id);
       const contact = await ctx.db.clientContact.findFirst({
         where: { id: input.id },
         include: { clientCompany: true },

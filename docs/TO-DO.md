@@ -1,8 +1,8 @@
 # TO-DO — Claritee ATS
 
-Source de vérité pour les prochaines actions de développement, par urgence puis par thème. Les épics 1 à 5 (MVP + villes structurées) sont livrés — voir `prd.md`. L'historique complet des stories, rétros et rapports QA est dans le tag git `docs-archive-2026-10`.
+Source de vérité pour les prochaines actions de développement, par urgence puis par thème. Les épics 1 à 6 (MVP, villes structurées, import LinkedIn) sont livrés — voir `prd.md`. L'historique complet des stories, rétros et rapports QA est dans le tag git `docs-archive-2026-10`.
 
-Dernière mise à jour : 2026-11-01
+Dernière mise à jour : 2026-11-11
 
 Cocher `[x]` une tâche livrée ; les tâches cochées sont retirées à la mise à jour suivante.
 
@@ -10,27 +10,11 @@ Cocher `[x]` une tâche livrée ; les tâches cochées sont retirées à la mise
 
 ## 🔥 Urgent — bugs et sécurité
 
-- [ ] **Limite de débit absente sur des procédures publiques et des mutations**
-  `checkMutationRateLimit` ne couvre que 17 mutations sur 41 (NFR14). Les cas exposés sans authentification :
-  - `invitation.accept` (`publicProcedure`) crée des comptes Supabase Auth, sans limite ;
-  - `city.autocomplete` (`publicProcedure`) appelle Photon 3 fois en parallèle et **persiste les résultats dans `cities`** : un anonyme peut écrire dans la base en boucle.
-
-  Également sans limite : `auth.updateProfile`, `company.updateCompany`, `invitation.create` / `revoke`.
-
 - [ ] **Upload de CV probablement refusé au-delà d'environ 3,3 Mo en prod**
   Les fichiers transitent en base64 dans l'input tRPC (+33 %) : un CV de 5 Mo (limite NFR15) fait environ 6,7 Mo de corps de requête, au-delà de la limite de 4,5 Mo des fonctions Vercel. À confirmer en prod ; piste : URL d'upload signée Supabase (upload direct depuis le navigateur).
 
 - [ ] **Suppression de données incomplète (RGPD, NFR9)**
   Aucune procédure de suppression pour un client, un lien de partage, un utilisateur ou un cabinet. La suppression d'un cabinet devra aussi vider son préfixe `{companyId}/` dans les buckets `photos` et `cvs` (la cascade Prisma ne touche pas le Storage) et supprimer les comptes Supabase Auth de ses utilisateurs.
-
----
-
-## ⭐ Prioritaire
-
-- [ ] **Import LinkedIn (épic 6) : valider puis mettre en production**
-  - Tester l'import sur quelques profils de candidats réels (acteur `supreme_coder`).
-  - Prod : `APIFY_TOKEN` sur Vercel ; secrets GitHub `APIFY_TOKEN`, `ADMIN_EMAIL`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` pour `linkedin-import-check.yml` ; lancer le workflow à la main une fois (y compris un échec simulé pour recevoir l'email).
-  - RGPD : un profil importé n'est pas collecté auprès du candidat (art. 14) ; prévoir l'information du candidat et citer Apify comme sous-traitant.
 
 ---
 
@@ -79,7 +63,7 @@ Cocher `[x]` une tâche livrée ; les tâches cochées sont retirées à la mise
   `bun run a11y` cible `/dashboard` et `/settings/team`, pages protégées : sans session, `proxy.ts` redirige vers `/login`. Ajouter une page publique (`/`, `/register`, une fiche `/share`) ou authentifier pa11y (actions de login).
 
 - [ ] **Faux vert possible sur les tests DB**
-  `describe.runIf` skippe silencieusement les 14 fichiers de `__tests__/db` si `DATABASE_URL` est absent. `bun run test:db` le définit toujours (`scripts/test-db.sh`) ; le risque ne concerne qu'un `bun run vitest` lancé directement. Faire échouer ces fichiers au lieu de les ignorer.
+  `describe.runIf` skippe silencieusement les 15 fichiers de `__tests__/db` si `DATABASE_URL` est absent. `bun run test:db` le définit toujours (`scripts/test-db.sh`) ; le risque ne concerne qu'un `bun run vitest` lancé directement. Faire échouer ces fichiers au lieu de les ignorer.
 
 - [ ] **Avertissements « not wrapped in act » restants**
   15 avertissements, sans échec : `OfferNotesSection` (×6) met à jour son état après un `supabase.auth.getUser()` asynchrone, hors `act` → attendre cet état dans ses tests (`findBy*` / `waitFor`) ; `AppSidebar.a11y` (×9) vient de l'état interne de `next/link` (`LinkComponent`) → attendre la fin du rendu ou mocker `next/link`.
@@ -89,7 +73,7 @@ Cocher `[x]` une tâche livrée ; les tâches cochées sont retirées à la mise
 ## 🧹 Dette technique — code
 
 - [ ] **Formatage : `;` incohérents**
-  `.prettierrc` impose `semi: true` mais ~45 % des fichiers n'ont pas de `;` ; `bun run format:check` échoue sur ~185 fichiers et tout `prettier --write` reformate des fichiers entiers (diffs illisibles). Faire un commit de reformatage global unique (`bun run format`), puis ajouter `format:check` à la CI.
+  `.prettierrc` impose `semi: true` mais ~45 % des fichiers n'ont pas de `;` ; `bun run format:check` échoue sur ~195 fichiers et tout `prettier --write` reformate des fichiers entiers (diffs illisibles). Faire un commit de reformatage global unique (`bun run format`), puis ajouter `format:check` à la CI.
 
 - [ ] **Erreurs Prisma brutes côté client**
   Pas d'`errorFormatter` tRPC : un `connect` sur un `cityId` invalide (offres) ou un `createMany` de `CandidateCity` / `ClientCompanyCity` en erreur remonte en 500 brut. Ajouter un `errorFormatter` qui mappe P2002/P2003/P2025 vers des codes tRPC et des messages génériques.
@@ -107,11 +91,10 @@ Cocher `[x]` une tâche livrée ; les tâches cochées sont retirées à la mise
   - [ ] `CvDownloadLink` appelle `window.open` après un `await` : bloqué par Safari sans message à l'utilisateur.
   - [ ] Téléchargement de CV en 404 si le nom d'origine n'a pas l'extension du type MIME (`CV` ou `cv.txt` envoyé en DOCX) : le fichier est stocké en `cv.{ext du MIME}` mais `createCvSignedUrl` déduit l'extension de `cvFileName`. Dériver le chemin de `cvUrl`, ou refuser un `fileName` incohérent dans `uploadCvSchema`.
   - [ ] Deux uploads de photo (ou de CV) d'extensions différentes qui se chevauchent pour un même candidat (double envoi, deux onglets) : le nettoyage du premier peut supprimer le fichier du second, auquel la base pointe alors. Corriger demande de sérialiser les uploads par candidat ou un nom de fichier unique par upload.
-  - [ ] 15 assertions `ctx.user!` restantes (`client.ts` ×5, `offer.ts` ×4, `candidate.ts` ×3, `candidature.ts` ×2, `shareLink.ts` ×1) alors que `protectedProcedure` type déjà `ctx.user`.
   - [ ] Route `/search` non protégée par `src/proxy.ts` (les procédures tRPC restent protégées : pas de fuite, mais pas de redirection vers `/login`).
   - [ ] Fiche anonyme : UUIDs d'expériences/formations présents dans le DTO ; CTA « Contactez [cabinet] » sans `mailto` (pas d'email sur `Company`).
   - [ ] Schémas Zod contraires aux standards : `z.string().email()` (forme Zod 3) dans `src/lib/validations/auth.ts`, et pas de `.max()` sur les chaînes du schéma public `register`.
-  - [ ] `&apos;` dans du JSX (4 fichiers, dont `src/app/page.tsx`) au lieu d'une apostrophe typographique.
+  - [ ] `&apos;` dans du JSX (2 fichiers : `register/page.tsx`, `settings/team/page.tsx`) au lieu d'une apostrophe typographique.
   - [ ] Commentaire faux dans `src/server/trpc/routers/city.ts` : les bbox de repli ne sont pas interrogées « seulement si l'Europe ne renvoie rien », les 3 le sont en parallèle.
 
 - [ ] **Questionner React Hook Form sur les formulaires candidat** _(story 5.4)_
