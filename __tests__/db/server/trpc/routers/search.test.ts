@@ -6,7 +6,7 @@ import type { Context } from "@/server/trpc/context"
 
 const connectionString = process.env.DATABASE_URL
 
-describe.runIf(!!connectionString)("search", () => {
+describe("search", () => {
   let db: PrismaClient
   let companyAId: string
   let companyBId: string

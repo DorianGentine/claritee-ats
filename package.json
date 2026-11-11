@@ -15,7 +15,7 @@
     "test:unit": "vitest run __tests__/unit",
     "test:db": "bash scripts/test-db.sh",
     "test:watch": "vitest __tests__/unit",
-    "a11y": "pa11y --standard WCAG2AA http://localhost:3000/dashboard http://localhost:3000/settings/team",
+    "a11y": "tsx scripts/a11y.ts",
     "postinstall": "prisma generate",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",

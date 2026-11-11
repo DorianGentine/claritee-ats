@@ -12,7 +12,7 @@ const connectionString = process.env.DATABASE_URL;
 /** SIREN du cabinet de démo créé par le seed. */
 const DEV_COMPANY_SIREN = "123456789";
 
-describe.runIf(!!connectionString)("Prisma seed", () => {
+describe("Prisma seed", () => {
   let prisma: PrismaClient;
 
   beforeAll(async () => {

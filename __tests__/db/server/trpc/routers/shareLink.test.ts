@@ -9,7 +9,7 @@ const connectionString = process.env.DATABASE_URL
 // Pays fictif pour isoler les villes de test de la table partagée `cities`.
 const TEST_COUNTRY = "Sharelinkland"
 
-describe.runIf(!!connectionString)("shareLink router", () => {
+describe("shareLink router", () => {
   let db: PrismaClient
   let companyAId: string
   let companyBId: string

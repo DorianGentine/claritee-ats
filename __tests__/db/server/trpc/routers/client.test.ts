@@ -7,7 +7,7 @@ import { idsNewestFirst } from "../../../helpers/order";
 
 const connectionString = process.env.DATABASE_URL;
 
-describe.runIf(!!connectionString)("client", () => {
+describe("client", () => {
   let db: PrismaClient;
   let companyAId: string;
   let companyBId: string;

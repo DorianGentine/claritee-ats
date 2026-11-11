@@ -9,7 +9,7 @@ const connectionString = process.env.DATABASE_URL;
 
 const defaultNoteContent = noteContent("Note de test");
 
-describe.runIf(!!connectionString)("note", () => {
+describe("note", () => {
   let db: PrismaClient;
   let companyAId: string;
   let companyBId: string;

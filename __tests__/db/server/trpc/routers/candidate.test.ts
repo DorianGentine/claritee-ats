@@ -65,7 +65,7 @@ vi.mock("@/lib/supabase/admin", () => ({
   }),
 }));
 
-describe.runIf(!!connectionString)("candidate", () => {
+describe("candidate", () => {
   let db: PrismaClient;
   let companyAId: string;
   let companyBId: string;
