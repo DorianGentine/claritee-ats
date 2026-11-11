@@ -16,9 +16,10 @@ import { cn } from "@/lib/utils"
 export type NoteItem = {
   id: string
   content: string
-  authorId: string
+  /** null : auteur supprimé, la note reste au cabinet */
+  authorId: string | null
   createdAt: Date | string
-  author: { firstName: string; lastName: string }
+  author: { firstName: string; lastName: string } | null
 }
 
 type Props = {
@@ -36,9 +37,12 @@ type Props = {
   deletePending: boolean
 }
 
-const formatAuthor = (firstName: string, lastName: string): string => {
-  const initial = lastName?.charAt(0)?.toUpperCase() ?? ""
-  return `${firstName} ${initial}.`.trim()
+const DELETED_AUTHOR_LABEL = "Ancien membre"
+
+const formatAuthor = (author: NoteItem["author"]): string => {
+  if (!author) return DELETED_AUTHOR_LABEL
+  const initial = author.lastName?.charAt(0)?.toUpperCase() ?? ""
+  return `${author.firstName} ${initial}.`.trim()
 }
 
 /**
@@ -135,9 +139,9 @@ export const NotesSection = ({
         ) : (
           <ul className="flex flex-col gap-4" aria-label="Fil des notes">
             {notes.map((note) => {
-              const isOwn = currentUserId === note.authorId
+              const isOwn = note.authorId !== null && currentUserId === note.authorId
               const isEditing = editNoteId === note.id
-              const author = formatAuthor(note.author.firstName, note.author.lastName)
+              const author = formatAuthor(note.author)
 
               return (
                 <li

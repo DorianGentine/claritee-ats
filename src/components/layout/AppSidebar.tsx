@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { api } from "@/lib/trpc/client";
-import { clearAllNoteDrafts } from "@/lib/note-draft";
+import { signOutBrowser } from "@/lib/supabase/sign-out";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -128,10 +128,7 @@ export const AppSidebar = ({ defaultCollapsed = false }: Props) => {
   const closeMobile = () => setMobileOpen(false);
 
   const handleLogout = async () => {
-    // Brouillons de notes rapides : ne pas les laisser sur un poste partagé
-    clearAllNoteDrafts();
-    const supabase = createClient();
-    await supabase.auth.signOut();
+    await signOutBrowser();
     router.push("/");
     router.refresh();
   };

@@ -44,14 +44,18 @@ describe.runIf(!!connectionString)("company", () => {
     await db.$disconnect();
   });
 
-  // TODO(db-test-debt): échoue sur base fraîche — skippé temporairement, à corriger (voir docs/TO-DO.md)
-  it.skip("getMyCompany: returns id and name for authenticated user", async () => {
+  it("getMyCompany: returns the company of the authenticated user", async () => {
     const ctx = createProtectedContext();
     const caller = appRouter.createCaller(ctx);
 
     const result = await caller.company.getMyCompany();
 
-    expect(result).toEqual({ id: companyId, name: "Test Company Dashboard" });
+    // Aucun membre créé pour ce cabinet : pas de créateur.
+    expect(result).toMatchObject({
+      id: companyId,
+      name: "Test Company Dashboard",
+      ownerId: null,
+    });
   });
 
   it("getMyCompany: throws UNAUTHORIZED when not authenticated", async () => {

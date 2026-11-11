@@ -6,6 +6,7 @@ import { render, screen, fireEvent, cleanup, waitFor } from "@testing-library/re
 import { ShareLinkDialog } from "@/components/candidates/ShareLinkDialog"
 
 const mockCreate = vi.fn()
+const mockDelete = vi.fn()
 const mockInvalidate = vi.fn()
 
 const existingLinks = [
@@ -42,6 +43,9 @@ vi.mock("@/lib/trpc/client", () => ({
           isPending: false,
           error: null,
         }),
+      },
+      delete: {
+        useMutation: () => ({ mutate: mockDelete, isPending: false }),
       },
     },
     useUtils: () => ({
@@ -164,5 +168,14 @@ describe("ShareLinkDialog", () => {
     render(<ShareLinkDialog {...defaultProps} open={false} />)
 
     expect(screen.queryByText("Partager la fiche candidat")).toBeNull()
+  })
+
+  it("deletes an existing link after confirmation", async () => {
+    render(<ShareLinkDialog {...defaultProps} />)
+
+    fireEvent.click(screen.getByLabelText("Supprimer le lien Fiche anonymisée"))
+    fireEvent.click(await screen.findByRole("button", { name: "Supprimer" }))
+
+    expect(mockDelete).toHaveBeenCalledWith({ id: "link-2" })
   })
 })

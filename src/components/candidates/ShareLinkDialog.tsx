@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { toast } from "sonner"
-import { Copy, Share2, ExternalLink } from "lucide-react"
+import { Copy, Share2, ExternalLink, Trash2 } from "lucide-react"
 import { api } from "@/lib/trpc/client"
 import { Button } from "@/components/ui/button"
 import {
@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
 import {
   Select,
   SelectContent,
@@ -55,6 +56,10 @@ export const ShareLinkDialog = ({ open, onOpenChange, candidateId }: Props) => {
   const [selectedExpiration, setSelectedExpiration] =
     useState<ShareLinkExpiration>("30d")
   const [newLinkToken, setNewLinkToken] = useState<string | null>(null)
+  const [linkToDelete, setLinkToDelete] = useState<{
+    id: string
+    token: string
+  } | null>(null)
 
   const utils = api.useUtils()
 
@@ -72,6 +77,18 @@ export const ShareLinkDialog = ({ open, onOpenChange, candidateId }: Props) => {
       toast.error(
         err.message ?? "Une erreur est survenue. Réessayez."
       )
+    },
+  })
+
+  const deleteMutation = api.shareLink.delete.useMutation({
+    onSuccess: () => {
+      if (linkToDelete?.token === newLinkToken) setNewLinkToken(null)
+      setLinkToDelete(null)
+      toast.success("Lien supprimé.")
+      void utils.shareLink.listByCandidate.invalidate({ candidateId })
+    },
+    onError: (err) => {
+      toast.error(err.message ?? "Une erreur est survenue. Réessayez.")
     },
   })
 
@@ -219,6 +236,17 @@ export const ShareLinkDialog = ({ open, onOpenChange, candidateId }: Props) => {
                       >
                         <Copy className="size-3.5" />
                       </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="shrink-0 text-destructive hover:text-destructive"
+                        onClick={() =>
+                          setLinkToDelete({ id: link.id, token: link.token })
+                        }
+                        aria-label={`Supprimer le lien ${TYPE_LABELS[link.type]}`}
+                      >
+                        <Trash2 className="size-3.5" />
+                      </Button>
                     </li>
                   ))}
                 </ul>
@@ -227,6 +255,20 @@ export const ShareLinkDialog = ({ open, onOpenChange, candidateId }: Props) => {
           </div>
         </div>
       </DialogContent>
+      <ConfirmDialog
+        open={linkToDelete !== null}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) setLinkToDelete(null)
+        }}
+        title="Supprimer ce lien ?"
+        description="La fiche ne sera plus accessible à ceux qui ont reçu ce lien. Cette action est irréversible."
+        confirmLabel="Supprimer"
+        pendingLabel="Suppression…"
+        pending={deleteMutation.isPending}
+        onConfirm={() => {
+          if (linkToDelete) deleteMutation.mutate({ id: linkToDelete.id })
+        }}
+      />
     </Dialog>
   )
 }

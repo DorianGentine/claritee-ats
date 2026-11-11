@@ -246,5 +246,24 @@ export const clientRouter = router({
       await ctx.db.clientContact.delete({ where: { id: input.id } });
       return { success: true };
     }),
+
+  /**
+   * Supprime un client du cabinet. Contacts et villes sont supprimés en cascade ;
+   * les offres liées sont conservées, sans client ni contact (onDelete: SetNull).
+   */
+  delete: protectedProcedure
+    .input(z.object({ id: z.uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const client = await ctx.db.clientCompany.findFirst({
+        where: { id: input.id, companyId: ctx.companyId },
+        select: { id: true },
+      });
+      if (!client) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+
+      await ctx.db.clientCompany.delete({ where: { id: input.id } });
+      return { success: true };
+    }),
 });
 

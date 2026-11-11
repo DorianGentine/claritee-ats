@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { TRPCClientError } from "@trpc/client";
@@ -10,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { signOutBrowser } from "@/lib/supabase/sign-out";
 import { toast } from "sonner";
 
 const GENERIC_ERROR_MESSAGE = "Une erreur est survenue. Réessayez.";
@@ -41,7 +44,43 @@ export const TeamSettings = () => {
   const [serverError, setServerError] = useState<string | null>(null);
   const [createdUrl, setCreatedUrl] = useState<string | null>(null);
 
+  const router = useRouter();
+  // Membre conservé après fermeture : le titre reste juste pendant l'animation.
+  const [memberToDelete, setMemberToDelete] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const askDeleteMember = (member: { id: string; firstName: string; lastName: string }) => {
+    setMemberToDelete({ id: member.id, name: `${member.firstName} ${member.lastName}` });
+    setConfirmOpen(true);
+  };
+
   const membersQuery = api.company.listUsers.useQuery();
+  const meQuery = api.auth.getMe.useQuery();
+  const companyQuery = api.company.getMyCompany.useQuery();
+  const currentUserId = meQuery.data?.id;
+  const ownerId = companyQuery.data?.ownerId;
+  const isOwner = !!currentUserId && currentUserId === ownerId;
+  const isLastMember = membersQuery.data?.length === 1;
+  const isDeletingSelf = memberToDelete?.id === currentUserId;
+
+  const deleteUserMutation = api.company.deleteUser.useMutation({
+    onSuccess: async ({ isSelf }) => {
+      setConfirmOpen(false);
+      if (isSelf) {
+        await signOutBrowser("local");
+        router.push("/");
+        router.refresh();
+        return;
+      }
+      toast.success("Membre retiré du cabinet.");
+      void membersQuery.refetch();
+    },
+    onError: (err) => {
+      toast.error(err.message ?? GENERIC_ERROR_MESSAGE);
+    },
+  });
   const invitationsQuery = api.invitation.listAll.useQuery();
 
   const createMutation = api.invitation.create.useMutation({
@@ -120,6 +159,9 @@ export const TeamSettings = () => {
                   <th className="px-4 py-3 font-medium text-foreground">Nom</th>
                   <th className="px-4 py-3 font-medium text-foreground">Email</th>
                   <th className="px-4 py-3 font-medium text-foreground">Membre depuis</th>
+                  <th className="px-4 py-3 font-medium text-foreground">
+                    <span className="sr-only">Actions</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -130,6 +172,11 @@ export const TeamSettings = () => {
                   >
                     <td className="px-4 py-3">
                       {member.firstName} {member.lastName}
+                      {member.id === ownerId && (
+                        <span className="ml-2 inline-flex rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                          Créateur
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">{member.email}</td>
                     <td className="px-4 py-3 text-muted-foreground">
@@ -138,6 +185,32 @@ export const TeamSettings = () => {
                         month: "short",
                         year: "numeric",
                       })}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      {member.id === currentUserId ? (
+                        !isLastMember && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => askDeleteMember(member)}
+                          >
+                            Supprimer mon compte
+                          </Button>
+                        )
+                      ) : (
+                        isOwner && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => askDeleteMember(member)}
+                            aria-label={`Retirer ${member.firstName} ${member.lastName} du cabinet`}
+                          >
+                            Retirer
+                          </Button>
+                        )
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -300,6 +373,27 @@ export const TeamSettings = () => {
           )}
         </div>
       </div>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title={
+          isDeletingSelf
+            ? "Supprimer votre compte ?"
+            : `Retirer ${memberToDelete?.name ?? ""} du cabinet ?`
+        }
+        description={
+          isDeletingSelf
+            ? "Votre compte et vos accès sont définitivement supprimés. Vos notes restent visibles par le cabinet, signées « Ancien membre »."
+            : "Son compte et ses accès sont définitivement supprimés. Ses notes restent visibles par le cabinet, signées « Ancien membre »."
+        }
+        confirmLabel={isDeletingSelf ? "Supprimer mon compte" : "Retirer"}
+        pendingLabel="Suppression…"
+        pending={deleteUserMutation.isPending}
+        onConfirm={() => {
+          if (memberToDelete) deleteUserMutation.mutate({ userId: memberToDelete.id });
+        }}
+      />
     </section>
   );
 };
