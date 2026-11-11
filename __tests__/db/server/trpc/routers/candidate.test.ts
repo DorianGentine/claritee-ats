@@ -10,19 +10,43 @@ import {
 
 const connectionString = process.env.DATABASE_URL;
 
-const { storageRemove } = vi.hoisted(() => ({
+/** Faux Storage : fichiers en mémoire, clé `${bucket}:${path}`. */
+const { storageRemove, storedFiles } = vi.hoisted(() => ({
   storageRemove: vi.fn(
     (_bucket: string, _paths: string[]): Promise<{ error: Error | null }> =>
       Promise.resolve({ error: null })
   ),
+  storedFiles: new Map<string, Buffer>(),
 }));
 
 vi.mock("@/lib/supabase/admin", () => ({
   createAdminClient: () => ({
     storage: {
       from: (bucket: string) => ({
-        upload: () => Promise.resolve({ error: null }),
-        remove: (paths: string[]) => storageRemove(bucket, paths),
+        createSignedUploadUrl: (path: string) =>
+          Promise.resolve({
+            data: { path, token: "upload-token", signedUrl: "https://upload" },
+            error: null,
+          }),
+        download: (path: string) => {
+          const content = storedFiles.get(`${bucket}:${path}`);
+          return Promise.resolve(
+            content
+              ? { data: new Blob([new Uint8Array(content)]), error: null }
+              : { data: null, error: new Error("Object not found") }
+          );
+        },
+        list: (folder: string) =>
+          Promise.resolve({
+            data: [...storedFiles.keys()]
+              .filter((key) => key.startsWith(`${bucket}:${folder}/`))
+              .map((key) => ({ name: key.slice(`${bucket}:${folder}/`.length) })),
+            error: null,
+          }),
+        remove: (paths: string[]) => {
+          for (const path of paths) storedFiles.delete(`${bucket}:${path}`);
+          return storageRemove(bucket, paths);
+        },
         getPublicUrl: (path: string) => ({
           data: {
             publicUrl: `https://storage.example.com/${bucket}/${path}`,
@@ -541,351 +565,273 @@ describe.runIf(!!connectionString)("candidate", () => {
     ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
   });
 
-  /** Minimal valid JPEG (magic bytes FF D8 FF) */
-  const minimalJpegBase64 = Buffer.from([
-    0xff, 0xd8, 0xff, ...Array(20).fill(0),
-  ]).toString("base64");
+  // ─── Upload direct (URL signée) : photo et CV ───
 
-  it("uploadPhoto: updates Candidate.photoUrl after upload", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+  const minimalJpeg = Buffer.from([0xff, 0xd8, 0xff, ...Array(20).fill(0)]);
+  const minimalPdf = Buffer.from([0x25, 0x50, 0x44, 0x46, ...Array(20).fill(0)]);
+  const minimalDocx = Buffer.from([0x50, 0x4b, 0x03, 0x04, ...Array(20).fill(0)]);
+  const PDF_MIME = "application/pdf" as const;
+  const DOCX_MIME =
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document" as const;
 
-    const result = await caller.candidate.uploadPhoto({
-      candidateId: candidateA1Id,
-      fileBase64: minimalJpegBase64,
+  type Caller = ReturnType<typeof appRouter.createCaller>;
+
+  /** Simule le navigateur : URL signée, dépôt du fichier dans le faux Storage, confirmation. */
+  const uploadPhoto = async (caller: Caller, candidateId: string, content: Buffer) => {
+    const { bucket, path } = await caller.candidate.createFileUploadUrl({
+      kind: "photo",
+      candidateId,
       mimeType: "image/jpeg",
+      size: content.length,
     });
-
-    expect(result.photoUrl).toContain(
-      `https://storage.example.com/photos/${companyAId}/candidates/${candidateA1Id}/photo.jpg`,
-    );
-
-    const inDb = await db.candidate.findUniqueOrThrow({
-      where: { id: candidateA1Id },
+    storedFiles.set(`${bucket}:${path}`, content);
+    const updated = await caller.candidate.confirmFileUpload({
+      kind: "photo",
+      candidateId,
+      path,
     });
-    expect(inDb.photoUrl).toBe(result.photoUrl);
+    return { path, updated };
+  };
 
+  const uploadCv = async (
+    caller: Caller,
+    candidateId: string,
+    content: Buffer,
+    fileName: string,
+    mimeType: typeof PDF_MIME | typeof DOCX_MIME = PDF_MIME
+  ) => {
+    const { bucket, path } = await caller.candidate.createFileUploadUrl({
+      kind: "cv",
+      candidateId,
+      mimeType,
+      size: content.length,
+    });
+    storedFiles.set(`${bucket}:${path}`, content);
+    const updated = await caller.candidate.confirmFileUpload({
+      kind: "cv",
+      candidateId,
+      path,
+      fileName,
+    });
+    return { path, updated };
+  };
+
+  const clearFiles = async (candidateId: string) => {
+    storedFiles.clear();
     await db.candidate.update({
-      where: { id: candidateA1Id },
-      data: { photoUrl: null },
+      where: { id: candidateId },
+      data: { photoUrl: null, cvUrl: null, cvFileName: null },
+    });
+  };
+
+  it("createFileUploadUrl: returns a unique path in the candidate folder", async () => {
+    const caller = appRouter.createCaller(createContext(companyAId));
+    const input = {
+      kind: "cv" as const,
+      candidateId: candidateA2Id,
+      mimeType: DOCX_MIME,
+      size: 1000,
+    };
+
+    const first = await caller.candidate.createFileUploadUrl(input);
+    const second = await caller.candidate.createFileUploadUrl(input);
+
+    expect(first.bucket).toBe("cvs");
+    expect(first.token).toBe("upload-token");
+    expect(first.path).toMatch(
+      new RegExp(`^${companyAId}/candidates/${candidateA2Id}/cv-[0-9a-f-]{36}\\.docx$`)
+    );
+    expect(second.path).not.toBe(first.path);
+  });
+
+  it("createFileUploadUrl: rejects a file above the limit with PRD message", async () => {
+    const caller = appRouter.createCaller(createContext(companyAId));
+
+    await expect(
+      caller.candidate.createFileUploadUrl({
+        kind: "photo",
+        candidateId: candidateA1Id,
+        mimeType: "image/jpeg",
+        size: PHOTO_MAX_BYTES + 1,
+      })
+    ).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+      message: expect.stringContaining(
+        "Le fichier dépasse la taille maximale autorisée (2 Mo pour les photos, 5 Mo pour les CVs)"
+      ),
     });
   });
 
-  it("uploadPhoto: removes a previous photo with another extension, not the new one", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
-    storageRemove.mockClear();
+  it("createFileUploadUrl: throws NOT_FOUND when candidate belongs to another company", async () => {
+    const caller = appRouter.createCaller(createContext(companyAId));
 
-    await caller.candidate.uploadPhoto({
-      candidateId: candidateA1Id,
-      fileBase64: minimalJpegBase64,
-      mimeType: "image/jpeg",
-    });
+    await expect(
+      caller.candidate.createFileUploadUrl({
+        kind: "cv",
+        candidateId: candidateB1Id,
+        mimeType: PDF_MIME,
+        size: 1000,
+      })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
 
+  it("confirmFileUpload: sets photoUrl and removes the previous photos, not the new one", async () => {
+    const caller = appRouter.createCaller(createContext(companyAId));
     const prefix = `${companyAId}/candidates/${candidateA1Id}`;
-    expect(storageRemove).toHaveBeenCalledWith("photos", [
-      `${prefix}/photo.png`,
-      `${prefix}/photo.webp`,
-    ]);
+    storedFiles.set(`photos:${prefix}/photo.png`, minimalJpeg);
 
-    await db.candidate.update({
-      where: { id: candidateA1Id },
-      data: { photoUrl: null },
-    });
+    const { path, updated } = await uploadPhoto(caller, candidateA1Id, minimalJpeg);
+
+    expect(updated.photoUrl).toBe(`https://storage.example.com/photos/${path}`);
+    expect(storedFiles.has(`photos:${path}`)).toBe(true);
+    expect(storedFiles.has(`photos:${prefix}/photo.png`)).toBe(false);
+
+    await clearFiles(candidateA1Id);
   });
 
-  it("uploadPhoto: rejects file exceeding 2 MB with PRD message", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
-    const oversizedBuffer = Buffer.alloc(PHOTO_MAX_BYTES + 1, "x");
-    const oversizedBase64 = oversizedBuffer.toString("base64");
+  it("confirmFileUpload: sets cvUrl and cvFileName, replacing the previous CV", async () => {
+    const caller = appRouter.createCaller(createContext(companyAId));
 
-    await expect(
-      caller.candidate.uploadPhoto({
-        candidateId: candidateA1Id,
-        fileBase64: oversizedBase64,
-        mimeType: "image/jpeg",
-      }),
-    ).rejects.toMatchObject({
-      code: "BAD_REQUEST",
-      message: expect.stringContaining(
-        "Le fichier dépasse la taille maximale autorisée (2 Mo pour les photos, 5 Mo pour les CVs)",
-      ),
-    });
-  });
-
-  it("uploadPhoto: rejects invalid mime type with PRD message", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
-    const smallBase64 = Buffer.from("x").toString("base64");
-
-    await expect(
-      caller.candidate.uploadPhoto({
-        candidateId: candidateA1Id,
-        fileBase64: smallBase64,
-        mimeType: "image/gif" as "image/jpeg",
-      }),
-    ).rejects.toThrow(/Format de fichier non supporté/);
-  });
-
-  it("uploadPhoto: throws NOT_FOUND when candidate belongs to another company", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
-
-    await expect(
-      caller.candidate.uploadPhoto({
-        candidateId: candidateB1Id,
-        fileBase64: minimalJpegBase64,
-        mimeType: "image/jpeg",
-      }),
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
-  });
-
-  it("uploadPhoto: rejects file with content not matching declared mime type", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
-    const notJpegBase64 = Buffer.from("not a jpeg").toString("base64");
-
-    await expect(
-      caller.candidate.uploadPhoto({
-        candidateId: candidateA1Id,
-        fileBase64: notJpegBase64,
-        mimeType: "image/jpeg",
-      }),
-    ).rejects.toMatchObject({
-      code: "BAD_REQUEST",
-      message: expect.stringContaining("Format de fichier non supporté"),
-    });
-  });
-
-  // ─── uploadCv / deleteCv ───
-
-  /** Minimal valid PDF (%PDF) */
-  const minimalPdfBase64 = Buffer.from([0x25, 0x50, 0x44, 0x46, ...Array(20).fill(0)]).toString("base64");
-
-  it("uploadCv: updates Candidate.cvUrl and cvFileName after upload", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
-
-    const result = await caller.candidate.uploadCv({
-      candidateId: candidateA2Id,
-      fileBase64: minimalPdfBase64,
-      mimeType: "application/pdf",
-      fileName: "Mon CV.pdf",
-    });
-
-    expect(result.cvUrl).toContain(
-      `https://storage.example.com/cvs/${companyAId}/candidates/${candidateA2Id}/cv.pdf`,
+    const { path: firstPath } = await uploadCv(caller, candidateA2Id, minimalPdf, "v1.pdf");
+    const { path, updated } = await uploadCv(
+      caller,
+      candidateA2Id,
+      minimalDocx,
+      "v2.docx",
+      DOCX_MIME
     );
-    expect(result.cvFileName).toBe("Mon CV.pdf");
 
-    const inDb = await db.candidate.findUniqueOrThrow({
-      where: { id: candidateA2Id },
-    });
-    expect(inDb.cvUrl).toBe(result.cvUrl);
-    expect(inDb.cvFileName).toBe("Mon CV.pdf");
+    expect(updated.cvFileName).toBe("v2.docx");
+    expect(updated.cvUrl).toBe(`https://storage.example.com/cvs/${path}`);
+    expect(storedFiles.has(`cvs:${firstPath}`)).toBe(false);
+    const inDb = await db.candidate.findUniqueOrThrow({ where: { id: candidateA2Id } });
+    expect(inDb.cvUrl).toBe(updated.cvUrl);
 
-    await db.candidate.update({
-      where: { id: candidateA2Id },
-      data: { cvUrl: null, cvFileName: null },
-    });
+    await clearFiles(candidateA2Id);
   });
 
-  it("uploadCv: replaces existing CV (upsert)", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
-
-    await caller.candidate.uploadCv({
-      candidateId: candidateA2Id,
-      fileBase64: minimalPdfBase64,
-      mimeType: "application/pdf",
-      fileName: "v1.pdf",
-    });
-
-    const result = await caller.candidate.uploadCv({
-      candidateId: candidateA2Id,
-      fileBase64: minimalPdfBase64,
-      mimeType: "application/pdf",
-      fileName: "v2.pdf",
-    });
-
-    expect(result.cvFileName).toBe("v2.pdf");
-    const inDb = await db.candidate.findUniqueOrThrow({
-      where: { id: candidateA2Id },
-    });
-    expect(inDb.cvFileName).toBe("v2.pdf");
-
-    await db.candidate.update({
-      where: { id: candidateA2Id },
-      data: { cvUrl: null, cvFileName: null },
-    });
-  });
-
-  it("uploadCv: removes a previous CV with another extension, not the new one", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
-    storageRemove.mockClear();
-
-    await caller.candidate.uploadCv({
-      candidateId: candidateA2Id,
-      fileBase64: Buffer.from("docx").toString("base64"),
-      mimeType:
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      fileName: "cv.docx",
-    });
-
-    const prefix = `${companyAId}/candidates/${candidateA2Id}`;
-    expect(storageRemove).toHaveBeenCalledWith("cvs", [
-      `${prefix}/cv.pdf`,
-      `${prefix}/cv.doc`,
-    ]);
-
-    await db.candidate.update({
-      where: { id: candidateA2Id },
-      data: { cvUrl: null, cvFileName: null },
-    });
-  });
-
-  it("uploadCv: rejects file exceeding 5 MB with PRD message", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
-    const oversizedBuffer = Buffer.alloc(CV_MAX_BYTES + 1, "x");
-    const oversizedBase64 = oversizedBuffer.toString("base64");
+  it("confirmFileUpload: rejects and removes a stored file whose content does not match its format", async () => {
+    const caller = appRouter.createCaller(createContext(companyAId));
 
     await expect(
-      caller.candidate.uploadCv({
-        candidateId: candidateA2Id,
-        fileBase64: oversizedBase64,
-        mimeType: "application/pdf",
-        fileName: "big.pdf",
-      }),
-    ).rejects.toMatchObject({
-      code: "BAD_REQUEST",
-      message: expect.stringContaining(
-        "Le fichier dépasse la taille maximale autorisée (2 Mo pour les photos, 5 Mo pour les CVs)",
-      ),
-    });
-  });
-
-  it("uploadCv: rejects invalid mime type with PRD message", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
-
-    await expect(
-      caller.candidate.uploadCv({
-        candidateId: candidateA2Id,
-        fileBase64: minimalPdfBase64,
-        mimeType: "text/plain" as "application/pdf",
-        fileName: "doc.txt",
-      }),
-    ).rejects.toThrow(/Format de fichier non supporté/);
-  });
-
-  it("uploadCv: rejects PDF mimeType with non-PDF content (magic bytes)", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
-    const notPdfBase64 = Buffer.from("not a pdf").toString("base64");
-
-    await expect(
-      caller.candidate.uploadCv({
-        candidateId: candidateA2Id,
-        fileBase64: notPdfBase64,
-        mimeType: "application/pdf",
-        fileName: "fake.pdf",
-      }),
+      uploadCv(caller, candidateA2Id, Buffer.from("not a pdf"), "fake.pdf")
     ).rejects.toMatchObject({
       code: "BAD_REQUEST",
       message: expect.stringContaining("Format de fichier non supporté"),
     });
+    expect(storedFiles.size).toBe(0);
+    const inDb = await db.candidate.findUniqueOrThrow({ where: { id: candidateA2Id } });
+    expect(inDb.cvUrl).toBeNull();
   });
 
-  it("uploadCv: throws NOT_FOUND when candidate belongs to another company", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+  it("confirmFileUpload: rejects and removes a stored file above the limit", async () => {
+    const caller = appRouter.createCaller(createContext(companyAId));
+    const { bucket, path } = await caller.candidate.createFileUploadUrl({
+      kind: "cv",
+      candidateId: candidateA2Id,
+      mimeType: PDF_MIME,
+      size: 1000,
+    });
+    // Taille annoncée mensongère : le fichier réellement déposé dépasse 5 Mo.
+    storedFiles.set(
+      `${bucket}:${path}`,
+      Buffer.concat([minimalPdf, Buffer.alloc(CV_MAX_BYTES)])
+    );
 
     await expect(
-      caller.candidate.uploadCv({
+      caller.candidate.confirmFileUpload({
+        kind: "cv",
+        candidateId: candidateA2Id,
+        path,
+        fileName: "big.pdf",
+      })
+    ).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+      message: expect.stringContaining("Le fichier dépasse la taille maximale autorisée"),
+    });
+    expect(storedFiles.has(`${bucket}:${path}`)).toBe(false);
+  });
+
+  it("confirmFileUpload: rejects a path outside the candidate folder", async () => {
+    const caller = appRouter.createCaller(createContext(companyAId));
+
+    await expect(
+      caller.candidate.confirmFileUpload({
+        kind: "photo",
+        candidateId: candidateA1Id,
+        path: `${companyBId}/candidates/${candidateB1Id}/photo.jpg`,
+      })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+
+  it("confirmFileUpload: rejects a file that was never uploaded", async () => {
+    const caller = appRouter.createCaller(createContext(companyAId));
+    const { path } = await caller.candidate.createFileUploadUrl({
+      kind: "photo",
+      candidateId: candidateA1Id,
+      mimeType: "image/jpeg",
+      size: 100,
+    });
+
+    await expect(
+      caller.candidate.confirmFileUpload({ kind: "photo", candidateId: candidateA1Id, path })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+
+  it("confirmFileUpload: throws NOT_FOUND when candidate belongs to another company", async () => {
+    const caller = appRouter.createCaller(createContext(companyAId));
+
+    await expect(
+      caller.candidate.confirmFileUpload({
+        kind: "photo",
         candidateId: candidateB1Id,
-        fileBase64: minimalPdfBase64,
-        mimeType: "application/pdf",
-        fileName: "cv.pdf",
-      }),
+        path: `${companyBId}/candidates/${candidateB1Id}/photo.jpg`,
+      })
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 
-  it("deleteCv: clears cvUrl and cvFileName", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+  // ─── deleteCv / téléchargement ───
 
-    await caller.candidate.uploadCv({
-      candidateId: candidateA2Id,
-      fileBase64: minimalPdfBase64,
-      mimeType: "application/pdf",
-      fileName: "to-delete.pdf",
-    });
+  it("deleteCv: clears cvUrl and cvFileName and removes the stored CV", async () => {
+    const caller = appRouter.createCaller(createContext(companyAId));
+    const { path } = await uploadCv(caller, candidateA2Id, minimalPdf, "to-delete.pdf");
 
-    storageRemove.mockClear();
     const result = await caller.candidate.deleteCv({ candidateId: candidateA2Id });
+
     expect(result.success).toBe(true);
-
-    const prefix = `${companyAId}/candidates/${candidateA2Id}`;
-    expect(storageRemove).toHaveBeenCalledWith("cvs", [
-      `${prefix}/cv.pdf`,
-      `${prefix}/cv.doc`,
-      `${prefix}/cv.docx`,
-    ]);
-
-    const inDb = await db.candidate.findUniqueOrThrow({
-      where: { id: candidateA2Id },
-    });
+    expect(storedFiles.has(`cvs:${path}`)).toBe(false);
+    const inDb = await db.candidate.findUniqueOrThrow({ where: { id: candidateA2Id } });
     expect(inDb.cvUrl).toBeNull();
     expect(inDb.cvFileName).toBeNull();
   });
 
   it("deleteCv: succeeds when no CV present (idempotent)", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const caller = appRouter.createCaller(createContext(companyAId));
 
     const result = await caller.candidate.deleteCv({ candidateId: candidateA2Id });
     expect(result.success).toBe(true);
   });
 
   it("deleteCv: throws NOT_FOUND when candidate belongs to another company", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const caller = appRouter.createCaller(createContext(companyAId));
 
     await expect(
       caller.candidate.deleteCv({ candidateId: candidateB1Id }),
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 
-  it("getCvDownloadUrl: returns signed URL for own candidate with CV", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+  it("getCvDownloadUrl: signs the stored path even when the file name has no extension", async () => {
+    const caller = appRouter.createCaller(createContext(companyAId));
+    const { path } = await uploadCv(caller, candidateA2Id, minimalDocx, "CV", DOCX_MIME);
 
-    await caller.candidate.uploadCv({
-      candidateId: candidateA2Id,
-      fileBase64: minimalPdfBase64,
-      mimeType: "application/pdf",
-      fileName: "cv.pdf",
-    });
+    const result = await caller.candidate.getCvDownloadUrl({ candidateId: candidateA2Id });
 
-    const result = await caller.candidate.getCvDownloadUrl({
-      candidateId: candidateA2Id,
-    });
-    expect(result.url).toContain(
-      `https://storage.example.com/cvs/${companyAId}/candidates/${candidateA2Id}/cv.pdf?signed`,
-    );
-
-    await db.candidate.update({
-      where: { id: candidateA2Id },
-      data: { cvUrl: null, cvFileName: null },
-    });
+    expect(result.url).toBe(`https://storage.example.com/cvs/${path}?signed`);
+    await clearFiles(candidateA2Id);
   });
 
   it("getCvDownloadUrl: throws NOT_FOUND when no CV", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const caller = appRouter.createCaller(createContext(companyAId));
 
     await expect(
       caller.candidate.getCvDownloadUrl({ candidateId: candidateA2Id }),
@@ -893,8 +839,7 @@ describe.runIf(!!connectionString)("candidate", () => {
   });
 
   it("getCvDownloadUrl: throws NOT_FOUND for candidate of another company", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
+    const caller = appRouter.createCaller(createContext(companyAId));
 
     await expect(
       caller.candidate.getCvDownloadUrl({ candidateId: candidateB1Id }),
@@ -910,8 +855,7 @@ describe.runIf(!!connectionString)("candidate", () => {
         expiresAt: new Date(Date.now() - 60000),
       },
     });
-    const publicCtx = createContext(null);
-    const publicCaller = appRouter.createCaller(publicCtx);
+    const publicCaller = appRouter.createCaller(createContext(null));
 
     await expect(
       publicCaller.candidate.getCvDownloadUrlByShareToken({
@@ -923,14 +867,8 @@ describe.runIf(!!connectionString)("candidate", () => {
   });
 
   it("getCvDownloadUrlByShareToken: returns signed URL when token valid", async () => {
-    const ctx = createContext(companyAId);
-    const caller = appRouter.createCaller(ctx);
-    await caller.candidate.uploadCv({
-      candidateId: candidateA2Id,
-      fileBase64: minimalPdfBase64,
-      mimeType: "application/pdf",
-      fileName: "cv.pdf",
-    });
+    const caller = appRouter.createCaller(createContext(companyAId));
+    const { path } = await uploadCv(caller, candidateA2Id, minimalPdf, "cv.pdf");
     const shareLink = await db.shareLink.create({
       data: {
         candidateId: candidateA2Id,
@@ -938,17 +876,15 @@ describe.runIf(!!connectionString)("candidate", () => {
         type: "NORMAL",
       },
     });
-    const publicCtx = createContext(null);
-    const publicCaller = appRouter.createCaller(publicCtx);
+    const publicCaller = appRouter.createCaller(createContext(null));
+
     const result = await publicCaller.candidate.getCvDownloadUrlByShareToken({
       token: shareLink.token,
     });
-    expect(result.url).toContain("cv.pdf?signed");
+
+    expect(result.url).toBe(`https://storage.example.com/cvs/${path}?signed`);
     await db.shareLink.delete({ where: { id: shareLink.id } });
-    await db.candidate.update({
-      where: { id: candidateA2Id },
-      data: { cvUrl: null, cvFileName: null },
-    });
+    await clearFiles(candidateA2Id);
   });
 
   it("getById: returns candidate with relations for own company", async () => {
@@ -1013,21 +949,18 @@ describe.runIf(!!connectionString)("candidate", () => {
       firstName: "ToDelete",
       lastName: "WithFiles",
     });
+    const prefix = `${companyAId}/candidates/${created.id}`;
+    storedFiles.set(`photos:${prefix}/photo.jpg`, minimalJpeg);
+    storedFiles.set(`cvs:${prefix}/cv-3f2b8c1e-9a4d-4e7b-8c6f-1d2e3f4a5b6c.pdf`, minimalPdf);
     storageRemove.mockClear();
 
     await caller.candidate.delete({ id: created.id });
 
-    const prefix = `${companyAId}/candidates/${created.id}`;
-    expect(storageRemove).toHaveBeenCalledWith("photos", [
-      `${prefix}/photo.jpg`,
-      `${prefix}/photo.png`,
-      `${prefix}/photo.webp`,
-    ]);
+    expect(storageRemove).toHaveBeenCalledWith("photos", [`${prefix}/photo.jpg`]);
     expect(storageRemove).toHaveBeenCalledWith("cvs", [
-      `${prefix}/cv.pdf`,
-      `${prefix}/cv.doc`,
-      `${prefix}/cv.docx`,
+      `${prefix}/cv-3f2b8c1e-9a4d-4e7b-8c6f-1d2e3f4a5b6c.pdf`,
     ]);
+    expect(storedFiles.size).toBe(0);
   });
 
   it("delete: keeps the candidate when Storage removal fails", async () => {
@@ -1037,6 +970,7 @@ describe.runIf(!!connectionString)("candidate", () => {
       firstName: "Kept",
       lastName: "StorageDown",
     });
+    storedFiles.set(`photos:${companyAId}/candidates/${created.id}/photo.jpg`, minimalJpeg);
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
     storageRemove.mockResolvedValueOnce({ error: new Error("Storage down") });
 
@@ -1051,6 +985,7 @@ describe.runIf(!!connectionString)("candidate", () => {
       expect(stillExists).not.toBeNull();
     } finally {
       consoleError.mockRestore();
+      storedFiles.clear();
       await db.candidate.delete({ where: { id: created.id } });
     }
   });

@@ -16,10 +16,13 @@ import {
   deleteFormationSchema,
   PHOTO_ACCEPTED_MIMES,
   PHOTO_MAX_BYTES,
-  uploadPhotoSchema,
   CV_ACCEPTED_MIMES,
   CV_MAX_BYTES,
-  uploadCvSchema,
+  FILE_TOO_LARGE_MESSAGE,
+  PHOTO_FORMAT_MESSAGE,
+  CV_FORMAT_MESSAGE,
+  createFileUploadUrlSchema,
+  confirmFileUploadSchema,
 } from "@/lib/validations/candidate"
 import {
   addTagSchema,
@@ -27,51 +30,63 @@ import {
   MAX_TAGS_PER_CANDIDATE,
 } from "@/lib/validations/tag"
 import { getTagColor } from "@/lib/tag-colors"
-import { checkRateLimit, getClientIp, RATE_LIMITS } from "@/lib/rate-limit";
+import {
+  checkRateLimit,
+  enforceRateLimit,
+  getClientIp,
+  RATE_LIMITS,
+} from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
-  getCandidateFilePath,
-  getCvStorageExt,
-  removeCandidateFile,
+  createCandidateFilePath,
+  getCandidateFilePathFromUrl,
+  parseCandidateFilePath,
+  removeCandidateFiles,
 } from "@/server/candidateStorage";
 
-/** Magic bytes PDF (%PDF) */
-const PDF_SIGNATURE = (buf: Buffer) =>
-  buf.length >= 4 &&
-  buf[0] === 0x25 &&
-  buf[1] === 0x50 &&
-  buf[2] === 0x44 &&
-  buf[3] === 0x46;
+/** Le contenu commence-t-il par ces octets ? */
+const startsWith = (buffer: Buffer, bytes: number[]) =>
+  buffer.length >= bytes.length &&
+  bytes.every((byte, index) => buffer[index] === byte);
 
-/** Magic bytes pour valider que le contenu correspond au type déclaré */
-const IMAGE_SIGNATURES: Record<
-  (typeof PHOTO_ACCEPTED_MIMES)[number],
-  (buf: Buffer) => boolean
-> = {
-  "image/jpeg": (buf) =>
-    buf.length >= 3 && buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff,
-  "image/png": (buf) =>
-    buf.length >= 8 &&
-    buf[0] === 0x89 &&
-    buf[1] === 0x50 &&
-    buf[2] === 0x4e &&
-    buf[3] === 0x47 &&
-    buf[4] === 0x0d &&
-    buf[5] === 0x0a &&
-    buf[6] === 0x1a &&
-    buf[7] === 0x0a,
-  "image/webp": (buf) =>
-    buf.length >= 12 &&
-    buf[0] === 0x52 &&
-    buf[1] === 0x49 &&
-    buf[2] === 0x46 &&
-    buf[3] === 0x46 &&
-    buf[8] === 0x57 &&
-    buf[9] === 0x45 &&
-    buf[10] === 0x42 &&
-    buf[11] === 0x50,
+/** Magic bytes attendus par extension, pour vérifier que le contenu correspond au format. */
+const FILE_SIGNATURES: Record<string, (buffer: Buffer) => boolean> = {
+  jpg: (buffer) => startsWith(buffer, [0xff, 0xd8, 0xff]),
+  png: (buffer) =>
+    startsWith(buffer, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+  webp: (buffer) =>
+    startsWith(buffer, [0x52, 0x49, 0x46, 0x46]) &&
+    buffer.subarray(8, 12).toString("ascii") === "WEBP",
+  pdf: (buffer) => startsWith(buffer, [0x25, 0x50, 0x44, 0x46]), // %PDF
+  doc: (buffer) =>
+    startsWith(buffer, [0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]), // OLE
+  docx: (buffer) => startsWith(buffer, [0x50, 0x4b, 0x03, 0x04]), // ZIP
 };
 
+const MIME_EXTENSIONS: Record<
+  (typeof PHOTO_ACCEPTED_MIMES)[number] | (typeof CV_ACCEPTED_MIMES)[number],
+  string
+> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "application/pdf": "pdf",
+  "application/msword": "doc",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+    "docx",
+};
+
+/** Bucket, taille max et message de format par type de fichier candidat. */
+const FILE_KINDS = {
+  photo: {
+    bucket: "photos",
+    maxBytes: PHOTO_MAX_BYTES,
+    formatMessage: PHOTO_FORMAT_MESSAGE,
+  },
+  cv: { bucket: "cvs", maxBytes: CV_MAX_BYTES, formatMessage: CV_FORMAT_MESSAGE },
+} as const;
+
+const GENERIC_ERROR_MESSAGE = "Une erreur est survenue. Réessayez.";
 
 /**
  * Rattache des tags à un candidat par leur nom : un tag existant du cabinet est
@@ -122,14 +137,17 @@ const attachTagsByName = async (
 const createCvSignedUrl = async (
   companyId: string,
   candidateId: string,
-  cvFileName: string | null,
+  cvUrl: string | null,
 ): Promise<string> => {
-  const storagePath = getCandidateFilePath(
+  const storagePath = getCandidateFilePathFromUrl(
+    "cvs",
     companyId,
     candidateId,
-    "cvs",
-    getCvStorageExt(cvFileName),
+    cvUrl,
   );
+  if (!storagePath) {
+    throw new TRPCError({ code: "NOT_FOUND" });
+  }
   const supabase = createAdminClient();
   const { data, error } = await supabase.storage
     .from("cvs")
@@ -310,8 +328,8 @@ export const candidateRouter = router({
       const supabase = createAdminClient();
       const storageErrors = (
         await Promise.all([
-          removeCandidateFile(supabase, ctx.companyId, input.id, "photos"),
-          removeCandidateFile(supabase, ctx.companyId, input.id, "cvs"),
+          removeCandidateFiles(supabase, ctx.companyId, input.id, "photos"),
+          removeCandidateFiles(supabase, ctx.companyId, input.id, "cvs"),
         ])
       ).filter((error) => error !== null);
       if (storageErrors.length > 0) {
@@ -740,203 +758,133 @@ export const candidateRouter = router({
     }),
 
   /**
-   * Upload une photo pour un candidat existant.
-   * Rate limit : 30 uploads/heure par utilisateur. Formats : JPG, PNG, WebP. Max 2 Mo.
-   * Une photo précédente d'une autre extension est supprimée du Storage.
+   * Prépare l'upload d'une photo ou d'un CV : vérifie le candidat, le format et la
+   * taille annoncée, puis renvoie une URL d'upload signée vers un chemin unique.
+   * Le navigateur envoie le fichier directement à Supabase Storage (sans transiter
+   * par la fonction serverless), puis appelle `confirmFileUpload`.
+   * Rate limit : 30 uploads / heure par utilisateur, photo et CV confondus.
    */
-  uploadPhoto: protectedProcedure
-    .input(uploadPhotoSchema)
+  createFileUploadUrl: protectedProcedure
+    .input(createFileUploadUrlSchema)
     .mutation(async ({ ctx, input }) => {
-      const userId = ctx.user?.id;
-      if (!userId) {
-        throw new TRPCError({ code: "UNAUTHORIZED" });
-      }
-
-      const rateResult = await checkRateLimit(
-        `upload:${userId}`,
-        RATE_LIMITS.UPLOAD_PER_USER.limit,
-        RATE_LIMITS.UPLOAD_PER_USER.windowMs,
+      await enforceRateLimit(
+        `upload:${ctx.user.id}`,
+        RATE_LIMITS.UPLOAD_PER_USER,
       );
-      if (!rateResult.success) {
-        throw new TRPCError({
-          code: "TOO_MANY_REQUESTS",
-          message: "Trop de requêtes. Réessayez dans quelques minutes.",
-        });
-      }
 
       const candidate = await ctx.db.candidate.findFirst({
         where: { id: input.candidateId, companyId: ctx.companyId },
+        select: { id: true },
       });
       if (!candidate) {
         throw new TRPCError({ code: "NOT_FOUND" });
       }
 
-      const buffer = Buffer.from(input.fileBase64, "base64");
-      if (buffer.length > PHOTO_MAX_BYTES) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message:
-            "Le fichier dépasse la taille maximale autorisée (2 Mo pour les photos, 5 Mo pour les CVs).",
-        });
-      }
-
-      const isValidSignature = IMAGE_SIGNATURES[input.mimeType];
-      if (isValidSignature && !isValidSignature(buffer)) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message:
-            "Format de fichier non supporté. Formats acceptés : JPG, PNG, WebP.",
-        });
-      }
-
-      const extMap: Record<(typeof PHOTO_ACCEPTED_MIMES)[number], string> = {
-        "image/jpeg": "jpg",
-        "image/png": "png",
-        "image/webp": "webp",
-      };
-      const ext = extMap[input.mimeType];
-      const storagePath = getCandidateFilePath(
+      const { bucket } = FILE_KINDS[input.kind];
+      const path = createCandidateFilePath(
         ctx.companyId,
         input.candidateId,
-        "photos",
-        ext,
+        bucket,
+        MIME_EXTENSIONS[input.mimeType],
       );
-
-      const supabase = createAdminClient();
-      const { error } = await supabase.storage
-        .from("photos")
-        .upload(storagePath, buffer, {
-          contentType: input.mimeType,
-          upsert: true,
-        });
-
-      if (error) {
-        console.error("[uploadPhoto] Supabase Storage error:", error);
+      const { data, error } = await createAdminClient()
+        .storage.from(bucket)
+        .createSignedUploadUrl(path);
+      if (error || !data) {
+        console.error("[createFileUploadUrl] Supabase Storage error:", error);
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Une erreur est survenue. Réessayez.",
+          message: GENERIC_ERROR_MESSAGE,
         });
       }
-
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("photos").getPublicUrl(storagePath);
-
-      const updated = await ctx.db.candidate.update({
-        where: { id: input.candidateId },
-        data: { photoUrl: publicUrl },
-      });
-
-      const cleanupError = await removeCandidateFile(
-        supabase,
-        ctx.companyId,
-        input.candidateId,
-        "photos",
-        ext,
-      );
-      if (cleanupError) {
-        console.warn("[uploadPhoto] Previous photo removal failed:", cleanupError);
-      }
-      return updated;
+      return { bucket, path: data.path, token: data.token };
     }),
 
   /**
-   * Upload un CV pour un candidat existant.
-   * Rate limit : 30 uploads/heure par utilisateur (partagé avec photo). Formats : PDF, DOC, DOCX. Max 5 Mo.
-   * Un CV précédent d'une autre extension est supprimé du Storage.
+   * Finalise un upload : revérifie le fichier réellement stocké (taille, signature
+   * binaire), met à jour la fiche puis supprime les fichiers précédents du candidat.
+   * Un fichier refusé est supprimé du Storage.
    */
-  uploadCv: protectedProcedure
-    .input(uploadCvSchema)
+  confirmFileUpload: protectedProcedure
+    .input(confirmFileUploadSchema)
     .mutation(async ({ ctx, input }) => {
-      const userId = ctx.user?.id;
-      if (!userId) {
-        throw new TRPCError({ code: "UNAUTHORIZED" });
-      }
-
-      const rateResult = await checkRateLimit(
-        `upload:${userId}`,
-        RATE_LIMITS.UPLOAD_PER_USER.limit,
-        RATE_LIMITS.UPLOAD_PER_USER.windowMs,
-      );
-      if (!rateResult.success) {
-        throw new TRPCError({
-          code: "TOO_MANY_REQUESTS",
-          message: "Trop de requêtes. Réessayez dans quelques minutes.",
-        });
-      }
-
       const candidate = await ctx.db.candidate.findFirst({
         where: { id: input.candidateId, companyId: ctx.companyId },
+        select: { id: true },
       });
       if (!candidate) {
         throw new TRPCError({ code: "NOT_FOUND" });
       }
 
-      const buffer = Buffer.from(input.fileBase64, "base64");
-      if (buffer.length > CV_MAX_BYTES) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message:
-            "Le fichier dépasse la taille maximale autorisée (2 Mo pour les photos, 5 Mo pour les CVs).",
-        });
+      const { bucket, maxBytes, formatMessage } = FILE_KINDS[input.kind];
+      const parsedPath = parseCandidateFilePath(bucket, input.path);
+      if (
+        parsedPath?.companyId !== ctx.companyId ||
+        parsedPath.candidateId !== input.candidateId
+      ) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: GENERIC_ERROR_MESSAGE });
       }
-
-      if (input.mimeType === "application/pdf" && !PDF_SIGNATURE(buffer)) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message:
-            "Format de fichier non supporté. Formats acceptés : PDF, DOC, DOCX.",
-        });
-      }
-
-      const extMap: Record<(typeof CV_ACCEPTED_MIMES)[number], string> = {
-        "application/pdf": "pdf",
-        "application/msword": "doc",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
-          "docx",
-      };
-      const ext = extMap[input.mimeType];
-      const storagePath = getCandidateFilePath(
-        ctx.companyId,
-        input.candidateId,
-        "cvs",
-        ext,
-      );
 
       const supabase = createAdminClient();
-      const { error } = await supabase.storage
-        .from("cvs")
-        .upload(storagePath, buffer, {
-          contentType: input.mimeType,
-          upsert: true,
-        });
+      const { data: storedFile, error: downloadError } = await supabase.storage
+        .from(bucket)
+        .download(input.path);
+      if (downloadError || !storedFile) {
+        console.error("[confirmFileUpload] Supabase Storage error:", downloadError);
+        throw new TRPCError({ code: "BAD_REQUEST", message: GENERIC_ERROR_MESSAGE });
+      }
 
-      if (error) {
-        console.error("[uploadCv] Supabase Storage error:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Une erreur est survenue. Réessayez.",
-        });
+      const buffer = Buffer.from(await storedFile.arrayBuffer());
+      const hasValidSignature =
+        FILE_SIGNATURES[parsedPath.extension]?.(buffer) ?? false;
+      const rejectionMessage =
+        buffer.length > maxBytes
+          ? FILE_TOO_LARGE_MESSAGE
+          : hasValidSignature
+            ? null
+            : formatMessage;
+      if (rejectionMessage) {
+        const { error: removeError } = await supabase.storage
+          .from(bucket)
+          .remove([input.path]);
+        if (removeError) {
+          console.warn("[confirmFileUpload] Rejected file removal failed:", removeError);
+        }
+        throw new TRPCError({ code: "BAD_REQUEST", message: rejectionMessage });
       }
 
       const {
         data: { publicUrl },
-      } = supabase.storage.from("cvs").getPublicUrl(storagePath);
-
+      } = supabase.storage.from(bucket).getPublicUrl(input.path);
       const updated = await ctx.db.candidate.update({
         where: { id: input.candidateId },
-        data: { cvUrl: publicUrl, cvFileName: input.fileName },
+        data:
+          input.kind === "photo"
+            ? { photoUrl: publicUrl }
+            : { cvUrl: publicUrl, cvFileName: input.fileName },
       });
 
-      const cleanupError = await removeCandidateFile(
+      // Relecture : si un autre upload a été confirmé entre-temps, c'est son
+      // fichier (celui que la fiche référence) qui est conservé.
+      const current = await ctx.db.candidate.findUnique({
+        where: { id: input.candidateId },
+        select: { photoUrl: true, cvUrl: true },
+      });
+      const currentPath = getCandidateFilePathFromUrl(
+        bucket,
+        ctx.companyId,
+        input.candidateId,
+        (input.kind === "photo" ? current?.photoUrl : current?.cvUrl) ?? null,
+      );
+      const cleanupError = await removeCandidateFiles(
         supabase,
         ctx.companyId,
         input.candidateId,
-        "cvs",
-        ext,
+        bucket,
+        currentPath ?? input.path,
       );
       if (cleanupError) {
-        console.warn("[uploadCv] Previous CV removal failed:", cleanupError);
+        console.warn("[confirmFileUpload] Previous file removal failed:", cleanupError);
       }
       return updated;
     }),
@@ -955,7 +903,7 @@ export const candidateRouter = router({
       }
 
       if (candidate.cvUrl || candidate.cvFileName) {
-        const error = await removeCandidateFile(
+        const error = await removeCandidateFiles(
           createAdminClient(),
           ctx.companyId,
           input.candidateId,
@@ -990,7 +938,7 @@ export const candidateRouter = router({
       const url = await createCvSignedUrl(
         ctx.companyId,
         input.candidateId,
-        candidate.cvFileName,
+        candidate.cvUrl,
       );
       return { url };
     }),
@@ -1033,7 +981,7 @@ export const candidateRouter = router({
       const url = await createCvSignedUrl(
         candidate.companyId,
         candidate.id,
-        candidate.cvFileName,
+        candidate.cvUrl,
       );
       return { url };
     }),

@@ -5,15 +5,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
+  FILE_TOO_LARGE_MESSAGE,
   PHOTO_ACCEPTED_MIMES,
+  PHOTO_FORMAT_MESSAGE,
   PHOTO_MAX_BYTES,
 } from "@/lib/validations/candidate";
 
 export const PHOTO_ACCEPT_ATTR = ".jpg,.jpeg,.png,.webp";
-const PHOTO_FORMAT_ERROR =
-  "Format de fichier non supporté. Formats acceptés : JPG, PNG, WebP.";
-const PHOTO_SIZE_ERROR =
-  "Le fichier dépasse la taille maximale autorisée (2 Mo pour les photos, 5 Mo pour les CVs).";
 
 export const getCandidateInitials = (firstName: string, lastName: string) =>
   `${firstName?.charAt(0) ?? ""}${lastName?.charAt(0) ?? ""}`.toUpperCase() || "?";
@@ -120,11 +118,11 @@ export const createPhotoChangeHandler = (
   }
   const mime = file.type as (typeof PHOTO_ACCEPTED_MIMES)[number];
   if (!PHOTO_ACCEPTED_MIMES.includes(mime)) {
-    setPhotoError(PHOTO_FORMAT_ERROR);
+    setPhotoError(PHOTO_FORMAT_MESSAGE);
     return;
   }
   if (file.size > PHOTO_MAX_BYTES) {
-    setPhotoError(PHOTO_SIZE_ERROR);
+    setPhotoError(FILE_TOO_LARGE_MESSAGE);
     return;
   }
   if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl);

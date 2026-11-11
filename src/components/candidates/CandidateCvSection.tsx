@@ -6,20 +6,17 @@ import { api } from "@/lib/trpc/client";
 import { CvDownloadLink } from "@/components/shared/CvDownloadLink";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
-import { fileToBase64 } from "@/lib/file-utils";
+import { useCandidateFileUpload } from "@/hooks/useCandidateFileUpload";
 import {
   CV_ACCEPTED_MIMES,
+  CV_FORMAT_MESSAGE,
   CV_MAX_BYTES,
-  type UploadCvInput,
+  FILE_TOO_LARGE_MESSAGE,
 } from "@/lib/validations/candidate";
 
 const CV_ACCEPT_ATTR =
   ".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 const GENERIC_ERROR = "Une erreur est survenue. Réessayez.";
-const FILE_TOO_BIG =
-  "Le fichier dépasse la taille maximale autorisée (2 Mo pour les photos, 5 Mo pour les CVs).";
-const FORMAT_INVALID =
-  "Format de fichier non supporté. Formats acceptés : PDF, DOC, DOCX.";
 
 type Props = {
   candidateId: string;
@@ -37,16 +34,7 @@ export const CandidateCvSection = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const utils = api.useUtils();
 
-  const uploadMutation = api.candidate.uploadCv.useMutation({
-    onSuccess: () => {
-      void utils.candidate.getById.invalidate({ id: candidateId });
-      setUploadError(null);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    },
-    onError: (err) => {
-      setUploadError(err.message ?? GENERIC_ERROR);
-    },
-  });
+  const { uploadFile, isUploading } = useCandidateFileUpload();
 
   const deleteMutation = api.candidate.deleteCv.useMutation({
     onSuccess: () => {
@@ -64,23 +52,18 @@ export const CandidateCvSection = ({
 
     const mime = file.type as (typeof CV_ACCEPTED_MIMES)[number];
     if (!CV_ACCEPTED_MIMES.includes(mime)) {
-      setUploadError(FORMAT_INVALID);
+      setUploadError(CV_FORMAT_MESSAGE);
       return;
     }
     if (file.size > CV_MAX_BYTES) {
-      setUploadError(FILE_TOO_BIG);
+      setUploadError(FILE_TOO_LARGE_MESSAGE);
       return;
     }
 
     try {
-      const { base64, mimeType } = await fileToBase64(file, "application/pdf");
-      const input: UploadCvInput = {
-        candidateId,
-        fileBase64: base64,
-        mimeType: mimeType as (typeof CV_ACCEPTED_MIMES)[number],
-        fileName: file.name,
-      };
-      await uploadMutation.mutateAsync(input);
+      await uploadFile({ kind: "cv", candidateId, file });
+      void utils.candidate.getById.invalidate({ id: candidateId });
+      if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (err) {
       setUploadError(
         (err as { message?: string })?.message ?? GENERIC_ERROR,
@@ -120,16 +103,16 @@ export const CandidateCvSection = ({
               variant="outline"
               size="sm"
               onClick={triggerFileInput}
-              disabled={uploadMutation.isPending}
+              disabled={isUploading}
             >
-              {uploadMutation.isPending ? "Envoi…" : "Remplacer"}
+              {isUploading ? "Envoi…" : "Remplacer"}
             </Button>
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={() => setDeleteDialogOpen(true)}
-              disabled={deleteMutation.isPending || uploadMutation.isPending}
+              disabled={deleteMutation.isPending || isUploading}
               aria-label="Supprimer le CV"
             >
               <Trash2 className="h-4 w-4 shrink-0" aria-hidden />
@@ -144,10 +127,10 @@ export const CandidateCvSection = ({
             variant="outline"
             size="sm"
             onClick={triggerFileInput}
-            disabled={uploadMutation.isPending}
+            disabled={isUploading}
           >
             <FileUp className="mr-2 h-4 w-4 shrink-0" aria-hidden />
-            {uploadMutation.isPending ? "Envoi…" : "Ajouter un CV"}
+            {isUploading ? "Envoi…" : "Ajouter un CV"}
           </Button>
         </div>
       )}

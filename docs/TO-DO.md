@@ -10,9 +10,6 @@ Cocher `[x]` une tâche livrée ; les tâches cochées sont retirées à la mise
 
 ## 🔥 Urgent — bugs et sécurité
 
-- [ ] **Upload de CV probablement refusé au-delà d'environ 3,3 Mo en prod**
-  Les fichiers transitent en base64 dans l'input tRPC (+33 %) : un CV de 5 Mo (limite NFR15) fait environ 6,7 Mo de corps de requête, au-delà de la limite de 4,5 Mo des fonctions Vercel. À confirmer en prod ; piste : URL d'upload signée Supabase (upload direct depuis le navigateur).
-
 - [ ] **Suppression de données incomplète (RGPD, NFR9)**
   Aucune procédure de suppression pour un client, un lien de partage, un utilisateur ou un cabinet. La suppression d'un cabinet devra aussi vider son préfixe `{companyId}/` dans les buckets `photos` et `cvs` (la cascade Prisma ne touche pas le Storage) et supprimer les comptes Supabase Auth de ses utilisateurs.
 
@@ -37,9 +34,6 @@ Cocher `[x]` une tâche livrée ; les tâches cochées sont retirées à la mise
 
 - [ ] **Rate limiter en mémoire, par instance**
   `src/lib/rate-limit.ts` stocke les compteurs en mémoire : sur Vercel chaque instance a sa propre limite. Passer à un store distribué (ex. Upstash) si le trafic augmente.
-
-- [ ] **Buckets Storage non provisionnés en local**
-  `photos` et `cvs` ne sont pas déclarés dans `supabase/config.toml` : sur une stack locale neuve, upload et téléchargement échouent tant qu'on ne les crée pas à la main dans le Studio local. Les déclarer (`[storage.buckets.*]`).
 
 - [ ] **Supabase CLI non figée en CI**
   `supabase/setup-cli` en `version: latest` dans `ci.yml`, contrairement à la règle des versions exactes. Fixer la version.
@@ -89,8 +83,7 @@ Cocher `[x]` une tâche livrée ; les tâches cochées sont retirées à la mise
   - [ ] Liste candidats : « X candidats trouvés » affiche `items.length` (plafonné à la page, 20) et non le total.
   - [ ] Filtres offres en state local (non présents dans l'URL, perdus au retour arrière), contrairement aux candidats.
   - [ ] `CvDownloadLink` appelle `window.open` après un `await` : bloqué par Safari sans message à l'utilisateur.
-  - [ ] Téléchargement de CV en 404 si le nom d'origine n'a pas l'extension du type MIME (`CV` ou `cv.txt` envoyé en DOCX) : le fichier est stocké en `cv.{ext du MIME}` mais `createCvSignedUrl` déduit l'extension de `cvFileName`. Dériver le chemin de `cvUrl`, ou refuser un `fileName` incohérent dans `uploadCvSchema`.
-  - [ ] Deux uploads de photo (ou de CV) d'extensions différentes qui se chevauchent pour un même candidat (double envoi, deux onglets) : le nettoyage du premier peut supprimer le fichier du second, auquel la base pointe alors. Corriger demande de sérialiser les uploads par candidat ou un nom de fichier unique par upload.
+  - [ ] Deux confirmations d'upload simultanées pour un même candidat (double envoi, deux onglets) : si le nettoyage de l'une passe entre la vérification et la mise à jour de la fiche de l'autre, la fiche peut pointer vers un fichier supprimé (fenêtre de quelques millisecondes). Corriger demanderait de sérialiser les confirmations par candidat.
   - [ ] Route `/search` non protégée par `src/proxy.ts` (les procédures tRPC restent protégées : pas de fuite, mais pas de redirection vers `/login`).
   - [ ] Fiche anonyme : UUIDs d'expériences/formations présents dans le DTO ; CTA « Contactez [cabinet] » sans `mailto` (pas d'email sur `Company`).
   - [ ] Schémas Zod contraires aux standards : `z.string().email()` (forme Zod 3) dans `src/lib/validations/auth.ts`, et pas de `.max()` sur les chaînes du schéma public `register`.

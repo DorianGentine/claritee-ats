@@ -20,12 +20,15 @@ vi.mock("@/lib/trpc/client", () => ({
     }),
     candidate: {
       update: { useMutation: () => ({ mutateAsync: mockUpdate, isPending: false }) },
-      uploadPhoto: { useMutation: () => ({ mutateAsync: mockUpload, isPending: false }) },
     },
     city: {
       autocomplete: { useQuery: () => ({ data: [], isLoading: false, isError: false }) },
     },
   },
+}))
+
+vi.mock("@/hooks/useCandidateFileUpload", () => ({
+  useCandidateFileUpload: () => ({ uploadFile: mockUpload, isUploading: false }),
 }))
 
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }))
