@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
@@ -19,6 +20,8 @@ describe.runIf(!!connectionString)("dashboard.getStats", () => {
   let offerA1Id: string;
   let offerA2Id: string;
   let offerB1Id: string;
+  let authorAId: string;
+  let authorBId: string;
 
   const createContext = (companyId: string | null): Context =>
     ({
@@ -38,6 +41,18 @@ describe.runIf(!!connectionString)("dashboard.getStats", () => {
     ]);
     companyAId = companyA.id;
     companyBId = companyB.id;
+
+    // Auteurs réels des notes (FK Note.authorId → User)
+    const [authorA, authorB] = await Promise.all([
+      db.user.create({
+        data: { id: randomUUID(), email: `dash-a-${randomUUID()}@test.com`, firstName: "Auteur", lastName: "A", companyId: companyAId },
+      }),
+      db.user.create({
+        data: { id: randomUUID(), email: `dash-b-${randomUUID()}@test.com`, firstName: "Auteur", lastName: "B", companyId: companyBId },
+      }),
+    ]);
+    authorAId = authorA.id;
+    authorBId = authorB.id;
 
     const [cA1, cA2, cB1] = await Promise.all([
       db.candidate.create({ data: { firstName: "Alice", lastName: "A", companyId: companyAId } }),
@@ -114,14 +129,13 @@ describe.runIf(!!connectionString)("dashboard.getStats", () => {
     expect(offer?.createdAt).toBeInstanceOf(Date);
   });
 
-  // TODO(db-test-debt): échoue sur base fraîche — skippé temporairement, à corriger (voir docs/TO-DO.md)
-  it.skip("recentNotes inclut les relations candidate et jobOffer", async () => {
+  it("recentNotes inclut les relations candidate et jobOffer", async () => {
     const note = await db.note.create({
       data: {
         content: defaultNoteContent,
         companyId: companyAId,
         candidateId: candidateA1Id,
-        authorId: "test-user",
+        authorId: authorAId,
       },
     });
 
@@ -136,13 +150,12 @@ describe.runIf(!!connectionString)("dashboard.getStats", () => {
     await db.note.delete({ where: { id: note.id } });
   });
 
-  // TODO(db-test-debt): échoue sur base fraîche — skippé temporairement, à corriger (voir docs/TO-DO.md)
-  it.skip("recentNotes ne retourne que les notes de la société (isolation tenant)", async () => {
+  it("recentNotes ne retourne que les notes de la société (isolation tenant)", async () => {
     const noteA = await db.note.create({
-      data: { content: defaultNoteContent, companyId: companyAId, authorId: "u1" },
+      data: { content: defaultNoteContent, companyId: companyAId, authorId: authorAId },
     });
     const noteB = await db.note.create({
-      data: { content: defaultNoteContent, companyId: companyBId, authorId: "u2" },
+      data: { content: defaultNoteContent, companyId: companyBId, authorId: authorBId },
     });
 
     const caller = appRouter.createCaller(createContext(companyAId));

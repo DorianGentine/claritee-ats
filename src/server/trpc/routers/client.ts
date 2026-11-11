@@ -16,7 +16,8 @@ export const clientRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
     const items = await ctx.db.clientCompany.findMany({
       where: { companyId: ctx.companyId },
-      orderBy: { createdAt: "desc" },
+      // id en départage : ordre stable entre deux clients créés à la même milliseconde
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       select: {
         id: true,
         name: true,

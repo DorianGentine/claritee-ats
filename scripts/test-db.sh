@@ -32,6 +32,16 @@ psql "$TEST_URL" -v ON_ERROR_STOP=1 -q \
   -c "CREATE SCHEMA IF NOT EXISTS auth;" \
   -c "CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid AS \$\$ SELECT NULL::uuid \$\$ LANGUAGE sql;"
 
+# Droits par défaut d'un projet Supabase : tout objet créé par postgres dans public
+# serait exposé à l'API REST (anon / authenticated). Reproduits ici pour que la base de
+# test parte du même état que la prod, et que `supabase-data-api.test.ts` vérifie que
+# les migrations referment bien tout (sans eux, le test passerait même sans révocation).
+psql "$TEST_URL" -v ON_ERROR_STOP=1 -q \
+  -c "GRANT USAGE ON SCHEMA public TO anon, authenticated;" \
+  -c "ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated;" \
+  -c "ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authenticated;" \
+  -c "ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT EXECUTE ON FUNCTIONS TO anon, authenticated;"
+
 echo "→ Application des migrations sur '${TEST_DB}'…"
 DATABASE_URL="$TEST_URL" DIRECT_DATABASE_URL="$TEST_URL" bun run prisma migrate deploy
 

@@ -3,6 +3,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import { appRouter } from "@/server/trpc/routers/_app";
 import type { Context } from "@/server/trpc/context";
+import { idsNewestFirst } from "../../../helpers/order";
 import {
   PHOTO_MAX_BYTES,
   CV_MAX_BYTES,
@@ -167,16 +168,12 @@ describe.runIf(!!connectionString)("candidate", () => {
       db.candidate.findUniqueOrThrow({ where: { id: candidateA1Id } }),
       db.candidate.findUniqueOrThrow({ where: { id: candidateA2Id } }),
     ]);
-    const expectedOrder =
-      cA1.createdAt.getTime() >= cA2.createdAt.getTime()
-        ? [cA1.id, cA2.id]
-        : [cA2.id, cA1.id];
+    const expectedOrder = idsNewestFirst([cA1, cA2]);
     expect(result.items[0].id).toBe(expectedOrder[0]);
     expect(result.items[1].id).toBe(expectedOrder[1]);
   });
 
-  // TODO(db-test-debt): échoue sur base fraîche — skippé temporairement, à corriger (voir docs/TO-DO.md)
-  it.skip("list: pagination returns nextCursor and hasMore when more than limit", async () => {
+  it("list: pagination returns nextCursor and hasMore when more than limit", async () => {
     const ctx = createContext(companyAId);
     const caller = appRouter.createCaller(ctx);
 

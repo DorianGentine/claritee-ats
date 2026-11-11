@@ -3,6 +3,7 @@ import { PrismaPg } from "@prisma/adapter-pg"
 import { PrismaClient } from "@prisma/client"
 import { appRouter } from "@/server/trpc/routers/_app"
 import type { Context } from "@/server/trpc/context"
+import { idsNewestFirst } from "../../../helpers/order"
 import type { OfferMutationResult } from "@/server/trpc/routers/offer"
 import { MAX_TAGS_PER_OFFER } from "@/lib/validations/tag"
 
@@ -126,10 +127,7 @@ describe.runIf(!!connectionString)("offer router", () => {
     expect(result.pageSize).toBe(20)
   })
 
-  // TODO(db-test-debt): flaky — offres créées à la même milliseconde → ordre du tri
-  // secondaire indéfini (le router ne trie que par createdAt). Skippé, à fiabiliser
-  // (timestamps espacés ou tiebreaker) — voir docs/TO-DO.md.
-  it.skip("default sort is createdAt desc (newest first)", async () => {
+  it("default sort is createdAt desc (newest first)", async () => {
     const ctx = createContext(companyAId)
     const caller = appRouter.createCaller(ctx)
 
@@ -140,16 +138,12 @@ describe.runIf(!!connectionString)("offer router", () => {
       db.jobOffer.findUniqueOrThrow({ where: { id: offerA1Id } }),
       db.jobOffer.findUniqueOrThrow({ where: { id: offerA2Id } }),
     ])
-    const expectedOrder =
-      o1.createdAt.getTime() >= o2.createdAt.getTime()
-        ? [o1.id, o2.id]
-        : [o2.id, o1.id]
+    const expectedOrder = idsNewestFirst([o1, o2])
     expect(result.items[0].id).toBe(expectedOrder[0])
     expect(result.items[1].id).toBe(expectedOrder[1])
   })
 
-  // TODO(db-test-debt): échoue sur base fraîche — skippé temporairement, à corriger (voir docs/TO-DO.md)
-  it.skip("can sort by status", async () => {
+  it("can sort by status", async () => {
     const ctx = createContext(companyAId)
     const caller = appRouter.createCaller(ctx)
 
@@ -158,10 +152,9 @@ describe.runIf(!!connectionString)("offer router", () => {
 
     expect(resultAsc.items.length).toBe(2)
     expect(resultDesc.items.length).toBe(2)
-    const statusesAsc = resultAsc.items.map((o) => o.status)
-    const statusesDesc = resultDesc.items.map((o) => o.status)
-    expect(statusesAsc).toEqual([...statusesAsc].sort())
-    expect(statusesDesc).toEqual([...statusesDesc].sort((a, b) => (a > b ? -1 : 1)))
+    // Postgres trie un enum dans son ordre de déclaration (ordre du pipeline), pas alphabétiquement
+    expect(resultAsc.items.map((offer) => offer.status)).toEqual(["TODO", "IN_PROGRESS"])
+    expect(resultDesc.items.map((offer) => offer.status)).toEqual(["IN_PROGRESS", "TODO"])
   })
 
   it("pagination returns correct slice and totalCount", async () => {

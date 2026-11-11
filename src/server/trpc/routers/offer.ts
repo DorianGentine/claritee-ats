@@ -82,7 +82,8 @@ export const offerRouter = router({
       const [items, totalCount] = await Promise.all([
         ctx.db.jobOffer.findMany({
           where,
-          orderBy: { [sortBy]: sortOrder },
+          // id en départage : pagination stable sur un tri à égalités (statut, date)
+          orderBy: [{ [sortBy]: sortOrder }, { id: sortOrder }],
           skip,
           take: pageSize,
           select: {

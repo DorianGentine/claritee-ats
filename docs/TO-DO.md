@@ -36,14 +36,6 @@ _Aucun sujet ouvert._
 
 ## 🧪 Tests
 
-- [ ] **Dé-skipper les tests DB en dette** (tag `TODO(db-test-debt)`)
-  8 tests `it.skip` échouent ou sont flaky sur base fraîche (isolation, setup, tri non déterministe) : `dashboard` (×2 `recentNotes`), `candidate` (pagination), `client` (tri `createdAt`), `invitation` (list other company), `offer` (×2 tri), `prisma/seed`.
-  - _Pistes :_ données uniques par test (`randomUUID`, pas `Date.now()` en `Promise.all`), cleanup ciblé en `try/finally`, tiebreaker ou `createdAt` espacés pour les tris, seed exécuté avant `seed.test.ts`.
-  - _Trous de couverture connus :_ `cityId` invalide à la création d'offre, `cityName: null` côté router (couvert seulement dans `JobOfferCard`), interaction `CityAutocomplete` dans `JobOfferForm`.
-
-- [ ] **Aucun test ne vérifie que l'API REST Supabase reste fermée**
-  Les tests DB tournent en propriétaire. Ajouter un test DB qui vérifie, pour chaque table `public`, `has_table_privilege('anon' | 'authenticated', …) = false` et `relrowsecurity = true` : une future migration qui rouvrirait un droit serait détectée.
-
 - [ ] **pa11y n'audite que `/login`**
   `bun run a11y` cible `/dashboard` et `/settings/team`, pages protégées : sans session, `proxy.ts` redirige vers `/login`. Ajouter une page publique (`/`, `/register`, une fiche `/share`) ou authentifier pa11y (actions de login).
 

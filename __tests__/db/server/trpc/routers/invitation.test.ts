@@ -109,8 +109,7 @@ describe.runIf(!!connectionString)("invitation", () => {
     expect(list.every((inv) => inv.email.includes("invite-"))).toBe(true);
   });
 
-  // TODO(db-test-debt): échoue sur base fraîche — skippé temporairement, à corriger (voir docs/TO-DO.md)
-  it.skip("list: returns empty for other company", async () => {
+  it("list: returns empty for other company", async () => {
     const otherCompany = await db.company.create({
       data: {
         name: "Other Company",
@@ -120,7 +119,7 @@ describe.runIf(!!connectionString)("invitation", () => {
 
     const ctx = {
       db,
-      user: null,
+      user: { id: "other-company-user", email: "other@test.com" },
       companyId: otherCompany.id,
       headers: new Headers(),
     } as unknown as Context;
