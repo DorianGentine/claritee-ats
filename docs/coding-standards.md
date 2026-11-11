@@ -57,7 +57,7 @@ Architecture (flux, RLS, auth, routers, modèle de données, déploiement) : `do
 - **Tenant** : chaque requête Prisma filtre par `companyId: ctx.companyId` ; `companyId` injecté dans les `data` de `create` ; ownership vérifié (`findFirst({ where: { id, companyId } })`) avant update/delete. Tables enfants sans `companyId` (`Experience`, `ShareLink`, `Candidature`…) : passer par le parent (`candidate: { companyId: ctx.companyId }`).
 - **Erreurs** : codes `TRPCError` standards, messages génériques en français côté client (« Une erreur est survenue. », « Identifiants invalides »). Détails techniques uniquement dans les logs serveur.
 - **Mots de passe** : jamais en base applicative ni dans les logs ; Supabase Auth uniquement.
-- **Rate limit** : appeler `checkMutationRateLimit` dans les nouvelles mutations métier (voir `docs/architecture.md` §5).
+- **Rate limit** : toute mutation `protectedProcedure` est déjà limitée par le middleware (`mutation:<userId>`) — ne pas rappeler `checkMutationRateLimit`. Une procédure publique qui écrit ou appelle un service externe, ou une action coûteuse, ajoute sa propre limite via `enforceRateLimit` (clé par IP avec `getClientIp`, ou par utilisateur) — voir `docs/architecture.md` §5.
 
 ### Template de router
 

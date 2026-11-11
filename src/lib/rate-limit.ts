@@ -52,6 +52,11 @@ const inMemoryStore: RateLimitStore = {
   },
 };
 
+/** Vide tous les compteurs. Réservé aux tests (isolation entre tests). */
+export const resetRateLimits = (): void => {
+  entries.clear();
+};
+
 /** Seuils recommandés (docs/architecture.md § Rate limiting) */
 export const RATE_LIMITS = {
   /** Auth (login/register) par IP : 10 req / minute */
@@ -64,9 +69,20 @@ export const RATE_LIMITS = {
   CV_DOWNLOAD_SHARE_PER_IP: { limit: 30, windowMs: 60 * 1000 },
   /** Import LinkedIn (appel Apify payant) par utilisateur : 20 / heure */
   LINKEDIN_IMPORT_PER_USER: { limit: 20, windowMs: 60 * 60 * 1000 },
-  /** Mutations métier générales par utilisateur : 60 / minute */
+  /** Autocomplétion de villes par utilisateur (appel Photon + écriture dans `cities`) : 60 / minute */
+  CITY_AUTOCOMPLETE_PER_USER: { limit: 60, windowMs: 60 * 1000 },
+  /** Mutations par utilisateur (toutes les mutations protégées, cf. `protectedProcedure`) : 60 / minute */
   GENERAL_MUTATION: { limit: 60, windowMs: 60 * 1000 },
 } as const;
+
+export const RATE_LIMIT_MESSAGE =
+  "Trop de requêtes. Réessayez dans quelques minutes.";
+
+/** IP du client (premier élément de `x-forwarded-for`, sinon `x-real-ip`). */
+export const getClientIp = (headers: Headers | null | undefined): string =>
+  headers?.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+  headers?.get("x-real-ip") ||
+  "unknown";
 
 /**
  * Vérifie la limite pour une clé ; si dépassée, retourne success: false.
@@ -79,20 +95,26 @@ export const checkRateLimit = async (
 ): Promise<RateLimitResult> => inMemoryStore.check(key, limit, windowMs);
 
 /**
- * Vérifie la limite GENERAL_MUTATION pour un utilisateur authentifié.
- * Lance une TRPCError TOO_MANY_REQUESTS si la limite est dépassée.
- * Clé : `mutation:${userId}` — partagée par toutes les mutations métier.
+ * Comme `checkRateLimit`, mais lance une TRPCError TOO_MANY_REQUESTS si la
+ * limite est dépassée.
  */
-export const checkMutationRateLimit = async (userId: string): Promise<void> => {
-  const rl = await checkRateLimit(
-    `mutation:${userId}`,
-    RATE_LIMITS.GENERAL_MUTATION.limit,
-    RATE_LIMITS.GENERAL_MUTATION.windowMs,
-  );
-  if (!rl.success) {
+export const enforceRateLimit = async (
+  key: string,
+  { limit, windowMs }: { limit: number; windowMs: number }
+): Promise<void> => {
+  const result = await checkRateLimit(key, limit, windowMs);
+  if (!result.success) {
     throw new TRPCError({
       code: "TOO_MANY_REQUESTS",
-      message: "Trop de requêtes. Réessayez dans quelques minutes.",
+      message: RATE_LIMIT_MESSAGE,
     });
   }
 };
+
+/**
+ * Limite GENERAL_MUTATION d'un utilisateur authentifié, appliquée à toutes les
+ * mutations par le middleware de `protectedProcedure`.
+ * Clé : `mutation:${userId}` — partagée par toutes les mutations.
+ */
+export const checkMutationRateLimit = (userId: string): Promise<void> =>
+  enforceRateLimit(`mutation:${userId}`, RATE_LIMITS.GENERAL_MUTATION);

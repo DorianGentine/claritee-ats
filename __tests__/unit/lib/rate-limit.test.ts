@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest"
 import { TRPCError } from "@trpc/server"
-import { checkRateLimit, checkMutationRateLimit } from "@/lib/rate-limit"
+import { checkRateLimit, checkMutationRateLimit, getClientIp } from "@/lib/rate-limit"
 
 describe("checkRateLimit", () => {
   it("succeeds within the limit and decrements remaining", async () => {
@@ -43,5 +43,18 @@ describe("checkMutationRateLimit", () => {
       code: "TOO_MANY_REQUESTS",
     })
     await expect(checkMutationRateLimit(userId)).rejects.toBeInstanceOf(TRPCError)
+  })
+})
+
+describe("getClientIp", () => {
+  it("returns the first x-forwarded-for entry", () => {
+    const headers = new Headers({ "x-forwarded-for": "1.2.3.4, 10.0.0.1" })
+    expect(getClientIp(headers)).toBe("1.2.3.4")
+  })
+
+  it("falls back to x-real-ip, then to unknown", () => {
+    expect(getClientIp(new Headers({ "x-real-ip": "5.6.7.8" }))).toBe("5.6.7.8")
+    expect(getClientIp(new Headers())).toBe("unknown")
+    expect(getClientIp(null)).toBe("unknown")
   })
 })

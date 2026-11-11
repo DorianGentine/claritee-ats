@@ -147,7 +147,7 @@ Pour une nouvelle table : `ENABLE ROW LEVEL SECURITY` dans sa migration, aucune 
 | Résolution serveur              | `createContext` : `supabase.auth.getUser()` (valide le JWT auprès de Supabase) puis lecture de `User.companyId`.                                                                                                                                                                                                                                                                                                                               |
 | Affichage client de l'état auth | `getSession()` (lecture locale, sans appel réseau) dans le menu latéral (`AppSidebar`) ; `getUser()` côté serveur, et côté client pour l'id courant dans les sections de notes.                                                                                                                                                                                                                                                                                                                                        |
 | Protection des pages            | `src/proxy.ts` redirige vers `/login` sans user pour `/dashboard`, `/candidates`, `/offers`, `/clients`, `/settings`, `/notes`. Les procédures tRPC restent protégées indépendamment.                                                                                                                                                                                                                                                          |
-| Invitation                      | `invitation.create` (token, expiration 7 j) → page `/invite/[token]` → `invitation.getByToken` puis `invitation.accept` (publicProcedure) : vérifie usedAt / revokedAt / expiresAt, crée le compte Auth avec `email_confirm: true` (pas d'email : l'invitation fait foi), puis transaction `User` (companyId de l'invitation) + `usedAt`.                                                                                                      |
+| Invitation                      | `invitation.create` (token, expiration 7 j) → page `/invite/[token]` → `invitation.getByToken` puis `invitation.accept` (publicProcedure, rate limit IP) : vérifie usedAt / revokedAt / expiresAt, crée le compte Auth avec `email_confirm: true` (pas d'email : l'invitation fait foi), puis transaction `User` (companyId de l'invitation) + `usedAt`.                                                                                                      |
 | Profil                          | `auth.updateProfile` met à jour `User` et les métadonnées Supabase via l'Admin API.                                                                                                                                                                                                                                                                                                                                                            |
 
 ### Clés Supabase
@@ -166,12 +166,15 @@ Implémentation : `src/lib/rate-limit.ts`, store **in-memory par instance** (non
 | Périmètre                                  | Clé                   | Limite   | Branché dans                                            |
 | ------------------------------------------ | --------------------- | -------- | ------------------------------------------------------- |
 | Pages login / register                     | `auth:<ip>`           | 10 / min | `src/proxy.ts`                                          |
-| Inscription                                | `auth:<ip>`           | 10 / min | `auth.register`                                         |
+| Inscription, acceptation d'invitation      | `auth:<ip>`           | 10 / min | `auth.register`, `invitation.accept`                    |
 | Création de lien de partage                | `share-link:<userId>` | 20 / h   | `shareLink.create`                                      |
 | Upload photo / CV                          | `upload:<userId>`     | 30 / h   | `candidate.uploadPhoto`, `candidate.uploadCv`           |
 | Téléchargement CV depuis une page partagée | `cv-share:<ip>`       | 30 / min | `candidate.getCvDownloadUrlByShareToken`                |
 | Import LinkedIn (run Apify payant)         | `linkedin-import:<userId>` | 20 / h | `linkedinImport.preview`                              |
-| Mutations métier générales                 | `mutation:<userId>`   | 60 / min | `checkMutationRateLimit` : appliqué à 17 mutations sur 41 (candidate, note, offer, client, candidature) ; absent d'`auth`, `company` et `invitation` (voir `TO-DO.md`) |
+| Autocomplétion de villes (Photon + écriture) | `city-autocomplete:<userId>` | 60 / min | `city.autocomplete`                               |
+| Toutes les mutations authentifiées         | `mutation:<userId>`   | 60 / min | Middleware de `protectedProcedure` (`checkMutationRateLimit`), en plus des limites spécifiques ci-dessus |
+
+IP client : `getClientIp(headers)` (premier élément de `x-forwarded-for`, sinon `x-real-ip`). Les tests DB remettent les compteurs à zéro avant chaque test (`resetRateLimits`, `__tests__/setup/rate-limit.ts`).
 
 Évolution si besoin d'une limite globale : store externe (Upstash Redis / Vercel KV).
 
@@ -198,13 +201,13 @@ Un router par domaine dans `src/server/trpc/routers/`, enregistré dans `_app.ts
 | `search`             | `search.ts`      | Recherche globale (ilike/contains, cf. ADR 0004)                                                 | —                              |
 | `dashboard`          | `dashboard.ts`   | Statistiques d'accueil                                                                           | —                              |
 | `linkedinImport`     | `linkedinImport.ts` | Import LinkedIn : `status` (activé si `APIFY_TOKEN`), `preview` (run Apify → brouillon + doublon éventuel, rien n'est enregistré). La création passe par `candidate.create`, qui accepte résumé, expériences, formations, langues et noms de tags (tag du cabinet réutilisé sans tenir compte de la casse, sinon créé) | —            |
-| `city`               | `city.ts`        | Autocomplétion de villes (local puis Photon, cf. ADR 0005). Procédure **publique** : les résultats Photon sont persistés (upsert) dans `cities`, partagée entre cabinets | `autocomplete`, `getByIds`     |
+| `city`               | `city.ts`        | Autocomplétion de villes (local puis Photon, cf. ADR 0005). Procédure **protégée**, rate limitée par utilisateur : les résultats Photon sont persistés (upsert) dans `cities`, partagée entre cabinets | `autocomplete`, `getByIds`     |
 
 ### Règles
 
 | Règle                           | Détail                                                                                                                                                                                                          |
 | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `protectedProcedure` par défaut | Garantit `ctx.user` et `ctx.companyId` non nuls. `publicProcedure` uniquement pour l'onboarding (register, invitation), le partage public (validation token + expiration) et les données de référence (villes). |
+| `protectedProcedure` par défaut | Garantit `ctx.user` et `ctx.companyId` non nuls. `publicProcedure` uniquement pour l'onboarding (register, invitation) et le partage public (validation token + expiration), toujours avec un rate limit par IP s'il écrit ou appelle un service externe. |
 | Contexte                        | `ctx.db` (Prisma), `ctx.user` (Supabase), `ctx.companyId`, `ctx.headers` (IP pour le rate limit).                                                                                                               |
 | Inputs                          | Schémas Zod de `src/lib/validations/<domaine>.ts`.                                                                                                                                                              |
 | Erreurs                         | Codes tRPC standards (`UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`, `BAD_REQUEST`, `CONFLICT`, `TOO_MANY_REQUESTS`)  ; pas d'`errorFormatter` : une erreur Prisma non interceptée remonte en 500 brut au client (voir `TO-DO.md`).                     |

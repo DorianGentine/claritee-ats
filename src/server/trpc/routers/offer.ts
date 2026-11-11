@@ -2,7 +2,6 @@ import { TRPCError } from "@trpc/server"
 import { z } from "zod"
 import type { CandidatureStatus, Prisma } from "@prisma/client"
 import { router, protectedProcedure } from "../trpc"
-import { checkMutationRateLimit } from "@/lib/rate-limit"
 import {
   offerListInputSchema,
   createJobOfferSchema,
@@ -209,7 +208,6 @@ export const offerRouter = router({
   create: protectedProcedure
     .input(createJobOfferSchema)
     .mutation(async ({ ctx, input }) => {
-      await checkMutationRateLimit(ctx.user!.id)
       const { clientCompanyId, clientContactId, cityId, ...rest } = input
       let resolvedClientCompanyId: string | null | undefined = clientCompanyId
       let resolvedClientContactId: string | null | undefined = clientContactId
@@ -295,7 +293,6 @@ export const offerRouter = router({
   update: protectedProcedure
     .input(updateJobOfferSchema)
     .mutation(async ({ ctx, input }) => {
-      await checkMutationRateLimit(ctx.user!.id)
       const { id, clientCompanyId, clientContactId, cityId, ...rest } = input
       const existing = await ctx.db.jobOffer.findFirst({
         where: { id, companyId: ctx.companyId },
@@ -418,7 +415,6 @@ export const offerRouter = router({
   delete: protectedProcedure
     .input(z.object({ id: z.uuid() }))
     .mutation(async ({ ctx, input }) => {
-      await checkMutationRateLimit(ctx.user!.id)
       const existing = await ctx.db.jobOffer.findFirst({
         where: { id: input.id, companyId: ctx.companyId },
       })
@@ -542,7 +538,6 @@ export const offerRouter = router({
   addCandidates: protectedProcedure
     .input(addCandidatesSchema)
     .mutation(async ({ ctx, input }) => {
-      await checkMutationRateLimit(ctx.user!.id)
       const offer = await ctx.db.jobOffer.findFirst({
         where: { id: input.offerId, companyId: ctx.companyId },
       })

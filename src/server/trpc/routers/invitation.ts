@@ -5,6 +5,7 @@ import { router, protectedProcedure, publicProcedure } from "../trpc";
 import { createInvitationSchema } from "@/lib/validations/invitation";
 import { emailSchema, passwordSchema } from "@/lib/validations/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { enforceRateLimit, getClientIp, RATE_LIMITS } from "@/lib/rate-limit";
 
 const INVITATION_EXPIRED_MESSAGE =
   "Cette invitation a expiré. Demandez une nouvelle invitation à votre administrateur.";
@@ -138,6 +139,12 @@ export const invitationRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Crée un compte Supabase Auth : même budget par IP que login/register.
+      await enforceRateLimit(
+        `auth:${getClientIp(ctx.headers)}`,
+        RATE_LIMITS.AUTH_PER_IP
+      );
+
       const invitation = await ctx.db.invitation.findUnique({
         where: { token: input.token },
         include: { company: true },

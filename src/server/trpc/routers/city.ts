@@ -1,4 +1,5 @@
-import { router, publicProcedure } from "../trpc"
+import { router, protectedProcedure } from "../trpc"
+import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit"
 import {
   cityAutocompleteInputSchema,
   cityGetByIdsInputSchema,
@@ -73,7 +74,7 @@ const fetchPhotonFeatures = async (
 }
 
 export const cityRouter = router({
-  autocomplete: publicProcedure
+  autocomplete: protectedProcedure
     .input(cityAutocompleteInputSchema)
     .query(async ({ ctx, input }): Promise<CityResult[]> => {
       const q = input.q.trim()
@@ -82,6 +83,12 @@ export const cityRouter = router({
       if (q.length < 3) {
         return []
       }
+
+      // Peut appeler Photon et écrire dans `cities` : limité par utilisateur.
+      await enforceRateLimit(
+        `city-autocomplete:${ctx.user.id}`,
+        RATE_LIMITS.CITY_AUTOCOMPLETE_PER_USER
+      )
 
       // AC 4 — recherche locale insensible aux accents, préfixe, triée, limitée à 5.
       // Les métacaractères LIKE sont échappés pour rester littéraux (ESCAPE '\').
@@ -207,7 +214,7 @@ export const cityRouter = router({
    * Résout un lot d'ids en villes complètes (pour afficher un nom depuis un
    * simple UUID, ex. filtres persistés dans l'URL). Pas d'ordre garanti.
    */
-  getByIds: publicProcedure
+  getByIds: protectedProcedure
     .input(cityGetByIdsInputSchema)
     .query(async ({ ctx, input }): Promise<CityResult[]> => {
       if (input.ids.length === 0) {

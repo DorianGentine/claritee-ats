@@ -4,12 +4,11 @@ import { registerSchema } from "@/lib/validations/auth";
 import { updateProfileSchema } from "@/lib/validations/user";
 import {
   checkRateLimit,
+  getClientIp,
+  RATE_LIMIT_MESSAGE,
   RATE_LIMITS,
 } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
-
-const RATE_LIMIT_MESSAGE =
-  "Trop de requêtes. Réessayez dans quelques minutes.";
 
 /** Message générique quand email ou SIREN déjà utilisé (option B : tout côté serveur) */
 const REGISTER_UNAVAILABLE_MESSAGE =
@@ -24,12 +23,8 @@ export const authRouter = router({
   register: publicProcedure
     .input(registerSchema)
     .mutation(async ({ ctx, input }) => {
-      const ip =
-        ctx.headers?.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-        ctx.headers?.get("x-real-ip") ??
-        "unknown";
       const result = await checkRateLimit(
-        "auth:" + ip,
+        `auth:${getClientIp(ctx.headers)}`,
         RATE_LIMITS.AUTH_PER_IP.limit,
         RATE_LIMITS.AUTH_PER_IP.windowMs,
       );

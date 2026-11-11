@@ -19,6 +19,9 @@ export default defineConfig({
     // Tests d'intégration en SÉRIE : ils partagent la même base Postgres et
     // interfèrent en parallèle (collisions de données). Déterminisme > vitesse ici.
     fileParallelism: false,
+    // Compteurs de rate limit remis à zéro avant chaque test : toutes les mutations
+    // protégées comptent, et un fichier en enchaîne plus que la limite par minute.
+    setupFiles: ["./__tests__/setup/rate-limit.ts"],
   },
   resolve: {
     alias: {

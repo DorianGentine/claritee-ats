@@ -27,7 +27,7 @@ import {
   MAX_TAGS_PER_CANDIDATE,
 } from "@/lib/validations/tag"
 import { getTagColor } from "@/lib/tag-colors"
-import { checkRateLimit, checkMutationRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { checkRateLimit, getClientIp, RATE_LIMITS } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   getCandidateFilePath,
@@ -301,7 +301,6 @@ export const candidateRouter = router({
   delete: protectedProcedure
     .input(z.object({ id: z.uuid() }))
     .mutation(async ({ ctx, input }) => {
-      await checkMutationRateLimit(ctx.user!.id);
       const existing = await ctx.db.candidate.findFirst({
         where: { id: input.id, companyId: ctx.companyId },
       });
@@ -333,7 +332,6 @@ export const candidateRouter = router({
   update: protectedProcedure
     .input(updateCandidateSchema)
     .mutation(async ({ ctx, input }) => {
-      await checkMutationRateLimit(ctx.user!.id);
       const { id, cities, ...rest } = input;
       const existing = await ctx.db.candidate.findFirst({
         where: { id, companyId: ctx.companyId },
@@ -377,7 +375,6 @@ export const candidateRouter = router({
   create: protectedProcedure
     .input(createCandidateSchema)
     .mutation(async ({ ctx, input }) => {
-      await checkMutationRateLimit(ctx.user!.id);
       // Candidat + villes ordonnées dans une seule transaction : un échec du
       // createMany annule la création du candidat (pas de candidat orphelin).
       return ctx.db.$transaction(async (tx) => {
@@ -1005,12 +1002,8 @@ export const candidateRouter = router({
   getCvDownloadUrlByShareToken: publicProcedure
     .input(z.object({ token: z.string().min(1) }))
     .query(async ({ ctx, input }) => {
-      const ip =
-        ctx.headers?.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-        ctx.headers?.get("x-real-ip") ??
-        "unknown";
       const rateResult = await checkRateLimit(
-        `cv-share:${ip}`,
+        `cv-share:${getClientIp(ctx.headers)}`,
         RATE_LIMITS.CV_DOWNLOAD_SHARE_PER_IP.limit,
         RATE_LIMITS.CV_DOWNLOAD_SHARE_PER_IP.windowMs,
       );

@@ -7,6 +7,7 @@ import {
   afterEach,
   vi,
 } from "vitest"
+import { randomUUID } from "crypto"
 import { PrismaPg } from "@prisma/adapter-pg"
 import { PrismaClient } from "@prisma/client"
 import { cityRouter } from "@/server/trpc/routers/city"
@@ -20,12 +21,11 @@ const TEST_COUNTRY = "Testland"
 describe.runIf(!!connectionString)("city.autocomplete (integration)", () => {
   let db: PrismaClient
 
-  // publicProcedure : pas d'auth requise pour l'autocomplétion.
   const caller = () =>
     cityRouter.createCaller({
       db,
-      user: null,
-      companyId: null,
+      user: { id: randomUUID() },
+      companyId: randomUUID(),
       headers: new Headers(),
     } as unknown as Context)
 
@@ -150,8 +150,8 @@ describe.runIf(!!connectionString)("city.getByIds (integration)", () => {
   const caller = () =>
     cityRouter.createCaller({
       db,
-      user: null,
-      companyId: null,
+      user: { id: randomUUID() },
+      companyId: randomUUID(),
       headers: new Headers(),
     } as unknown as Context)
 
