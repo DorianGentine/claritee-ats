@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { GET } from "@/app/api/keep-alive/route";
+import { GET, HEAD } from "@/app/api/keep-alive/route";
 
 vi.mock("@/server/db", () => ({
   db: { keepAlive: { upsert: vi.fn() } },
@@ -7,8 +7,8 @@ vi.mock("@/server/db", () => ({
 
 import { db } from "@/server/db";
 
-const makeRequest = (headers: Record<string, string> = {}) =>
-  new Request("http://localhost/api/keep-alive", { headers });
+const makeRequest = (headers: Record<string, string> = {}, method = "GET") =>
+  new Request("http://localhost/api/keep-alive", { headers, method });
 
 describe("GET /api/keep-alive", () => {
   beforeEach(() => {
@@ -74,5 +74,29 @@ describe("GET /api/keep-alive", () => {
 
     expect(res.status).toBe(200);
     expect(db.keepAlive.upsert).toHaveBeenCalledOnce();
+  });
+
+  it("HEAD pings the DB too and returns the status without a body", async () => {
+    process.env.KEEPALIVE_SECRET = "s3cret";
+    vi.mocked(db.keepAlive.upsert).mockResolvedValueOnce({
+      id: 1,
+      lastPingAt: new Date("2026-07-12T06:17:00.000Z"),
+      pingCount: 2,
+    });
+
+    const res = await HEAD(makeRequest({ authorization: "Bearer s3cret" }, "HEAD"));
+
+    expect(res.status).toBe(200);
+    expect(await res.text()).toBe("");
+    expect(db.keepAlive.upsert).toHaveBeenCalledOnce();
+  });
+
+  it("HEAD returns 401 without the bearer token", async () => {
+    process.env.KEEPALIVE_SECRET = "s3cret";
+
+    const res = await HEAD(makeRequest({}, "HEAD"));
+
+    expect(res.status).toBe(401);
+    expect(db.keepAlive.upsert).not.toHaveBeenCalled();
   });
 });

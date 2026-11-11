@@ -4,9 +4,9 @@ import { db } from "@/server/db";
 
 // Maintient la DB Supabase active (plan gratuit : pause après 7 j d'inactivité).
 // Écrit une ligne unique dans _keepalive pour générer une activité réelle et
-// observable. Déclenché par un cron GitHub Actions (~1×/jour).
+// observable. Appelé par un moniteur UptimeRobot (auth Bearer), en GET ou en HEAD.
 // Protégé par un bearer secret si KEEPALIVE_SECRET est défini.
-export const GET = async (request: Request) => {
+const ping = async (request: Request) => {
   const secret = process.env.KEEPALIVE_SECRET;
   if (secret && request.headers.get("authorization") !== `Bearer ${secret}`) {
     return Response.json({ ok: false, error: "unauthorized" }, { status: 401 });
@@ -27,4 +27,12 @@ export const GET = async (request: Request) => {
   } catch {
     return Response.json({ ok: false, db: "unavailable" }, { status: 503 });
   }
+};
+
+export const GET = ping;
+
+/** Même ping que GET, sans corps (les moniteurs envoient souvent des HEAD). */
+export const HEAD = async (request: Request) => {
+  const response = await ping(request);
+  return new Response(null, { status: response.status });
 };
