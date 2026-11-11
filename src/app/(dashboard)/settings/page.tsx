@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { CompanySettings } from "@/components/settings/CompanySettings";
 import { TeamSettings } from "@/components/settings/TeamSettings";
 import { ProfileSettings } from "@/components/settings/ProfileSettings";
+import { DeleteCompanySettings } from "@/components/settings/DeleteCompanySettings";
 
 export default function SettingsPage() {
   return (
@@ -18,6 +19,9 @@ export default function SettingsPage() {
         </Suspense>
         <Suspense>
           <ProfileSettings />
+        </Suspense>
+        <Suspense>
+          <DeleteCompanySettings />
         </Suspense>
       </div>
     </main>

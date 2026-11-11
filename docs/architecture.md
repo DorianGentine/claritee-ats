@@ -189,7 +189,7 @@ Un router par domaine dans `src/server/trpc/routers/`, enregistré dans `_app.ts
 | Clé dans `appRouter` | Fichier          | Périmètre                                                                                        | Procédures publiques           |
 | -------------------- | ---------------- | ------------------------------------------------------------------------------------------------ | ------------------------------ |
 | `auth`               | `auth.ts`        | Inscription, profil courant                                                                      | `register`                     |
-| `company`            | `company.ts`     | Cabinet, liste des membres                                                                       | —                              |
+| `company`            | `company.ts`     | Cabinet, membres, suppression d'un membre ou du cabinet (RGPD, voir §7)                          | —                              |
 | `invitation`         | `invitation.ts`  | Invitations collaborateurs                                                                       | `getByToken`, `accept`         |
 | `candidate`          | `candidate.ts`   | Candidats + sous-entités (expériences, formations, langues, tags), upload photo/CV, URLs signées | `getCvDownloadUrlByShareToken` |
 | `candidature`        | `candidature.ts` | Statut / suppression d'une candidature                                                           | —                              |
@@ -244,12 +244,24 @@ Source : `prisma/schema.prisma` (20 modèles). Toutes les FK vers le tenant sont
 | `ClientContact`                  | Contact chez le client                                                     | via ClientCompany        | Référencé par JobOffer (optionnel)                                                         |
 | `JobOffer`                       | Offre (statut TODO / IN_PROGRESS / DONE, salaire, ville)                   | `companyId`              | ClientCompany, ClientContact, City (optionnels, SetNull), OfferTag, Candidature, Note      |
 | `Candidature`                    | Lien candidat ↔ offre + statut de pipeline (unique par paire)              | via Candidate / JobOffer | —                                                                                          |
-| `Note`                           | Note Tiptap (JSON), liée à un candidat, une offre, ou libre                | `companyId`              | Auteur User                                                                                |
+| `Note`                           | Note Tiptap (JSON), liée à un candidat, une offre, ou libre                | `companyId`              | Auteur User optionnel (`SetNull` : la note survit à son auteur, « Ancien membre »)         |
 | `ShareLink`                      | Lien public NORMAL / ANONYMOUS, expiration optionnelle                     | via Candidate            | —                                                                                          |
 | `City` (table `cities`)          | Référentiel de villes (nom, région, pays, coordonnées), unique (nom, pays) | Global                   | CandidateCity, ClientCompanyCity, JobOffer                                                 |
 | `CandidateCity`                  | Villes d'un candidat (N-N ordonnée)                                        | via Candidate            | City en `Restrict`                                                                         |
 | `ClientCompanyCity`              | Villes d'un client (N-N)                                                   | via ClientCompany        | City en `Restrict`                                                                         |
 | `KeepAlive` (table `_keepalive`) | Ligne unique mise à jour par le cron keep-alive                            | Système                  | —                                                                                          |
+
+**Suppression (RGPD, NFR9)** — toujours filtrée par `companyId` :
+
+| Donnée            | Procédure                  | Qui                                   | Effet                                                                                                                                                                                                                                                  |
+| ----------------- | -------------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Candidat          | `candidate.delete`         | Tout membre                           | Fichiers Storage puis ligne (cascade), voir §8                                                                                                                                                                                                          |
+| Client            | `clientCompany.delete`     | Tout membre                           | Contacts et villes en cascade ; les offres sont conservées sans client ni contact                                                                                                                                                                       |
+| Lien de partage   | `shareLink.delete`         | Tout membre                           | La page publique cesse d'être accessible                                                                                                                                                                                                                |
+| Membre            | `company.deleteUser`       | Soi-même, ou le créateur du cabinet   | Compte Supabase Auth puis ligne `User` ; ses notes restent au cabinet sans auteur. Le dernier membre doit supprimer le cabinet                                                                                                                          |
+| Cabinet           | `company.deleteCompany`    | Créateur du cabinet, nom saisi        | Fichiers du préfixe `{companyId}/` dans `photos` et `cvs` (abandon si échec), puis `Company` (cascade sur tout le cabinet), puis comptes Auth des membres (un échec est logué : le compte restant n'a plus accès à rien et se supprime à la main dans Supabase) |
+
+Créateur du cabinet : son membre le plus ancien (`createdAt`, sans système de rôles), exposé par `company.getMyCompany` (`ownerId`). S'il supprime son compte, le membre suivant le plus ancien le remplace.
 
 Index notables : `Candidate(companyId, firstName, lastName, title)`, `JobOffer(companyId, title)`. Extensions `unaccent` et `pg_trgm` installées, mais **aucun index sur `cities.name`** (supprimé par `city_drift_fix`, voir TO-DO).
 

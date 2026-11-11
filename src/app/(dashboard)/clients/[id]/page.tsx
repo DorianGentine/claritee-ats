@@ -2,18 +2,21 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { api } from "@/lib/trpc/client"
 import { formatSiren } from "@/lib/format"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ClientContactCard } from "@/components/clients/ClientContactCard"
 import { ClientContactFormModal } from "@/components/clients/ClientContactFormModal"
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
 import { toast } from "sonner"
 
 export default function ClientDetailPage() {
   const params = useParams<{ id: string }>()
   const id = params?.id
+  const router = useRouter()
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
 
   const [modalOpen, setModalOpen] = useState(false)
   const [editingContact, setEditingContact] = useState<{
@@ -36,6 +39,18 @@ export default function ClientDetailPage() {
     onSuccess: () => {
       if (id) void utils.clientCompany.getById.invalidate({ id })
       toast.success("Contact supprimé.")
+    },
+  })
+  const deleteClientMutation = api.clientCompany.delete.useMutation({
+    onSuccess: () => {
+      setDeleteDialogOpen(false)
+      void utils.clientCompany.list.invalidate()
+      void utils.offer.list.invalidate()
+      toast.success("Client supprimé.")
+      router.push("/clients")
+    },
+    onError: (error) => {
+      toast.error(error.message ?? "Une erreur est survenue. Réessayez.")
     },
   })
 
@@ -105,6 +120,14 @@ export default function ClientDetailPage() {
           </Button>
           <Button variant="outline" size="sm" asChild>
             <Link href={`/clients/${data.id}/edit`}>Modifier</Link>
+          </Button>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => setDeleteDialogOpen(true)}
+            disabled={deleteClientMutation.isPending}
+          >
+            {deleteClientMutation.isPending ? "Suppression…" : "Supprimer"}
           </Button>
         </div>
 
@@ -182,6 +205,16 @@ export default function ClientDetailPage() {
           </p>
         </section>
       </div>
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Supprimer ce client ?"
+        description="Cette action est irréversible. Le client, ses contacts et ses villes seront définitivement supprimés. Ses offres sont conservées, sans client associé."
+        confirmLabel="Supprimer"
+        pendingLabel="Suppression…"
+        pending={deleteClientMutation.isPending}
+        onConfirm={() => deleteClientMutation.mutate({ id: data.id })}
+      />
     </main>
   )
 }

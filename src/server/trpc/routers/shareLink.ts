@@ -85,6 +85,24 @@ export const shareLinkRouter = router({
       })
     }),
 
+  /**
+   * Supprime un lien de partage : la page publique cesse aussitôt d'être accessible.
+   */
+  delete: protectedProcedure
+    .input(z.object({ id: z.uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const shareLink = await ctx.db.shareLink.findFirst({
+        where: { id: input.id, candidate: { companyId: ctx.companyId } },
+        select: { id: true },
+      })
+      if (!shareLink) {
+        throw new TRPCError({ code: "NOT_FOUND" })
+      }
+
+      await ctx.db.shareLink.delete({ where: { id: input.id } })
+      return { success: true }
+    }),
+
   getPublicByToken: publicProcedure
     .input(z.object({ token: z.string().min(1) }))
     .query(async ({ ctx, input }) => {

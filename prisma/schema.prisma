@@ -281,14 +281,14 @@ model Note {
   id          String   @id @default(uuid())
   title       String?
   content     String   @db.Text
-  authorId    String
+  authorId    String? // null : auteur supprimé, la note reste au cabinet
   candidateId String?
   offerId     String?
   companyId   String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  author    User?      @relation(fields: [authorId], references: [id], onDelete: SetNull)
   candidate Candidate? @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   jobOffer  JobOffer?  @relation(fields: [offerId], references: [id], onDelete: Cascade)
   company   Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)

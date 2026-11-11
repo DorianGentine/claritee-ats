@@ -10,8 +10,7 @@ Cocher `[x]` une tâche livrée ; les tâches cochées sont retirées à la mise
 
 ## 🔥 Urgent — bugs et sécurité
 
-- [ ] **Suppression de données incomplète (RGPD, NFR9)**
-  Aucune procédure de suppression pour un client, un lien de partage, un utilisateur ou un cabinet. La suppression d'un cabinet devra aussi vider son préfixe `{companyId}/` dans les buckets `photos` et `cvs` (la cascade Prisma ne touche pas le Storage) et supprimer les comptes Supabase Auth de ses utilisateurs.
+_Aucun sujet ouvert._
 
 ---
 
@@ -46,7 +45,7 @@ Cocher `[x]` une tâche livrée ; les tâches cochées sont retirées à la mise
 ## 🧪 Tests
 
 - [ ] **Dé-skipper les tests DB en dette** (tag `TODO(db-test-debt)`)
-  9 tests `it.skip` échouent ou sont flaky sur base fraîche (isolation, setup, tri non déterministe) : `dashboard` (×2 `recentNotes`), `candidate` (pagination), `client` (tri `createdAt`), `company` (`getMyCompany`), `invitation` (list other company), `offer` (×2 tri), `prisma/seed`.
+  8 tests `it.skip` échouent ou sont flaky sur base fraîche (isolation, setup, tri non déterministe) : `dashboard` (×2 `recentNotes`), `candidate` (pagination), `client` (tri `createdAt`), `invitation` (list other company), `offer` (×2 tri), `prisma/seed`.
   - _Pistes :_ données uniques par test (`randomUUID`, pas `Date.now()` en `Promise.all`), cleanup ciblé en `try/finally`, tiebreaker ou `createdAt` espacés pour les tris, seed exécuté avant `seed.test.ts`.
   - _Trous de couverture connus :_ `cityId` invalide à la création d'offre, `cityName: null` côté router (couvert seulement dans `JobOfferCard`), interaction `CityAutocomplete` dans `JobOfferForm`.
 
@@ -84,6 +83,8 @@ Cocher `[x]` une tâche livrée ; les tâches cochées sont retirées à la mise
   - [ ] Filtres offres en state local (non présents dans l'URL, perdus au retour arrière), contrairement aux candidats.
   - [ ] `CvDownloadLink` appelle `window.open` après un `await` : bloqué par Safari sans message à l'utilisateur.
   - [ ] Deux confirmations d'upload simultanées pour un même candidat (double envoi, deux onglets) : si le nettoyage de l'une passe entre la vérification et la mise à jour de la fiche de l'autre, la fiche peut pointer vers un fichier supprimé (fenêtre de quelques millisecondes). Corriger demanderait de sérialiser les confirmations par candidat.
+  - [ ] Notes d'un membre supprimé (auteur `null`, « Ancien membre ») : plus personne ne peut les modifier ni les supprimer (`note.update` / `delete` exigent l'auteur).
+  - [ ] Page `/settings/team` en doublon de `TeamSettings` (onglet Équipe de `/settings`) : liée nulle part, sans suppression de membre ; seul `bun run a11y` la cible. La supprimer.
   - [ ] Route `/search` non protégée par `src/proxy.ts` (les procédures tRPC restent protégées : pas de fuite, mais pas de redirection vers `/login`).
   - [ ] Fiche anonyme : UUIDs d'expériences/formations présents dans le DTO ; CTA « Contactez [cabinet] » sans `mailto` (pas d'email sur `Company`).
   - [ ] Schémas Zod contraires aux standards : `z.string().email()` (forme Zod 3) dans `src/lib/validations/auth.ts`, et pas de `.max()` sur les chaînes du schéma public `register`.
@@ -102,7 +103,7 @@ Cocher `[x]` une tâche livrée ; les tâches cochées sont retirées à la mise
 ## 📦 Post-MVP — Fonctionnalités différées
 
 - [ ] **Export RGPD (NFR9)** — prévu par le PRD, aucun export de données candidat n'existe dans le code.
-- [ ] **Rôles et permissions** — champ `role: "ADMIN" | "MEMBER"` sur `User`, migration, `adminProcedure` tRPC ; restreindre `/settings/team` et les invitations aux admins.
+- [ ] **Rôles et permissions** — champ `role: "ADMIN" | "MEMBER"` sur `User`, migration, `adminProcedure` tRPC ; restreindre l'équipe et les invitations aux admins. En attendant, le créateur du cabinet (son premier membre) est seul à pouvoir retirer un membre ou supprimer le cabinet.
 - [ ] **Changement d'adresse email** — l'email est en lecture seule dans le profil ; implémenter le flow de confirmation Supabase vers la nouvelle adresse.
 - [ ] **Historique de recherche (style Notion)** — recherches récentes dans la modal Cmd+K avant saisie (table `SearchHistory`, API par utilisateur/cabinet).
 - [ ] **Import LinkedIn : photo** — l'URL `photo` renvoyée par Apify (media.licdn.com) expire ; la télécharger côté serveur vers le bucket `photos` à la création.

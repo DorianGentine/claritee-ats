@@ -2,19 +2,37 @@
  * @vitest-environment jsdom
  */
 import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { render, screen, cleanup, fireEvent, within } from "@testing-library/react";
 import { TeamSettings } from "@/components/settings/TeamSettings";
 
 const mockListUsersUseQuery = vi.fn();
 const mockListAllUseQuery = vi.fn();
 const mockCreateUseMutation = vi.fn();
 const mockRevokeUseMutation = vi.fn();
+const mockGetMeUseQuery = vi.fn();
+const mockGetMyCompanyUseQuery = vi.fn();
+const mockDeleteUser = vi.fn();
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
+}));
 
 vi.mock("@/lib/trpc/client", () => ({
   api: {
     company: {
       listUsers: {
         useQuery: (...args: unknown[]) => mockListUsersUseQuery(...args),
+      },
+      getMyCompany: {
+        useQuery: (...args: unknown[]) => mockGetMyCompanyUseQuery(...args),
+      },
+      deleteUser: {
+        useMutation: () => ({ mutate: mockDeleteUser, isPending: false }),
+      },
+    },
+    auth: {
+      getMe: {
+        useQuery: (...args: unknown[]) => mockGetMeUseQuery(...args),
       },
     },
     invitation: {
@@ -68,6 +86,51 @@ describe("TeamSettings", () => {
   beforeEach(() => {
     mockCreateUseMutation.mockReturnValue({ mutate: vi.fn(), isPending: false });
     mockRevokeUseMutation.mockReturnValue({ mutate: vi.fn(), isPending: false, variables: undefined });
+    mockGetMeUseQuery.mockReturnValue({ data: { id: "u1" } });
+    mockGetMyCompanyUseQuery.mockReturnValue({ data: { id: "c1", name: "Cabinet", ownerId: "u1" } });
+  });
+
+  it("le créateur peut retirer un autre membre et supprimer son compte", () => {
+    mockListUsersUseQuery.mockReturnValue({ data: makeMembers(), isLoading: false });
+    mockListAllUseQuery.mockReturnValue({ data: [], isLoading: false, refetch: vi.fn() });
+
+    render(<TeamSettings />);
+
+    expect(screen.getByText("Créateur")).toBeDefined();
+    expect(screen.getByRole("button", { name: "Retirer Bob Dupont du cabinet" })).toBeDefined();
+    expect(screen.getByRole("button", { name: "Supprimer mon compte" })).toBeDefined();
+  });
+
+  it("un membre ne peut retirer personne, seulement supprimer son compte", () => {
+    mockGetMeUseQuery.mockReturnValue({ data: { id: "u2" } });
+    mockListUsersUseQuery.mockReturnValue({ data: makeMembers(), isLoading: false });
+    mockListAllUseQuery.mockReturnValue({ data: [], isLoading: false, refetch: vi.fn() });
+
+    render(<TeamSettings />);
+
+    expect(screen.queryByRole("button", { name: /^Retirer/ })).toBeNull();
+    expect(screen.getByRole("button", { name: "Supprimer mon compte" })).toBeDefined();
+  });
+
+  it("le dernier membre ne peut pas supprimer son compte", () => {
+    mockListUsersUseQuery.mockReturnValue({ data: makeMembers().slice(0, 1), isLoading: false });
+    mockListAllUseQuery.mockReturnValue({ data: [], isLoading: false, refetch: vi.fn() });
+
+    render(<TeamSettings />);
+
+    expect(screen.queryByRole("button", { name: "Supprimer mon compte" })).toBeNull();
+  });
+
+  it("retire un membre après confirmation", async () => {
+    mockListUsersUseQuery.mockReturnValue({ data: makeMembers(), isLoading: false });
+    mockListAllUseQuery.mockReturnValue({ data: [], isLoading: false, refetch: vi.fn() });
+
+    render(<TeamSettings />);
+    fireEvent.click(screen.getByRole("button", { name: "Retirer Bob Dupont du cabinet" }));
+    const dialog = await screen.findByRole("alertdialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Retirer" }));
+
+    expect(mockDeleteUser).toHaveBeenCalledWith({ userId: "u2" });
   });
 
   it("affiche les skeletons pendant isLoading (membres)", () => {

@@ -110,6 +110,56 @@ export const removeCandidateFiles = async (
   return error;
 };
 
+/** Taille de page des listings Storage. */
+const LIST_PAGE_SIZE = 1000;
+
+/** Liste récursivement les fichiers sous un préfixe (les dossiers ont un `id` nul). */
+const listFilesUnder = async (
+  supabase: SupabaseClient,
+  bucket: CandidateBucket,
+  prefix: string
+): Promise<string[]> => {
+  const files: string[] = [];
+  for (let offset = 0; ; offset += LIST_PAGE_SIZE) {
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .list(prefix, { limit: LIST_PAGE_SIZE, offset });
+    if (error) throw error;
+    for (const entry of data ?? []) {
+      const path = `${prefix}/${entry.name}`;
+      if (entry.id === null) {
+        files.push(...(await listFilesUnder(supabase, bucket, path)));
+      } else {
+        files.push(path);
+      }
+    }
+    if ((data ?? []).length < LIST_PAGE_SIZE) return files;
+  }
+};
+
+/**
+ * Supprime tous les fichiers du cabinet dans le bucket (préfixe `{companyId}/`),
+ * y compris ceux hors convention. Retourne l'erreur Storage éventuelle.
+ */
+export const removeCompanyFiles = async (
+  supabase: SupabaseClient,
+  companyId: string,
+  bucket: CandidateBucket
+) => {
+  try {
+    const paths = await listFilesUnder(supabase, bucket, companyId);
+    for (let start = 0; start < paths.length; start += LIST_PAGE_SIZE) {
+      const { error } = await supabase.storage
+        .from(bucket)
+        .remove(paths.slice(start, start + LIST_PAGE_SIZE));
+      if (error) return error;
+    }
+    return null;
+  } catch (error) {
+    return error instanceof Error ? error : new Error(String(error));
+  }
+};
+
 export type StoredCandidate = {
   id: string;
   companyId: string;

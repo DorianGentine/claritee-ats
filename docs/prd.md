@@ -80,7 +80,7 @@ Un ATS web gratuit, simple et chaleureux qui centralise candidats, offres, clien
 | NFR5        | Au moins 100 utilisateurs simultanés                                                                                                           |
 | NFR6        | Desktop d'abord, navigateurs récents (Chrome, Firefox, Safari, Edge) ; tablette utilisable                                                     |
 | NFR7 / NFR8 | Mots de passe jamais stockés en clair ; HTTPS partout                                                                                          |
-| NFR9        | RGPD : hébergement UE, suppression des données ; l'export n'est pas implémenté                                                                 |
+| NFR9        | RGPD : hébergement UE ; suppression d'un candidat, client, lien de partage, membre ou du cabinet entier (fichiers et comptes inclus) ; l'export n'est pas implémenté |
 | NFR10       | Cabinet créé et opérationnel en < 5 min                                                                                                        |
 | NFR11       | Fiche candidat complète créée en < 3 min                                                                                                       |
 | NFR12       | Candidat retrouvé par recherche ou tags en < 30 s                                                                                              |
