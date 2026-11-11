@@ -7,8 +7,8 @@ import path from "path";
 // En CI, ces fichiers sont absents (no-op) et DATABASE_URL est fourni par le job —
 // dotenv n'écrase jamais une variable déjà définie.
 //
-// `test:unit` (config par défaut vitest.config.ts) reste volontairement SANS DB : les
-// tests d'intégration se skippent (describe.runIf) tant que DATABASE_URL n'est pas défini.
+// `test:unit` (config par défaut vitest.config.ts) reste volontairement SANS DB : il exclut
+// __tests__/db. Ici, un environnement incomplet fait échouer la suite (__tests__/setup/db-env.ts).
 // `bun run test` enchaîne les deux : test:unit (config.ts) puis test:db (cette config).
 config({ path: ".env.local" });
 config();
@@ -21,7 +21,8 @@ export default defineConfig({
     fileParallelism: false,
     // Compteurs de rate limit remis à zéro avant chaque test : toutes les mutations
     // protégées comptent, et un fichier en enchaîne plus que la limite par minute.
-    setupFiles: ["./__tests__/setup/rate-limit.ts"],
+    // db-env : échec immédiat si DATABASE_URL ou Supabase manque (pas de skip silencieux).
+    setupFiles: ["./__tests__/setup/db-env.ts", "./__tests__/setup/rate-limit.ts"],
   },
   resolve: {
     alias: {

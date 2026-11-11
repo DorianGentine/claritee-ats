@@ -3,7 +3,7 @@
  */
 import React from "react"
 import { describe, it, expect, vi, beforeEach } from "vitest"
-import { render, screen, fireEvent, waitFor } from "@testing-library/react"
+import { act, render, screen, fireEvent, waitFor } from "@testing-library/react"
 import { api } from "@/lib/trpc/client"
 import { OfferNotesSection } from "@/components/offers/OfferNotesSection"
 import { noteContent } from "../../../helpers/note-content"
@@ -98,49 +98,59 @@ const mockNotes = [
   },
 ]
 
+/**
+ * Rend la section puis laisse se résoudre `supabase.auth.getUser()` (effet
+ * asynchrone qui met à jour l'utilisateur courant) dans `act`.
+ */
+const renderSection = async () => {
+  const view = render(<OfferNotesSection offerId="offer-1" />)
+  await act(async () => {})
+  return view
+}
+
 describe("OfferNotesSection", () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
-  it("shows loading state", () => {
+  it("shows loading state", async () => {
     vi.mocked(api.note.listByOffer.useQuery).mockReturnValue({
       data: undefined,
       isLoading: true,
     } as ReturnType<typeof api.note.listByOffer.useQuery>)
 
-    render(<OfferNotesSection offerId="offer-1" />)
+    await renderSection()
     expect(screen.getByText("Chargement…")).toBeDefined()
   })
 
-  it("shows empty state when no notes", () => {
+  it("shows empty state when no notes", async () => {
     vi.mocked(api.note.listByOffer.useQuery).mockReturnValue({
       data: [],
       isLoading: false,
     } as ReturnType<typeof api.note.listByOffer.useQuery>)
 
-    render(<OfferNotesSection offerId="offer-1" />)
+    await renderSection()
     expect(screen.getByText("Aucune note")).toBeDefined()
   })
 
-  it("renders notes with author names", () => {
+  it("renders notes with author names", async () => {
     vi.mocked(api.note.listByOffer.useQuery).mockReturnValue({
       data: mockNotes,
       isLoading: false,
     } as ReturnType<typeof api.note.listByOffer.useQuery>)
 
-    render(<OfferNotesSection offerId="offer-1" />)
+    await renderSection()
     expect(screen.getByText(/Alice D\./)).toBeDefined()
     expect(screen.getByText(/Bob M\./)).toBeDefined()
   })
 
-  it("renders note contents as static bubbles", () => {
+  it("renders note contents as static bubbles", async () => {
     vi.mocked(api.note.listByOffer.useQuery).mockReturnValue({
       data: mockNotes,
       isLoading: false,
     } as ReturnType<typeof api.note.listByOffer.useQuery>)
 
-    render(<OfferNotesSection offerId="offer-1" />)
+    await renderSection()
     expect(screen.getByText("Note 1")).toBeDefined()
     expect(screen.getByText("Note 2")).toBeDefined()
     expect(screen.queryByTestId("note-editor-readonly")).toBeNull()
@@ -152,7 +162,7 @@ describe("OfferNotesSection", () => {
       isLoading: false,
     } as ReturnType<typeof api.note.listByOffer.useQuery>)
 
-    render(<OfferNotesSection offerId="offer-1" />)
+    await renderSection()
 
     // currentUserId est "user-1" (mock supabase), chargé de façon asynchrone :
     // n1 appartient à user-1 → actions visibles ; n2 à user-2 → aucune action
@@ -162,13 +172,13 @@ describe("OfferNotesSection", () => {
     expect(screen.getAllByRole("button", { name: "Supprimer la note" })).toHaveLength(1)
   })
 
-  it("shows a Tiptap composer with a disabled send button when empty", () => {
+  it("shows a Tiptap composer with a disabled send button when empty", async () => {
     vi.mocked(api.note.listByOffer.useQuery).mockReturnValue({
       data: [],
       isLoading: false,
     } as ReturnType<typeof api.note.listByOffer.useQuery>)
 
-    render(<OfferNotesSection offerId="offer-1" />)
+    await renderSection()
     expect(screen.getByTestId("note-editor-editable")).toBeDefined()
     expect(
       screen.getByRole("button", { name: "Envoyer la note" }).hasAttribute("disabled")
@@ -176,13 +186,13 @@ describe("OfferNotesSection", () => {
     expect(screen.queryByText("Nouvelle note")).toBeNull()
   })
 
-  it("creates a note from the composer with offerId", () => {
+  it("creates a note from the composer with offerId", async () => {
     vi.mocked(api.note.listByOffer.useQuery).mockReturnValue({
       data: [],
       isLoading: false,
     } as ReturnType<typeof api.note.listByOffer.useQuery>)
 
-    render(<OfferNotesSection offerId="offer-1" />)
+    await renderSection()
 
     fireEvent.change(screen.getByTestId("note-editor-editable"), {
       target: { value: "Mon contenu" },
@@ -196,13 +206,13 @@ describe("OfferNotesSection", () => {
     )
   })
 
-  it("sends the note with Ctrl+Enter from the composer", () => {
+  it("sends the note with Ctrl+Enter from the composer", async () => {
     vi.mocked(api.note.listByOffer.useQuery).mockReturnValue({
       data: [],
       isLoading: false,
     } as ReturnType<typeof api.note.listByOffer.useQuery>)
 
-    render(<OfferNotesSection offerId="offer-1" />)
+    await renderSection()
 
     const composer = screen.getByTestId("note-editor-editable")
     fireEvent.change(composer, { target: { value: "Relancer jeudi" } })

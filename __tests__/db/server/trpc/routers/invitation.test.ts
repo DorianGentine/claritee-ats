@@ -7,7 +7,7 @@ import type { Context } from "@/server/trpc/context";
 
 const connectionString = process.env.DATABASE_URL;
 
-describe.runIf(!!connectionString)("invitation", () => {
+describe("invitation", () => {
   let db: PrismaClient;
   let companyId: string;
   let invitationId: string;

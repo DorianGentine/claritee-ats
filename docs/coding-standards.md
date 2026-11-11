@@ -124,12 +124,12 @@ export const exampleRouter = router({
 | `card` / `popover`                  | `#FEFBF7`                         | Cards, surfaces, popovers                      |
 | `foreground`                        | `#1C1917`                         | Texte principal                                |
 | `muted` / `muted-foreground`        | `#F1EAE1` / `#554D46`             | Fonds neutres / texte secondaire, labels       |
-| `primary` (+ `-foreground` blanc)   | `#BE5334`                         | CTA principaux, liens, focus ring (terracotta) |
+| `primary` (+ `-foreground` blanc)   | `#BA5133`                         | CTA principaux, liens, focus ring (terracotta, nuance ajustée pour un contraste AA ≥ 4,5:1 sur le fond et les cartes) |
 | `secondary` (+ `-foreground` blanc) | `#587A6B`                         | Actions secondaires, chips (vert sauge)        |
 | `accent` / `accent-foreground`      | `#E3EAE5` / `#2E4A42`             | Hover, surbrillance                            |
 | `success` / `success-foreground`    | `#E8F5EC` / `#2E6B3E`             | Statuts positifs (fond + texte)                |
 | `destructive`                       | `#C44B37`                         | Erreurs, actions destructives                  |
-| `border` / `input` / `ring`         | `#E5DCD1` / `#D3C7B8` / `#BE5334` | Bordures, champs, focus                        |
+| `border` / `input` / `ring`         | `#E5DCD1` / `#D3C7B8` / `#BA5133` | Bordures, champs, focus                        |
 | `sidebar` / `sidebar-accent`        | `#F1EAE1` / `#E9E0D4`             | Menu latéral, survol de ses liens              |
 
 - **Statuts** : utiliser les mappings existants (`src/lib/candidature-status-style.ts`, `src/lib/offer-status-style.ts`) plutôt que redéfinir des couleurs.
@@ -230,12 +230,12 @@ Diagnostic si CPU/mémoire excessifs ou « Compiling… » en boucle : `bun run 
 
 ### Patterns
 
-- **Composants (Testing Library)** : directive `/** @vitest-environment jsdom */` en tête de fichier. `cleanup()`, le vidage du scheduler React et `IS_REACT_ACT_ENVIRONMENT` sont gérés globalement par `__tests__/setup/react-dom.ts` (inutile de les répéter). Attendre un effet asynchrone avec `waitFor` / `findBy*`, jamais un `setTimeout`.
+- **Composants (Testing Library)** : directive `/** @vitest-environment jsdom */` en tête de fichier. `cleanup()`, le vidage du scheduler React et `IS_REACT_ACT_ENVIRONMENT` sont gérés globalement par `__tests__/setup/react-dom.ts` (inutile de les répéter). Attendre un effet asynchrone avec `waitFor` / `findBy*`, jamais un `setTimeout`. Un composant qui met à jour son état après une promesse au montage (`supabase.auth.getUser()`, `getSession()`) se rend via un helper `render…` qui enchaîne `await act(async () => {})` ; `next/link` se remplace par un `<a>` si son préchargement déclenche « not wrapped in act ». Objectif : zéro avertissement `act`.
 - Texte présent plusieurs fois : `getAllByText`, pas `getByText`.
 - Mock tRPC : `vi.mock("@/lib/trpc/client", () => ({ api: { … } }))`.
 - Routers tRPC unitaires : contexte et `ctx.db` mockés ; routers en DB : `appRouter.createCaller(ctx)` avec données créées par le test.
 - Cas à couvrir en priorité : validation, `UNAUTHORIZED`, `NOT_FOUND`, isolation tenant (un autre cabinet ne voit rien), chemins critiques.
-- **Tests DB** : données uniques par test (`randomUUID`), lignes liées réelles (un `authorId` doit exister en `User`), contexte avec `user` non nul pour une procédure protégée. Aucun `it.skip` : un test instable se corrige.
+- **Tests DB** : uniquement via `bun run test:db` (exclus de `vitest.config.ts`, pas de `describe.runIf`) ; données uniques par test (`randomUUID`), lignes liées réelles (un `authorId` doit exister en `User`), contexte avec `user` non nul pour une procédure protégée. Aucun `it.skip` : un test instable se corrige.
 - **API REST Supabase** : `__tests__/db/supabase-data-api.test.ts` échoue si une migration accorde un droit à `anon` / `authenticated` sur `public`, oublie la RLS ou rouvre les droits par défaut. `scripts/test-db.sh` reproduit les droits par défaut d'un projet Supabase avant les migrations.
 - **Accessibilité** : `const results = await axe(container, { rules: { "color-contrast": { enabled: false } } }); expect(results.violations).toEqual([]);` (modèle : `__tests__/unit/components/layout/AppSidebar.a11y.test.tsx`).
 - Pas d'E2E (Playwright non installé) ni d'objectif de couverture.

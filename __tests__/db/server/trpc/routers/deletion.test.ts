@@ -52,7 +52,7 @@ vi.mock("@/lib/supabase/admin", () => ({
   }),
 }));
 
-describe.runIf(!!connectionString)("RGPD deletion", () => {
+describe("RGPD deletion", () => {
   let db: PrismaClient;
   const createdCompanyIds: string[] = [];
 

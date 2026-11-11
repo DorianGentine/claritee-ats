@@ -40,7 +40,7 @@ const linkedInProfile = {
   ],
 };
 
-describe.runIf(!!connectionString)("linkedinImport", () => {
+describe("linkedinImport", () => {
   let db: PrismaClient;
   let companyAId: string;
   let companyBId: string;

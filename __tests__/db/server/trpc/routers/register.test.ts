@@ -5,11 +5,8 @@ import { appRouter } from "@/server/trpc/routers/_app";
 import type { Context } from "@/server/trpc/context";
 
 const connectionString = process.env.DATABASE_URL;
-const hasSupabase =
-  !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
-  !!process.env.SUPABASE_SECRET_KEY;
 
-describe.runIf(!!connectionString && hasSupabase)("auth.register", () => {
+describe("auth.register", () => {
   let db: PrismaClient;
   const testSiren = "987654321";
 

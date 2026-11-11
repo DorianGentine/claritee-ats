@@ -36,14 +36,7 @@ _Aucun sujet ouvert._
 
 ## 🧪 Tests
 
-- [ ] **pa11y n'audite que `/login`**
-  `bun run a11y` cible `/dashboard` et `/settings/team`, pages protégées : sans session, `proxy.ts` redirige vers `/login`. Ajouter une page publique (`/`, `/register`, une fiche `/share`) ou authentifier pa11y (actions de login).
-
-- [ ] **Faux vert possible sur les tests DB**
-  `describe.runIf` skippe silencieusement les 15 fichiers de `__tests__/db` si `DATABASE_URL` est absent. `bun run test:db` le définit toujours (`scripts/test-db.sh`) ; le risque ne concerne qu'un `bun run vitest` lancé directement. Faire échouer ces fichiers au lieu de les ignorer.
-
-- [ ] **Avertissements « not wrapped in act » restants**
-  15 avertissements, sans échec : `OfferNotesSection` (×6) met à jour son état après un `supabase.auth.getUser()` asynchrone, hors `act` → attendre cet état dans ses tests (`findBy*` / `waitFor`) ; `AppSidebar.a11y` (×9) vient de l'état interne de `next/link` (`LinkComponent`) → attendre la fin du rendu ou mocker `next/link`.
+_Aucun sujet ouvert._
 
 ---
 
@@ -68,7 +61,7 @@ _Aucun sujet ouvert._
   - [ ] `CvDownloadLink` appelle `window.open` après un `await` : bloqué par Safari sans message à l'utilisateur.
   - [ ] Deux confirmations d'upload simultanées pour un même candidat (double envoi, deux onglets) : si le nettoyage de l'une passe entre la vérification et la mise à jour de la fiche de l'autre, la fiche peut pointer vers un fichier supprimé (fenêtre de quelques millisecondes). Corriger demanderait de sérialiser les confirmations par candidat.
   - [ ] Notes d'un membre supprimé (auteur `null`, « Ancien membre ») : plus personne ne peut les modifier ni les supprimer (`note.update` / `delete` exigent l'auteur).
-  - [ ] Page `/settings/team` en doublon de `TeamSettings` (onglet Équipe de `/settings`) : liée nulle part, sans suppression de membre ; seul `bun run a11y` la cible. La supprimer.
+  - [ ] Page `/settings/team` en doublon de `TeamSettings` (onglet Équipe de `/settings`) : liée nulle part, sans suppression de membre. La supprimer.
   - [ ] Route `/search` non protégée par `src/proxy.ts` (les procédures tRPC restent protégées : pas de fuite, mais pas de redirection vers `/login`).
   - [ ] Fiche anonyme : UUIDs d'expériences/formations présents dans le DTO ; CTA « Contactez [cabinet] » sans `mailto` (pas d'email sur `Company`).
   - [ ] Schémas Zod contraires aux standards : `z.string().email()` (forme Zod 3) dans `src/lib/validations/auth.ts`, et pas de `.max()` sur les chaînes du schéma public `register`.

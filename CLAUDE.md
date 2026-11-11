@@ -108,7 +108,7 @@ See `prisma/schema.prisma` (source of truth) and `docs/architecture.md` (entity 
 | Token | Hex | Usage |
 |-------|-----|-------|
 | Background | `#FAF6F1` | Page background (cream) |
-| Primary | `#BE5334` | CTA, links (terracotta) |
+| Primary | `#BA5133` | CTA, links (terracotta) |
 | Secondary | `#587A6B` | Accents (sage green) |
 
 Charte inspired by claritee.fr: headings in Clash Grotesk (`font-display`), body in Inter, self-hosted via `next/font/local`. Use Tailwind tokens (`bg-primary`, `text-muted-foreground`) — no raw hex in class attributes.

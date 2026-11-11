@@ -34,6 +34,7 @@ export const CandidateBasicFieldsForm = ({
         </Label>
         <Input
           id="firstName"
+          type="text"
           autoComplete="given-name"
           aria-required
           aria-invalid={!!errors.firstName}
@@ -51,6 +52,7 @@ export const CandidateBasicFieldsForm = ({
         </Label>
         <Input
           id="lastName"
+          type="text"
           autoComplete="family-name"
           aria-required
           aria-invalid={!!errors.lastName}

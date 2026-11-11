@@ -9,7 +9,7 @@ import { MAX_TAGS_PER_OFFER } from "@/lib/validations/tag"
 
 const connectionString = process.env.DATABASE_URL
 
-describe.runIf(!!connectionString)("offer router", () => {
+describe("offer router", () => {
   let db: PrismaClient
   let companyAId: string
   let companyBId: string

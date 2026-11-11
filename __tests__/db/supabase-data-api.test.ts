@@ -18,7 +18,7 @@ const SEQUENCE_PRIVILEGES = "USAGE, SELECT, UPDATE";
 
 type ExposedObject = { name: string; role: string };
 
-describe.runIf(!!connectionString)("Supabase Data API closed on public", () => {
+describe("Supabase Data API closed on public", () => {
   let db: PrismaClient;
 
   beforeAll(() => {
@@ -74,7 +74,11 @@ describe.runIf(!!connectionString)("Supabase Data API closed on public", () => {
           JOIN pg_class c ON c.oid = s.seqrelid
           JOIN pg_namespace n ON n.oid = c.relnamespace
           WHERE n.nspname = 'public'
-            AND has_sequence_privilege(${role}, c.oid, ${SEQUENCE_PRIVILEGES})
+            -- CASE : garantit que la fonction n'est appelée que sur une séquence (le planificateur
+            -- peut sinon l'évaluer avant la jointure, sur un index ou une table).
+            AND CASE WHEN c.relkind = 'S'
+              THEN has_sequence_privilege(${role}, c.oid, ${SEQUENCE_PRIVILEGES})
+              ELSE false END
         `)
       );
     }

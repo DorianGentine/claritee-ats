@@ -18,7 +18,7 @@ const connectionString = process.env.DATABASE_URL
 // Pays fictif pour isoler les données de test de la table partagée `cities` (seed inclus).
 const TEST_COUNTRY = "Testland"
 
-describe.runIf(!!connectionString)("city.autocomplete (integration)", () => {
+describe("city.autocomplete (integration)", () => {
   let db: PrismaClient
 
   const caller = () =>
@@ -144,7 +144,7 @@ describe.runIf(!!connectionString)("city.autocomplete (integration)", () => {
   })
 })
 
-describe.runIf(!!connectionString)("city.getByIds (integration)", () => {
+describe("city.getByIds (integration)", () => {
   let db: PrismaClient
 
   const caller = () =>
