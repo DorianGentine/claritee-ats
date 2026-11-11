@@ -338,7 +338,7 @@ Modèle : `.env.example`.
 | Job                  | Contenu                                       |
 | -------------------- | --------------------------------------------- |
 | `lint-typecheck`     | `bun run lint` + `tsc --noEmit`                  |
-| `test` (après lint)  | `supabase start` puis `bun run test` (unit + DB) |
+| `test` (après lint)  | `supabase start` (CLI figée en `2.119.0`, alignée sur la version locale) puis `bun run test` (unit + DB) |
 | `build` (après lint) | `bun run build` avec variables factices          |
 
 Node 20 (runtime) et bun (`oven-sh/setup-bun`, version lue dans `packageManager`) ; dépendances installées en `bun install --frozen-lockfile`.

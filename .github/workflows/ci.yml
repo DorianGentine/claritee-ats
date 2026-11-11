@@ -60,7 +60,9 @@ jobs:
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
-          version: latest
+          # Version exacte, alignée sur la CLI locale (`supabase --version`) : une
+          # nouvelle version ne doit pas casser la CI sans changement dans le repo.
+          version: 2.119.0
 
       - name: Start Supabase
         # Fournit l'instance Postgres locale (127.0.0.1:54322) + les rôles Supabase
