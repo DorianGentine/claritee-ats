@@ -29,9 +29,6 @@ _Aucun sujet ouvert._
 - [ ] **Rate limiter en mémoire, par instance**
   `src/lib/rate-limit.ts` stocke les compteurs en mémoire : sur Vercel chaque instance a sa propre limite. Passer à un store distribué (ex. Upstash) si le trafic augmente.
 
-- [ ] **Supabase CLI non figée en CI**
-  `supabase/setup-cli` en `version: latest` dans `ci.yml`, contrairement à la règle des versions exactes. Fixer la version.
-
 - [ ] **Script `db-pull-prod.sh` : mot de passe tronqué**
   `tr -d '"'` supprime tous les guillemets, ce qui casse un mot de passe qui en contient. Idem `check-local-services.sh`, sensible à un commentaire en fin de ligne dans `.env`.
 
