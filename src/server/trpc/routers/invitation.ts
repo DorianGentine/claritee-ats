@@ -2,6 +2,7 @@ import { TRPCError } from "@trpc/server"
 import { randomUUID } from "crypto"
 import { z } from "zod"
 import { router, protectedProcedure, publicProcedure } from "../trpc"
+import { GENERIC_ERROR_MESSAGE } from "../errors"
 import { createInvitationSchema } from "@/lib/validations/invitation"
 import { emailSchema, passwordSchema } from "@/lib/validations/auth"
 import { createAdminClient } from "@/lib/supabase/admin"
@@ -12,7 +13,6 @@ const INVITATION_EXPIRED_MESSAGE =
 const INVITATION_USED_MESSAGE = "Cette invitation a déjà été utilisée."
 const INVITATION_REVOKED_MESSAGE =
   "Cette invitation a été révoquée par l'administrateur."
-const GENERIC_ERROR_MESSAGE = "Une erreur est survenue. Réessayez."
 
 export const invitationRouter = router({
   create: protectedProcedure

@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { router, protectedProcedure } from "../trpc"
+import { GENERIC_ERROR_MESSAGE } from "../errors"
 import {
   deleteCompanySchema,
   deleteCompanyUserSchema,
@@ -12,8 +13,6 @@ import {
   removeCompanyFiles,
 } from "@/server/candidateStorage"
 import type { Context } from "../context"
-
-const GENERIC_ERROR_MESSAGE = "Une erreur est survenue. Réessayez."
 
 /**
  * Créateur du cabinet : son premier utilisateur. Sans système de rôles, c'est lui

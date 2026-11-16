@@ -8,6 +8,13 @@ const handler = (req: Request) =>
     req,
     router: appRouter,
     createContext,
+    // Le client ne reçoit qu'un message générique pour un 500 : l'erreur
+    // complète (cause Prisma comprise) reste dans les logs Vercel.
+    onError: ({ error, path }) => {
+      if (error.code === "INTERNAL_SERVER_ERROR") {
+        console.error(`[tRPC] ${path ?? "<no-path>"}:`, error.cause ?? error)
+      }
+    },
   })
 
 export const GET = handler

@@ -2,6 +2,7 @@ import { TRPCError } from "@trpc/server"
 import type { Prisma } from "@prisma/client"
 import { z } from "zod"
 import { router, protectedProcedure, publicProcedure } from "../trpc"
+import { GENERIC_ERROR_MESSAGE } from "../errors"
 import {
   candidateListInputSchema,
   createCandidateSchema,
@@ -90,8 +91,6 @@ const FILE_KINDS = {
   },
 } as const
 
-const GENERIC_ERROR_MESSAGE = "Une erreur est survenue. Réessayez."
-
 /**
  * Rattache des tags à un candidat par leur nom : un tag existant du cabinet est
  * réutilisé sans tenir compte de la casse (« react » → « React »), sinon il est créé.
@@ -160,13 +159,13 @@ const createCvSignedUrl = async (
     console.error("[createCvSignedUrl] Supabase error:", error)
     throw new TRPCError({
       code: "INTERNAL_SERVER_ERROR",
-      message: "Une erreur est survenue. Réessayez.",
+      message: GENERIC_ERROR_MESSAGE,
     })
   }
   if (!data?.signedUrl) {
     throw new TRPCError({
       code: "INTERNAL_SERVER_ERROR",
-      message: "Une erreur est survenue. Réessayez.",
+      message: GENERIC_ERROR_MESSAGE,
     })
   }
   return data.signedUrl
@@ -346,7 +345,7 @@ export const candidateRouter = router({
         )
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Une erreur est survenue. Réessayez.",
+          message: GENERIC_ERROR_MESSAGE,
         })
       }
       await ctx.db.candidate.delete({ where: { id: input.id } })
