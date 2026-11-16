@@ -10,8 +10,7 @@ Cocher `[x]` une tâche livrée ; les tâches cochées sont retirées à la mise
 
 ## 🔥 Urgent — bugs et sécurité
 
-- [x] **Modifier api key de apify**
-  une fuite de données a eu lieu... faut changer la clé
+_Aucun sujet ouvert._
 
 ---
 
