@@ -2,7 +2,7 @@
 
 Source de vérité pour les prochaines actions de développement, par urgence puis par thème. Les épics 1 à 6 (MVP, villes structurées, import LinkedIn) sont livrés — voir `prd.md`. L'historique complet des stories, rétros et rapports QA est dans le tag git `docs-archive-2026-10`.
 
-Dernière mise à jour : 2026-11-11
+Dernière mise à jour : 2026-11-16
 
 Cocher `[x]` une tâche livrée ; les tâches cochées sont retirées à la mise à jour suivante.
 
@@ -42,9 +42,6 @@ _Aucun sujet ouvert._
 
 ## 🧹 Dette technique — code
 
-- [ ] **Erreurs Prisma brutes côté client**
-  Pas d'`errorFormatter` tRPC : un `connect` sur un `cityId` invalide (offres) ou un `createMany` de `CandidateCity` / `ClientCompanyCity` en erreur remonte en 500 brut. Ajouter un `errorFormatter` qui mappe P2002/P2003/P2025 vers des codes tRPC et des messages génériques.
-
 - [ ] **Recherche de villes sans index**
   `unaccent(name) ILIKE 'x%'` fait un scan complet de la table `cities` à chaque frappe (l'index trigram a été supprimé par la migration `city_drift_fix`). Créer un index fonctionnel adapté (ex. `unaccent` immutable + `text_pattern_ops`, ou trigram).
 
@@ -82,4 +79,5 @@ _Aucun sujet ouvert._
 - [ ] **Historique de recherche (style Notion)** — recherches récentes dans la modal Cmd+K avant saisie (table `SearchHistory`, API par utilisateur/cabinet).
 - [ ] **Import LinkedIn : photo** — l'URL `photo` renvoyée par Apify (media.licdn.com) expire ; la télécharger côté serveur vers le bucket `photos` à la création.
 - [ ] **Import LinkedIn : doublon non détecté si l'URL enregistrée est encodée** (`/in/j%C3%A9r%C3%B4me`) : le pré-filtre `contains` compare l'identifiant décodé.
+- [ ] **Analyse de CV par IA** — à l'upload d'un CV, une IA l'analyse et préremplit la fiche candidat (identité, coordonnées, résumé, expériences, formations, langues, compétences), à relire avant enregistrement. Même logique que l'import LinkedIn : un brouillon proposé, la création passe par `candidate.create`. Lève l'exclusion « parsing CV / IA » du MVP.
 - **Exclusions MVP** (Kanban, parsing CV, emails, IA, API publique, extension) — voir `prd.md`.
