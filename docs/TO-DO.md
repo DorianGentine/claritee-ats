@@ -10,7 +10,8 @@ Cocher `[x]` une tâche livrée ; les tâches cochées sont retirées à la mise
 
 ## 🔥 Urgent — bugs et sécurité
 
-_Aucun sujet ouvert._
+- [x] **Modifier api key de apify**
+  une fuite de données a eu lieu... faut changer la clé
 
 ---
 
@@ -79,4 +80,5 @@ _Aucun sujet ouvert._
 - [ ] **Historique de recherche (style Notion)** — recherches récentes dans la modal Cmd+K avant saisie (table `SearchHistory`, API par utilisateur/cabinet).
 - [ ] **Import LinkedIn : photo** — l'URL `photo` renvoyée par Apify (media.licdn.com) expire ; la télécharger côté serveur vers le bucket `photos` à la création.
 - [ ] **Import LinkedIn : doublon non détecté si l'URL enregistrée est encodée** (`/in/j%C3%A9r%C3%B4me`) : le pré-filtre `contains` compare l'identifiant décodé.
+- [ ] **Analyse de CV par IA** — à l'upload d'un CV, une IA l'analyse et préremplit la fiche candidat (identité, coordonnées, résumé, expériences, formations, langues, compétences), à relire avant enregistrement. Même logique que l'import LinkedIn : un brouillon proposé, la création passe par `candidate.create`. Lève l'exclusion « parsing CV / IA » du MVP.
 - **Exclusions MVP** (Kanban, parsing CV, emails, IA, API publique, extension) — voir `prd.md`.
